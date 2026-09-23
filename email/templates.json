@@ -1,0 +1,28 @@
+{
+  "categories": [
+    {
+      "id": "cat-welcome",
+      "name": "Welcome & Arrival",
+      "templates": [
+        {
+          "id": "tpl-welcome-1",
+          "title": "Pre-arrival welcome",
+          "subject": "Your stay at Rixos Bab Al Bahr",
+          "body": "Dear [Guest Name],\n\nWe are delighted to welcome you to Rixos Bab Al Bahr for your upcoming stay on [Date]. Your room will be ready from 3:00 PM, and our team is on hand for any request before you arrive.\n\nWarm regards,\n[Your Name]\nRixos Bab Al Bahr"
+        }
+      ]
+    },
+    {
+      "id": "cat-departure",
+      "name": "Departure",
+      "templates": [
+        {
+          "id": "tpl-departure-1",
+          "title": "Late checkout confirmation",
+          "subject": "Late checkout confirmed",
+          "body": "Dear [Guest Name],\n\nYour late checkout until [Time] is confirmed for room [Room Number]. Please let us know if there is anything else we can arrange before your departure.\n\nWarm regards,\n[Your Name]"
+        }
+      ]
+    }
+  ]
+}

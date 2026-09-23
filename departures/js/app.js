@@ -74,8 +74,12 @@
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
     CP.update(s => { s.theme = t; });
+    try { localStorage.setItem('cp_theme', t); } catch (e) {}
   }
-  const toggleTheme = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => {
+    if (window.CPSetTheme) { window.CPSetTheme(); return; }
+    setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  };
 
   function confirmNewShift() {
     confirm('Start a new shift?',
@@ -192,7 +196,7 @@
     const typing = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 
     document.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); return; }
+      if (window.CPActiveTool && window.CPActiveTool !== 'departures') return;
       if (typing(document.activeElement) || dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === '/') { e.preventDefault(); openPalette(); return; }
       const n = parseInt(e.key, 10);
@@ -232,5 +236,10 @@
     setInterval(tick, 1000);
   }
 
-  document.addEventListener('DOMContentLoaded', bind);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
+  window.CPDeparturesRenderAll = renderAll;
 })(window.CP);

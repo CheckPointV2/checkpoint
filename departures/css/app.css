@@ -2,24 +2,26 @@
    Lagoon ink + brass. Numbers set in a condensed departure-board face.
    Rooms are drawn as key tags, the one decorative idea in the system. */
 
-:root {
-  --bg: #EDF1F0;
-  --surface: #FFFFFF;
-  --surface-2: #F4F7F6;
-  --ink: #0F2830;
-  --muted: #5B7074;
-  --line: #D6DFDD;
-  --brass: #9E7120;
-  --brass-soft: #F4E8CC;
-  --slab: #0F2830;
-  --slab-ink: #EAF1EF;
-  --slab-muted: #86A2A3;
-  --slab-line: #214049;
-  --slab-brass: #E0B45A;
+.nav-btn[data-view="finder"], .nav-btn[data-view="tools"], .nav-btn[data-view="daylist"] { display: none; }
 
-  --ok: #1F7A58;       --ok-soft: #DCEFE6;
+:root {
+  --bg: #F7F5F1;
+  --surface: #FFFFFF;
+  --surface-2: #FBF9F5;
+  --ink: #2B2118;
+  --muted: #6B5D4F;
+  --line: #E6DFD3;
+  --brass: #6B4E33;
+  --brass-soft: #EFE4D2;
+  --slab: #201810;
+  --slab-ink: #F3EDE3;
+  --slab-muted: #B4A38D;
+  --slab-line: #3A2E20;
+  --slab-brass: #D2AC76;
+
+  --ok: #2E7D5B;       --ok-soft: #DCEFE3;
   --warn: #A5620D;     --warn-soft: #FBEBD2;
-  --hot: #B3372F;      --hot-soft: #F8DEDB;
+  --hot: #B0532E;      --hot-soft: #F6E4DD;
   --info: #1E6E9E;     --info-soft: #DCEBF4;
   --ext: #6246A8;      --ext-soft: #E7E0F6;
 
@@ -27,8 +29,8 @@
   --amwaj: #2A78AE;
   --marmar: #9A8C74;
 
-  --display: "Big Shoulders Display", "Oswald", "Arial Narrow", sans-serif;
-  --body: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --display: "Source Serif 4", Georgia, serif;
+  --body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
   --r-lg: 16px;
   --r-md: 10px;
@@ -38,20 +40,20 @@
 }
 
 [data-theme="dark"] {
-  --bg: #0B1F25;
-  --surface: #10282F;
-  --surface-2: #143039;
-  --ink: #E6EEEC;
-  --muted: #8BA3A4;
-  --line: #22434B;
-  --brass: #DDB05A;
-  --brass-soft: #3A3120;
-  --slab: #07161B;
-  --slab-line: #1B3840;
+  --bg: #17130E;
+  --surface: #201A13;
+  --surface-2: #241D15;
+  --ink: #EEE7DC;
+  --muted: #AB9C8B;
+  --line: #34291B;
+  --brass: #D2AC76;
+  --brass-soft: #2E2519;
+  --slab: #0E0B07;
+  --slab-line: #241C13;
 
-  --ok: #5DC49A;   --ok-soft: #173A30;
+  --ok: #6FCB9F;   --ok-soft: #17301F;
   --warn: #E6A64A; --warn-soft: #3B2C14;
-  --hot: #F07A70;  --hot-soft: #42201E;
+  --hot: #E08052;  --hot-soft: #3A2419;
   --info: #6DB3DE; --info-soft: #15324A;
   --ext: #A993E8;  --ext-soft: #2B2447;
   --zumroud: #4CC08E;

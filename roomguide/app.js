@@ -88,16 +88,15 @@ function findRoomAnyBuilding(roomNum) {
 
 /* ================= Theme ================= */
 function initTheme() {
-  const saved = localStorage.getItem("rbab-theme");
-  const theme = saved || "light";
-  document.documentElement.dataset.theme = theme;
+  const theme = document.documentElement.dataset.theme || "light";
   updateThemeIcon(theme);
 }
 function toggleTheme() {
+  if (window.CPSetTheme) { window.CPSetTheme(); return; }
   const cur = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
   const next = cur === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
-  localStorage.setItem("rbab-theme", next);
+  localStorage.setItem("cp_theme", next);
   updateThemeIcon(next);
 }
 function updateThemeIcon(theme) {
@@ -896,6 +895,7 @@ function setupSearch() {
 /* ================= Keyboard shortcuts ================= */
 function setupShortcuts() {
   document.addEventListener("keydown", (e) => {
+    if (window.CPActiveTool && window.CPActiveTool !== "roomguide") return;
     const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
 
     if (e.key === "Escape") {
@@ -915,33 +915,6 @@ function setupShortcuts() {
     else if (e.key === "d" || e.key === "D") { toggleTheme(); }
     else if (e.key === "ArrowLeft") { stepFloor(-1); }
     else if (e.key === "ArrowRight") { stepFloor(1); }
-  });
-}
-
-/* ================= Auth gate =================
-   Client-side only: this deters casual link-sharing, it does not secure the
-   photos or data, which remain reachable at their direct URLs regardless. */
-const AUTH_USER = "RBABFRONT";
-const AUTH_PASS = "RoomGuide@@2026$$";
-
-function isAuthed() {
-  return localStorage.getItem("rbab-auth") === "ok";
-}
-
-function setupAuthGate() {
-  const form = $("#authForm");
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const u = $("#authUser").value.trim();
-    const p = $("#authPass").value;
-    if (u === AUTH_USER && p === AUTH_PASS) {
-      localStorage.setItem("rbab-auth", "ok");
-      $("#authGate").classList.add("hidden");
-      $("#mainApp").style.display = "";
-      initApp();
-    } else {
-      $("#authError").classList.add("show");
-    }
   });
 }
 
@@ -1050,12 +1023,11 @@ function initApp() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (isAuthed()) {
-    $("#authGate").classList.add("hidden");
-    $("#mainApp").style.display = "";
-    initApp();
-  } else {
-    setupAuthGate();
-  }
-});
+window.CPMountRoomGuide = function () {
+  if (window.CPRoomGuideMounted) return;
+  window.CPRoomGuideMounted = true;
+  initApp();
+};
+window.CPRoomGuideGoTo = function (bkey, roomNum) {
+  showDetail(bkey, String(roomNum));
+};
