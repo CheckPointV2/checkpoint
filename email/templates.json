@@ -9,6 +9,12 @@
           "title": "Pre-arrival welcome",
           "subject": "Your stay at Rixos Bab Al Bahr",
           "body": "Dear [Guest Name],\n\nWe are delighted to welcome you to Rixos Bab Al Bahr for your upcoming stay on [Date]. Your room will be ready from 3:00 PM, and our team is on hand for any request before you arrive.\n\nWarm regards,\n[Your Name]\nRixos Bab Al Bahr"
+        },
+        {
+          "id": "tpl-du9z43g",
+          "title": "New template",
+          "subject": "ds",
+          "body": "adsadas"
         }
       ]
     },
