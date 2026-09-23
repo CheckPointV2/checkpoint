@@ -74,8 +74,8 @@ function titleCase(str) {
   return cleaned.toLowerCase().split(" ").map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
 }
 
-function imgPath(building, roomNum) { return `images/${building}/${roomNum}.jpg`; }
-function thumbPath(building, roomNum) { return `thumbs/${building}/${roomNum}.jpg`; }
+function imgPath(building, roomNum) { return `roomguide/images/${building}/${roomNum}.jpg`; }
+function thumbPath(building, roomNum) { return `roomguide/thumbs/${building}/${roomNum}.jpg`; }
 function buildingData(key) { return RBAB_DATA.buildings[key]; }
 
 function findRoomAnyBuilding(roomNum) {

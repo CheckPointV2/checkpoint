@@ -161,6 +161,13 @@
     return container;
   }
 
+  let roomDataPromise = null;
+  function ensureRoomDataLoaded() {
+    if (window.RBAB_DATA) return Promise.resolve();
+    if (!roomDataPromise) roomDataPromise = loadScriptsSequential(["roomguide/data.js"]);
+    return roomDataPromise;
+  }
+
   async function mountRoomGuide(container) {
     loadCSSOnce("roomguide/style.css");
     const res = await fetch("roomguide/index.html");
@@ -170,7 +177,8 @@
     const mainApp = doc.querySelector("#mainApp");
     if (mainApp) mainApp.removeAttribute("style");
     container.innerHTML = doc.body.innerHTML;
-    await loadScriptsSequential(["roomguide/data.js", "roomguide/app.js"]);
+    await ensureRoomDataLoaded();
+    await loadScriptsSequential(["roomguide/app.js"]);
     window.CPMountRoomGuide();
   }
 
@@ -237,8 +245,7 @@
   buildStaticIndex();
 
   async function ensureRoomIndex() {
-    if (window.RBAB_DATA) return;
-    await loadScriptsSequential(["roomguide/data.js"]);
+    await ensureRoomDataLoaded();
   }
 
   function roomResults(query) {
