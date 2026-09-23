@@ -1,0 +1,42 @@
+.alloc-wrap { padding: 20px 28px 40px; max-width: 1000px; }
+.alloc-banner {
+  padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: var(--ink-soft); line-height: 1.5;
+}
+.alloc-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.alloc-slot-label { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+
+.alloc-drop {
+  border: 1.5px dashed var(--line); border-radius: var(--radius);
+  padding: 26px 14px; text-align: center; cursor: pointer; background: var(--panel-2);
+  transition: border-color .15s ease, background .15s ease;
+}
+.alloc-drop:hover, .alloc-drop.over { border-color: var(--bronze); background: var(--bronze-soft); }
+.alloc-drop-sub { font-size: 12px; color: var(--ink-soft); }
+
+.alloc-file {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--panel);
+  position: relative;
+}
+.alloc-file-name { font-weight: 700; font-size: 13px; padding-right: 26px; overflow-wrap: break-word; }
+.alloc-file-size { font-weight: 500; color: var(--ink-faint); font-size: 11.5px; }
+.alloc-file-status { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+.alloc-file-status.ok { color: var(--ok); }
+.alloc-file-status.err { color: var(--danger); }
+.alloc-remove { position: absolute; top: 10px; right: 10px; }
+
+.alloc-preview {
+  margin-top: 10px; max-height: 220px; overflow: auto; background: var(--slab); border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.alloc-preview pre {
+  margin: 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
+  color: var(--slab-ink); white-space: pre-wrap; word-break: break-word;
+}
+.alloc-wrap [data-copy] { margin-top: 8px; }
+
+.alloc-hint { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+@media (max-width: 900px) {
+  .alloc-slots { grid-template-columns: 1fr; }
+  .alloc-wrap { padding: 16px 20px 30px; }
+}

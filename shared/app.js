@@ -76,7 +76,7 @@
   /* ============================================================
      Router
      ============================================================ */
-  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures" };
+  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Intelligence" };
   window.CPActiveTool = "home";
   window.CPActiveSub = null;
   let pendingSub = null;
@@ -162,6 +162,7 @@
     try {
       if (tool === "roomguide") await mountRoomGuide(container);
       else if (tool === "departures") await mountDepartures(container);
+      else if (tool === "allocation") await mountAllocation(container);
     } catch (err) {
       container.innerHTML = '<div class="cp-loading">Could not load this tool. ' + (err && err.message ? err.message : "") + '</div>';
       console.error(err);
@@ -207,6 +208,12 @@
       "departures/js/store.js", "departures/js/departures.js", "departures/js/checkouts.js",
       "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js"
     ]);
+  }
+
+  async function mountAllocation(container) {
+    loadCSSOnce("allocation/style.css");
+    await loadScriptsSequential(["allocation/module.js"]);
+    window.CPMountAllocation(container);
   }
 
   /* ============================================================
@@ -267,7 +274,8 @@
       { label: "Home", tag: "page", route: "#/" },
       { label: "Room Guide", tag: "page", route: "#/roomguide" },
       { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
-      { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" }
+      { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },
+      { label: "Allocation Intelligence", tag: "page", route: "#/allocation" }
     ];
   }
   buildStaticIndex();
