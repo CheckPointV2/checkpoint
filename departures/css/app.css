@@ -3,6 +3,7 @@
    Rooms are drawn as key tags, the one decorative idea in the system. */
 
 .nav-btn[data-view="finder"], .nav-btn[data-view="tools"], .nav-btn[data-view="daylist"] { display: none; }
+.rail { display: none !important; }
 
 :root {
   --bg: #F7F5F1;
@@ -81,7 +82,7 @@ h1, h2, h3 { margin: 0; }
 /* ============ shell ============ */
 .shell {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
 }
 .rail {
@@ -125,7 +126,7 @@ h1, h2, h3 { margin: 0; }
 
 /* ============ topbar ============ */
 .topbar {
-  position: sticky; top: 0; z-index: 5;
+  position: sticky; top: 78px; z-index: 5;
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 22px 0 18px;
   margin-bottom: 22px;

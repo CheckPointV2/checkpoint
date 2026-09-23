@@ -10,13 +10,18 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const esc = (s) => (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const uid = (p) => p + "-" + Math.random().toString(36).slice(2, 9);
+  const ICON_EDIT = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  const ICON_TRASH = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>';
+  const ICON_COPY = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 
   let data = null;
-  let sha = null;
   let activeCatId = null;
   let activeTplId = null;
   let container = null;
   let dirty = false;
+  let addingCat = false;
+  let addingTpl = false;
+  let renamingCat = null;
 
   function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
   function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
@@ -64,7 +69,6 @@
         body: JSON.stringify(body)
       });
       if (!res.ok) {
-        const errText = await res.text();
         throw new Error(res.status === 401 ? "That token was rejected — check it's valid and has write access."
           : res.status === 409 ? "The file changed on GitHub since you loaded it — reload and try again."
           : "GitHub said: " + res.status);
@@ -72,10 +76,17 @@
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
       dirty = false;
       setStatus("Saved");
+      updateUnsavedDot();
       setTimeout(() => setStatus(""), 2000);
     } catch (err) {
       setStatus(err.message || "Save failed", true);
     }
+  }
+
+  function markDirty() { dirty = true; updateUnsavedDot(); }
+  function updateUnsavedDot() {
+    const dot = $("#emlUnsaved", container);
+    if (dot) dot.style.display = dirty ? "block" : "none";
   }
 
   function setStatus(msg, isError) {
@@ -104,71 +115,150 @@
     const cat = activeCategory();
     const tpl = activeTemplate();
 
-    $("#emlCats", container).innerHTML = cats.map(c => `
-      <div class="eml-cat${c.id === activeCatId ? " active" : ""}" data-cat="${c.id}">
-        <span>${esc(c.name)}</span>
+    $("#emlCats", container).innerHTML = cats.map(c => {
+      if (renamingCat === c.id) {
+        return `<div class="eml-cat-row eml-cat-editing">
+          <input class="cp-input eml-inline-input" id="emlRenameInput" value="${esc(c.name)}">
+          <button class="eml-icon-btn eml-icon-ok" data-rename-save="${c.id}" title="Save">✓</button>
+        </div>`;
+      }
+      return `<div class="eml-cat-row${c.id === activeCatId ? " active" : ""}" data-cat="${c.id}">
+        <span class="eml-cat-name">${esc(c.name)}</span>
         <span class="eml-count">${c.templates.length}</span>
-      </div>`).join("") + `<button class="cp-btn" id="emlAddCat" style="width:100%;margin-top:8px;">+ Category</button>`;
+        <span class="eml-cat-actions">
+          <button class="eml-icon-btn" data-rename="${c.id}" title="Rename category">${ICON_EDIT}</button>
+          <button class="eml-icon-btn eml-icon-danger" data-delcat="${c.id}" title="Delete category">${ICON_TRASH}</button>
+        </span>
+      </div>`;
+    }).join("") + (addingCat
+      ? `<div class="eml-cat-row eml-cat-editing">
+          <input class="cp-input eml-inline-input" id="emlNewCatInput" placeholder="Category name">
+          <button class="eml-icon-btn eml-icon-ok" id="emlNewCatSave" title="Add">✓</button>
+        </div>`
+      : `<button class="cp-btn eml-add-btn" id="emlAddCat">+ Category</button>`);
 
-    $("#emlList", container).innerHTML = cat ? cat.templates.map(t => `
-      <div class="eml-item${t.id === activeTplId ? " active" : ""}" data-tpl="${t.id}">${esc(t.title) || "Untitled"}</div>
-    `).join() + `<button class="cp-btn" id="emlAddTpl" style="width:100%;margin-top:8px;">+ Template</button>` : "";
+    $("#emlList", container).innerHTML = (cat ? cat.templates.map(t =>
+      `<div class="eml-item${t.id === activeTplId ? " active" : ""}" data-tpl="${t.id}">${esc(t.title) || "Untitled"}</div>`
+    ).join("") : "") + (addingTpl
+      ? `<div class="eml-cat-row eml-cat-editing">
+          <input class="cp-input eml-inline-input" id="emlNewTplInput" placeholder="Template title">
+          <button class="eml-icon-btn eml-icon-ok" id="emlNewTplSave" title="Add">✓</button>
+        </div>`
+      : (cat ? `<button class="cp-btn eml-add-btn" id="emlAddTpl">+ Template</button>` : ""));
 
     const editor = $("#emlEditor", container);
     if (!tpl) {
-      editor.innerHTML = '<div class="cp-loading">Pick a template, or add a new one.</div>';
+      editor.innerHTML = '<div class="cp-loading">Pick a template on the left, or add a new one.</div>';
     } else {
       editor.innerHTML = `
         <input class="cp-input eml-title" id="emlTitle" value="${esc(tpl.title)}" placeholder="Template title">
         <input class="cp-input" id="emlSubject" value="${esc(tpl.subject || "")}" placeholder="Subject (optional)" style="margin-top:10px;">
-        <textarea class="cp-input" id="emlBody" rows="14" placeholder="Message body" style="margin-top:10px; font-family: var(--font-body); resize:vertical;">${esc(tpl.body)}</textarea>
-        <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+        <textarea class="cp-input eml-body" id="emlBody" rows="14" placeholder="Message body" style="margin-top:10px;">${esc(tpl.body)}</textarea>
+        <div class="eml-editor-actions">
           <button class="cp-btn cp-btn-primary" id="emlSave">Save to GitHub</button>
-          <button class="cp-btn" id="emlCopy">Copy</button>
-          <button class="cp-btn" id="emlDelete" style="margin-left:auto; color:var(--danger);">Delete template</button>
-          <span id="emlStatus" style="align-self:center; font-size:12.5px; color:var(--ink-soft);"></span>
+          <button class="cp-btn" id="emlCopy">${ICON_COPY} Copy</button>
+          <button class="cp-btn" id="emlDuplicate">Duplicate</button>
+          <button class="cp-btn eml-danger-btn" id="emlDelete">Delete</button>
+          <span id="emlStatus" class="eml-status"></span>
         </div>`;
-      $("#emlTitle", container).addEventListener("input", e => { tpl.title = e.target.value; dirty = true; $("#emlList", container).querySelector(`[data-tpl="${tpl.id}"]`).textContent = tpl.title || "Untitled"; });
-      $("#emlSubject", container).addEventListener("input", e => { tpl.subject = e.target.value; dirty = true; });
-      $("#emlBody", container).addEventListener("input", e => { tpl.body = e.target.value; dirty = true; });
+      $("#emlTitle", container).addEventListener("input", e => { tpl.title = e.target.value; markDirty(); const li = $("#emlList", container).querySelector(`[data-tpl="${tpl.id}"]`); if (li) li.textContent = tpl.title || "Untitled"; });
+      $("#emlSubject", container).addEventListener("input", e => { tpl.subject = e.target.value; markDirty(); });
+      $("#emlBody", container).addEventListener("input", e => { tpl.body = e.target.value; markDirty(); });
       $("#emlSave", container).addEventListener("click", saveToGitHub);
       $("#emlCopy", container).addEventListener("click", () => {
         const text = (tpl.subject ? "Subject: " + tpl.subject + "\n\n" : "") + tpl.body;
         navigator.clipboard.writeText(text).then(() => { setStatus("Copied"); setTimeout(() => setStatus(""), 1500); });
       });
+      $("#emlDuplicate", container).addEventListener("click", () => {
+        const copy = { id: uid("tpl"), title: tpl.title + " (copy)", subject: tpl.subject, body: tpl.body };
+        cat.templates.push(copy);
+        activeTplId = copy.id; markDirty();
+        render();
+      });
       $("#emlDelete", container).addEventListener("click", () => {
         if (!confirm("Delete this template?")) return;
         cat.templates = cat.templates.filter(t => t.id !== tpl.id);
         activeTplId = (cat.templates[0] || {}).id || null;
-        dirty = true;
+        markDirty();
         render();
       });
     }
 
-    $$(".eml-cat", container).forEach(el => el.addEventListener("click", () => {
+    // category selection / rename / delete
+    $$(".eml-cat-row[data-cat]", container).forEach(el => el.addEventListener("click", (e) => {
+      if (e.target.closest(".eml-cat-actions")) return;
       activeCatId = el.dataset.cat;
       const c = activeCategory();
       activeTplId = (c.templates[0] || {}).id || null;
       render();
     }));
+    $$("[data-rename]", container).forEach(el => el.addEventListener("click", (e) => {
+      e.stopPropagation(); renamingCat = el.dataset.rename; render();
+      const input = $("#emlRenameInput", container); if (input) { input.focus(); input.select(); }
+    }));
+    $$("[data-delcat]", container).forEach(el => el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = el.dataset.delcat;
+      const c = data.categories.find(c => c.id === id);
+      if (!confirm(`Delete category "${c.name}" and its ${c.templates.length} template(s)?`)) return;
+      data.categories = data.categories.filter(c => c.id !== id);
+      if (activeCatId === id) {
+        activeCatId = (data.categories[0] || {}).id || null;
+        activeTplId = activeCatId ? ((activeCategory().templates[0] || {}).id || null) : null;
+      }
+      markDirty(); render();
+    }));
+    const renameSave = $("[data-rename-save]", container);
+    if (renameSave) {
+      const commitRename = () => {
+        const c = data.categories.find(c => c.id === renamingCat);
+        const val = $("#emlRenameInput", container).value.trim();
+        if (c && val) { c.name = val; markDirty(); }
+        renamingCat = null; render();
+      };
+      renameSave.addEventListener("click", commitRename);
+      $("#emlRenameInput", container).addEventListener("keydown", e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") { renamingCat = null; render(); } });
+    }
+
     $$(".eml-item", container).forEach(el => el.addEventListener("click", () => { activeTplId = el.dataset.tpl; render(); }));
-    const addCat = $("#emlAddCat", container);
-    if (addCat) addCat.addEventListener("click", () => {
-      const name = prompt("Category name?");
-      if (!name) return;
-      const c = { id: uid("cat"), name, templates: [] };
-      data.categories.push(c);
-      activeCatId = c.id; activeTplId = null; dirty = true;
-      render();
-    });
-    const addTpl = $("#emlAddTpl", container);
-    if (addTpl) addTpl.addEventListener("click", () => {
-      const c = activeCategory();
-      const t = { id: uid("tpl"), title: "New template", subject: "", body: "" };
-      c.templates.push(t);
-      activeTplId = t.id; dirty = true;
-      render();
-    });
+
+    const addCatBtn = $("#emlAddCat", container);
+    if (addCatBtn) addCatBtn.addEventListener("click", () => { addingCat = true; render(); const i = $("#emlNewCatInput", container); if (i) i.focus(); });
+    const newCatSave = $("#emlNewCatSave", container);
+    if (newCatSave) {
+      const commitNewCat = () => {
+        const name = $("#emlNewCatInput", container).value.trim();
+        addingCat = false;
+        if (name) {
+          const c = { id: uid("cat"), name, templates: [] };
+          data.categories.push(c);
+          activeCatId = c.id; activeTplId = null; markDirty();
+        }
+        render();
+      };
+      newCatSave.addEventListener("click", commitNewCat);
+      $("#emlNewCatInput", container).addEventListener("keydown", e => { if (e.key === "Enter") commitNewCat(); if (e.key === "Escape") { addingCat = false; render(); } });
+    }
+
+    const addTplBtn = $("#emlAddTpl", container);
+    if (addTplBtn) addTplBtn.addEventListener("click", () => { addingTpl = true; render(); const i = $("#emlNewTplInput", container); if (i) i.focus(); });
+    const newTplSave = $("#emlNewTplSave", container);
+    if (newTplSave) {
+      const commitNewTpl = () => {
+        const title = $("#emlNewTplInput", container).value.trim();
+        addingTpl = false;
+        if (title) {
+          const t = { id: uid("tpl"), title, subject: "", body: "" };
+          cat.templates.push(t);
+          activeTplId = t.id; markDirty();
+        }
+        render();
+      };
+      newTplSave.addEventListener("click", commitNewTpl);
+      $("#emlNewTplInput", container).addEventListener("keydown", e => { if (e.key === "Enter") commitNewTpl(); if (e.key === "Escape") { addingTpl = false; render(); } });
+    }
+
+    updateUnsavedDot();
   }
 
   function shell() {
@@ -176,8 +266,10 @@
       <div class="eml-wrap">
         <div class="eml-toolbar no-print">
           <input class="cp-input" id="emlSearch" placeholder="Filter templates…" style="max-width:260px;">
-          <button class="cp-icon-btn" id="emlSettingsBtn" title="GitHub sync settings">
+          <span style="margin-left:auto"></span>
+          <button class="cp-icon-btn" id="emlSettingsBtn" title="GitHub sync settings" style="position:relative;">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            <span id="emlUnsaved" style="display:none; position:absolute; top:4px; right:4px; width:7px; height:7px; border-radius:50%; background:var(--danger);"></span>
           </button>
         </div>
         <div class="eml-grid">
@@ -228,6 +320,11 @@
     $("#emlTokenSave", container).addEventListener("click", () => { setToken($("#emlTokenInput", container).value.trim()); closeSettings(); });
     $("#emlTokenClear", container).addEventListener("click", () => { setToken(""); $("#emlTokenInput", container).value = ""; });
     $("#emlSettingsOverlay", container).addEventListener("click", (e) => { if (e.target.id === "emlSettingsOverlay") closeSettings(); });
+
+    document.addEventListener("keydown", function emlSaveShortcut(e) {
+      if (window.CPActiveTool !== "email") return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveToGitHub(); }
+    });
   };
 
   window.CPEmailGoTo = function (templateId) {

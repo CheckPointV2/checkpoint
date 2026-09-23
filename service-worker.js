@@ -1,7 +1,9 @@
-const CACHE = "checkpoint-v2";
+const CACHE = "checkpoint-v3";
 const APP_SHELL = [
   "./", "index.html", "manifest.webmanifest",
-  "shared/tokens.css", "shared/app.js", "shared/icon.svg",
+  "shared/tokens.css", "shared/app.js",
+  "shared/assets/favicon-16.png", "shared/assets/favicon-32.png", "shared/assets/apple-touch-icon.png",
+  "shared/assets/rixos-logo.png", "shared/assets/icon-192.png", "shared/assets/icon-512.png",
   "roomguide/index.html", "roomguide/style.css", "roomguide/app.js",
   "departures/index.html", "departures/css/app.css",
   "departures/js/store.js", "departures/js/departures.js", "departures/js/checkouts.js",

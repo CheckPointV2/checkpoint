@@ -7,10 +7,12 @@
   const ACTIONS = {
     departures: [
       { id: 'import', label: 'Import export', primary: true },
-      { id: 'reset-dep', label: 'Reset departures' }
+      { id: 'reset-dep', label: 'Reset departures' },
+      { id: 'newshift', label: 'Start new shift' }
     ],
     checkouts: [
-      { id: 'reset-co', label: 'Reset checkouts' }
+      { id: 'reset-co', label: 'Reset checkouts' },
+      { id: 'newshift', label: 'Start new shift' }
     ],
     finder: [],
     tools: [],
@@ -68,6 +70,7 @@
     if (id === 'reset-dl') return confirm('Reset the day list?',
       'Clears today\'s full departures PDF. Checkout validation falls back to the live due-out export only.',
       'Reset day list', () => { CP.update(s => { s.dayList = null; }); CP.toast('Day list cleared'); });
+    if (id === 'newshift') return confirmNewShift();
   }
 
   // ---------- theme / new shift ----------

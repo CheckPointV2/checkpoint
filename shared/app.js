@@ -78,6 +78,7 @@
      ============================================================ */
   const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", email: "Email Templates" };
   window.CPActiveTool = "home";
+  window.CPActiveSub = null;
   let pendingSub = null;
 
   async function route() {
@@ -85,15 +86,17 @@
     if (!hash.startsWith("#/")) return; // not ours — a mounted tool owns it (e.g. Departures' own #checkouts)
     const parts = hash.slice(2).split("/").filter(Boolean);
     const tool = parts[0] || "home";
-    await showTool(tool);
+    const sub = pendingSub;
+    pendingSub = null;
+    await showTool(tool, sub);
   }
 
-  async function showTool(tool) {
+  async function showTool(tool, sub) {
     if (!TOOL_TITLES[tool]) tool = "home";
     window.CPActiveTool = tool;
-    $("#topbarTitle").textContent = TOOL_TITLES[tool];
+    window.CPActiveSub = sub || (tool === "departures" ? "departures" : null);
+    document.title = tool === "home" ? "CheckPoint — Rixos Bab Al Bahr" : TOOL_TITLES[tool] + " — CheckPoint";
     $$(".cp-view").forEach(v => v.classList.remove("active"));
-    $$(".cp-nav-link, .cp-nav-dropdown a").forEach(a => a.removeAttribute("aria-current"));
 
     if (tool === "home") {
       $("#view-home").classList.add("active");
@@ -101,20 +104,25 @@
     } else {
       const view = await ensureMounted(tool);
       view.classList.add("active");
-      if (tool === "departures" && pendingSub && window.CP && window.CP.go) {
-        window.CP.go(pendingSub);
+      if (tool === "departures" && sub && window.CP && window.CP.go) {
+        window.CP.go(sub);
       }
     }
-    pendingSub = null;
-
-    const activeLink = document.querySelector(`.cp-nav-link[data-route="#/${tool === "home" ? "" : tool}"]`)
-      || document.querySelector(`.cp-nav-dropdown a[data-route="#/${tool}"]`);
-    if (activeLink) activeLink.setAttribute("aria-current", "page");
-    if (tool === "departures") {
-      const grp = $("#group-departures");
-      if (grp) grp.classList.add("open");
-    }
+    updateDockActive();
     window.scrollTo(0, 0);
+  }
+
+  function updateDockActive() {
+    $$(".cp-dock-btn[data-route]").forEach(el => el.removeAttribute("aria-current"));
+    const tool = window.CPActiveTool;
+    const sub = window.CPActiveSub;
+    let match = null;
+    if (tool === "departures") {
+      match = document.querySelector(`.cp-dock-btn[data-route="#/departures"][data-sub="${sub}"]`);
+    } else {
+      match = document.querySelector(`.cp-dock-btn[data-route="#/${tool === "home" ? "" : tool}"]`);
+    }
+    if (match) match.setAttribute("aria-current", "page");
   }
 
   /* ============================================================
@@ -322,15 +330,7 @@
   /* ============================================================
      Boot
      ============================================================ */
-  function bindSidebar() {
-    $$(".cp-nav-toggle").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const grp = btn.closest(".cp-nav-group");
-        const wasOpen = grp.classList.contains("open");
-        $$(".cp-nav-group.open").forEach(g => g.classList.remove("open"));
-        if (!wasOpen) grp.classList.add("open");
-      });
-    });
+  function bindDock() {
     $$("[data-route]").forEach(el => {
       el.addEventListener("click", (e) => {
         e.preventDefault();
@@ -342,7 +342,7 @@
   }
 
   function boot() {
-    bindSidebar();
+    bindDock();
     window.addEventListener("hashchange", route);
     route();
 

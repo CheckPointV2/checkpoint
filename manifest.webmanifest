@@ -1,5 +1,5 @@
 {
-  "name": "CheckPoint",
+  "name": "CheckPoint — Rixos Bab Al Bahr",
   "short_name": "CheckPoint",
   "description": "Personal Rooms Controller hub — Room Guide, Departures, Email Templates",
   "start_url": "./",
@@ -8,6 +8,8 @@
   "background_color": "#F7F5F1",
   "theme_color": "#6B4E33",
   "icons": [
-    { "src": "shared/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "shared/assets/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "shared/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "shared/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }

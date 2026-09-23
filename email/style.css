@@ -1,16 +1,36 @@
-.eml-wrap { padding: 24px 28px; height: 100%; display: flex; flex-direction: column; }
+.eml-wrap { padding: 20px 28px 28px; height: 100%; display: flex; flex-direction: column; }
 .eml-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-.eml-grid { display: grid; grid-template-columns: 220px 260px 1fr; gap: 14px; flex: 1; min-height: 0; }
+.eml-grid { display: grid; grid-template-columns: 230px 260px 1fr; gap: 14px; flex: 1; min-height: 0; }
 .eml-col { padding: 14px; overflow-y: auto; }
 .eml-editor { display: flex; flex-direction: column; }
-.eml-cat, .eml-item {
+
+.eml-cat-row, .eml-item {
   padding: 10px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; align-items: center; gap: 8px;
+  transition: background .12s ease;
 }
-.eml-cat:hover, .eml-item:hover { background: var(--paper); }
-.eml-cat.active, .eml-item.active { background: var(--bronze-soft); color: var(--bronze-deep); font-weight: 600; }
+.eml-cat-row:hover, .eml-item:hover { background: var(--paper); }
+.eml-cat-row.active, .eml-item.active { background: var(--bronze-soft); color: var(--bronze-deep); font-weight: 600; }
+.eml-cat-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .eml-count { font-size: 11px; color: var(--ink-faint); }
+.eml-cat-actions { display: none; align-items: center; gap: 2px; }
+.eml-cat-row:hover .eml-cat-actions { display: flex; }
+.eml-icon-btn {
+  width: 22px; height: 22px; border-radius: 6px; border: none; background: transparent; color: var(--ink-soft);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+}
+.eml-icon-btn:hover { background: var(--panel); color: var(--ink); }
+.eml-icon-danger:hover { color: var(--danger); }
+.eml-icon-ok { width: 30px; height: 30px; font-weight: 700; color: var(--ok); flex-shrink: 0; }
+.eml-cat-editing { padding: 4px 0; }
+.eml-inline-input { flex: 1; padding: 7px 10px; font-size: 13px; }
+.eml-add-btn { width: 100%; margin-top: 6px; justify-content: center; }
+
 .eml-title { font-weight: 700; }
+.eml-body { font-family: var(--font-body); resize: vertical; line-height: 1.55; }
+.eml-editor-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+.eml-danger-btn { margin-left: auto; color: var(--danger); border-color: var(--danger-soft); }
+.eml-status { font-size: 12.5px; color: var(--ink-soft); }
 
 @media (max-width: 900px) {
   .eml-grid { grid-template-columns: 1fr; }
