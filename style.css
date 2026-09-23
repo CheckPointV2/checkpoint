@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --paper: #F7F5F1;
+  --panel: #FFFFFF;
+  --ink: #2B2118;
+  --ink-soft: #6B5D4F;
+  --line: #E6DFD3;
+  --bronze: #6B4E33;
+  --bronze-deep: #4F3A26;
+  --bronze-soft: #EFE4D2;
+  --shadow: 0 10px 28px rgba(43, 33, 24, 0.09);
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); height: 100%; }
+
+.app { display: flex; min-height: 100vh; }
+
+/* ================= Sidebar ================= */
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px;
+}
+
+.sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 22px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.brand-mark {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--bronze); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 15px; flex-shrink: 0;
+}
+.brand-title { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 17px; line-height: 1.1; }
+.brand-sub { font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+.tool-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.tool-group { display: flex; flex-direction: column; }
+
+.tool-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 10px; border-radius: 10px;
+  color: var(--ink); text-decoration: none;
+  border: none; background: none; width: 100%; text-align: left; cursor: pointer;
+  font-size: 14px; font-weight: 600; font-family: inherit;
+}
+.tool-link:hover { background: var(--paper); }
+.tool-icon {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--bronze-soft); color: var(--bronze-deep);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tool-icon svg { width: 17px; height: 17px; }
+.tool-name { flex: 1; }
+.tool-caret { color: var(--ink-soft); font-size: 15px; transition: transform 0.15s ease; }
+.tool-group.open .tool-caret { transform: rotate(90deg); }
+
+.tool-dropdown {
+  display: none;
+  flex-direction: column;
+  margin: 2px 0 6px 44px;
+  border-left: 1px solid var(--line);
+  padding-left: 12px;
+  gap: 2px;
+}
+.tool-group.open .tool-dropdown { display: flex; }
+.tool-dropdown a {
+  padding: 8px 10px; border-radius: 8px; color: var(--ink-soft); text-decoration: none; font-size: 12.5px; font-weight: 600;
+}
+.tool-dropdown a:hover { background: var(--paper); color: var(--bronze-deep); }
+
+.sidebar-footer { font-size: 10.5px; color: var(--ink-soft); padding: 10px 8px 0; border-top: 1px solid var(--line); margin-top: 10px; }
+
+/* ================= Content ================= */
+.content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+.welcome { text-align: center; max-width: 420px; }
+.welcome-mark {
+  width: 60px; height: 60px; border-radius: 16px; background: var(--bronze); color: #fff;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+  font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 24px;
+}
+.welcome h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 26px; margin: 0 0 10px; }
+.welcome p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+
+@media (max-width: 720px) {
+  .app { flex-direction: column; }
+  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--line); }
+}

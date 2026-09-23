@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CheckPoint</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">CP</div>
+      <div class="brand-text">
+        <div class="brand-title">CheckPoint</div>
+        <div class="brand-sub">Mastertool</div>
+      </div>
+    </div>
+
+    <nav class="tool-nav">
+      <a class="tool-link" href="roomguide/index.html">
+        <span class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+        </span>
+        <span class="tool-name">Room Guide</span>
+      </a>
+
+      <div class="tool-group">
+        <button class="tool-link tool-toggle" data-tool="departures">
+          <span class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 13h16"/></svg>
+          </span>
+          <span class="tool-name">Departures</span>
+          <span class="tool-caret">›</span>
+        </button>
+        <div class="tool-dropdown" id="dropdown-departures">
+          <a href="https://sherilngar.github.io/Checkpoint/" target="_blank" rel="noopener">Departures</a>
+          <a href="https://sherilngar.github.io/Checkpoint/" target="_blank" rel="noopener">Checkouts</a>
+          <a href="https://sherilngar.github.io/Checkpoint/" target="_blank" rel="noopener">Room Finder</a>
+          <a href="https://sherilngar.github.io/Checkpoint/" target="_blank" rel="noopener">Room Lists</a>
+          <a href="https://sherilngar.github.io/Checkpoint/" target="_blank" rel="noopener">Day List</a>
+        </div>
+      </div>
+
+      <div class="tool-group">
+        <button class="tool-link tool-toggle" data-tool="email">
+          <span class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          </span>
+          <span class="tool-name">Email Templates</span>
+          <span class="tool-caret">›</span>
+        </button>
+        <div class="tool-dropdown" id="dropdown-email">
+          <a href="https://rbabgr.github.io/RBABGR/" target="_blank" rel="noopener">Guest Relations Templates</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">Personal reference hub — not shared</div>
+  </aside>
+
+  <main class="content">
+    <div class="welcome">
+      <div class="welcome-mark">CP</div>
+      <h1>CheckPoint</h1>
+      <p>Pick a tool from the sidebar. Room Guide opens right here; Departures and Email Templates open in their own tab.</p>
+    </div>
+  </main>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
