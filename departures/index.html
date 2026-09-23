@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F2830">
+<title>Checkpoint</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/app.css?v=26">
+<script>
+  // set theme before paint to avoid a flash
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('checkpoint_v2') || '{}');
+      var t = s.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+  })();
+</script>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 4h10l4 5v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9z"/><circle cx="16" cy="10" r="2.2"/></svg>
+      <div>
+        <div class="brand-name">Checkpoint</div>
+        <div class="brand-sub">Rooms control, Rixos Bab Al Bahr</div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <button class="nav-btn" data-view="departures"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg><span>Departures</span><em class="nav-count" data-count="departures"></em><kbd>1</kbd></button>
+      <button class="nav-btn" data-view="checkouts"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4z"/><path d="M9 10l2 2 4-4"/></svg><span>Checkouts</span><em class="nav-count" data-count="checkouts"></em><kbd>2</kbd></button>
+      <button class="nav-btn" data-view="finder"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>Room finder</span><kbd>3</kbd></button>
+      <button class="nav-btn" data-view="tools"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg><span>Room lists</span><kbd>4</kbd></button>
+      <button class="nav-btn" data-view="daylist"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M10 12h7M10 16h7M10 8h3"/></svg><span>Day list</span><em class="nav-count" data-count="daylist"></em><kbd>5</kbd></button>
+    </nav>
+    <div class="rail-foot">
+      <button class="rail-link" id="theme-btn" type="button">Night mode</button>
+      <button class="rail-link" id="newshift-btn" type="button">Start new shift</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="view-title">Departures</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="view-actions" id="view-actions"></div>
+        <div class="clock" id="clock" aria-label="Current time"></div>
+      </div>
+    </header>
+
+    <!-- DEPARTURES -->
+    <section class="view" id="view-departures" data-title="Departures">
+      <div class="panel import-panel">
+        <div class="last-checked" id="dep-last"></div>
+        <div class="drop" id="dep-drop">
+          <div>
+            <p class="drop-main">Drop the Opera due-out export here, or <button class="inline-btn" id="dep-browse" type="button">choose the file</button></p>
+            <p class="drop-meta" id="dep-meta">Use the .xls exactly as Opera gives it.</p>
+          </div>
+          <input type="file" id="dep-file" accept=".xls,.xlsx,.csv,.htm,.html" hidden>
+        </div>
+        <div class="cutoff">
+          <label for="cutoff">Physical check for departures before</label>
+          <div class="cutoff-row">
+            <input id="cutoff" class="time-input" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="12:04">
+            <button class="chip" data-cut="12:04" type="button">12:04</button>
+            <button class="chip" data-cut="now" type="button">Now</button>
+            <button class="chip" data-cut="+30" type="button">+30 min</button>
+          </div>
+          <p class="fine">Blank departure times are always included. 12:05 (left) and 12:06 (extension) never are. Rooms Concierge already reported as checked out drop off automatically.</p>
+        </div>
+      </div>
+      <div id="dep-body"></div>
+      <div class="panel" id="dep-table-panel" hidden>
+        <div class="panel-head">
+          <h2>All due-outs</h2>
+          <input id="dep-search" class="search" type="search" placeholder="Search room, guest or agent" autocomplete="off">
+        </div>
+        <div class="table-wrap"><table class="table" id="dep-table"></table></div>
+      </div>
+    </section>
+
+    <!-- CHECKOUTS -->
+    <section class="view" id="view-checkouts" data-title="Checkouts">
+      <div class="split">
+        <div class="panel">
+          <div class="panel-head"><h2>Read a screenshot</h2></div>
+          <div class="drop drop-tall" id="ex-drop" tabindex="0">
+            <div class="drop-inner" id="ex-drop-inner">
+              <p class="drop-main">Paste a WhatsApp screenshot anywhere on this page, drag it here, or <button class="inline-btn" id="ex-browse" type="button">choose an image</button></p>
+              <p class="drop-meta">Reads "co", "c/o", "check out", "checkout", "checked out" and "vacant", including lists like "1141, 1414 co".</p>
+            </div>
+            <img id="ex-preview" alt="Pasted screenshot" hidden>
+            <input type="file" id="ex-file" accept="image/*" hidden>
+          </div>
+          <p class="status" id="ex-status" hidden></p>
+          <details class="text-mode">
+            <summary>Paste text instead (always exact)</summary>
+            <textarea id="ex-text" rows="6" placeholder="Paste messages copied from WhatsApp"></textarea>
+            <button class="btn" id="ex-text-btn" type="button">Read text</button>
+          </details>
+        </div>
+        <div class="panel" id="ex-result"></div>
+      </div>
+      <div class="panel" id="ex-today"></div>
+    </section>
+
+    <!-- WAITING CARDS -->
+    <section class="view" id="view-finder" data-title="Room finder" hidden>
+      <div class="panel fd-controls" id="fd-controls"></div>
+      <div id="fd-body"></div>
+    </section>
+
+    <!-- ROOM LISTS -->
+    <section class="view" id="view-tools" data-title="Room lists">
+      <div class="split">
+        <div class="panel">
+          <div class="panel-head"><h2>Any text to Opera format</h2></div>
+          <textarea id="tl-input" rows="10" placeholder="Paste anything with room numbers: emails, HK lists, notes. Times like 12:05 are ignored."></textarea>
+          <label class="check-row"><input type="checkbox" id="tl-dedupe" checked> Remove duplicates</label>
+        </div>
+        <div class="panel" id="tl-out"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-daylist" data-title="Day list" hidden>
+      <div class="panel">
+        <div class="panel-head"><h2>Full-day departures PDF</h2></div>
+        <div class="drop" id="dl-drop">
+          <div>
+            <p class="drop-main">Drop today's full departures PDF here, or <button class="inline-btn" id="dl-browse" type="button">choose the file</button></p>
+            <p class="drop-meta">The report that lists every room departing today, not just what's still outstanding.</p>
+          </div>
+          <input type="file" id="dl-file" accept="application/pdf" hidden>
+        </div>
+        <p class="status" id="dl-status" hidden></p>
+      </div>
+      <div class="panel" id="dl-draft" hidden></div>
+      <div id="dl-body"></div>
+    </section>
+  </div>
+</div>
+
+<dialog id="sheet"><div id="sheet-body"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/store.js?v=26" defer></script>
+<script src="js/departures.js?v=26" defer></script>
+<script src="js/checkouts.js?v=26" defer></script>
+<script src="js/finder.js?v=26" defer></script>
+<script src="js/tools.js?v=26" defer></script>
+<script src="js/daylist.js?v=26" defer></script>
+<script src="js/app.js?v=26" defer></script>
+</body>
+</html>
