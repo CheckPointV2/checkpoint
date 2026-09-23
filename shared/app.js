@@ -76,7 +76,7 @@
   /* ============================================================
      Router
      ============================================================ */
-  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", email: "Email Templates" };
+  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures" };
   window.CPActiveTool = "home";
   window.CPActiveSub = null;
   let pendingSub = null;
@@ -141,6 +141,7 @@
 
   function loadScriptsSequential(srcs) {
     return srcs.reduce((p, src) => p.then(() => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
       const s = document.createElement("script");
       s.src = src;
       s.onload = resolve;
@@ -161,7 +162,6 @@
     try {
       if (tool === "roomguide") await mountRoomGuide(container);
       else if (tool === "departures") await mountDepartures(container);
-      else if (tool === "email") await mountEmail(container);
     } catch (err) {
       container.innerHTML = '<div class="cp-loading">Could not load this tool. ' + (err && err.message ? err.message : "") + '</div>';
       console.error(err);
@@ -174,6 +174,13 @@
     if (window.RBAB_DATA) return Promise.resolve();
     if (!roomDataPromise) roomDataPromise = loadScriptsSequential(["roomguide/data.js"]);
     return roomDataPromise;
+  }
+
+  let depDataPromise = null;
+  function ensureDeparturesDataLoaded() {
+    if (window.CP && window.CP.dep) return Promise.resolve();
+    if (!depDataPromise) depDataPromise = loadScriptsSequential(["departures/js/store.js", "departures/js/departures.js"]);
+    return depDataPromise;
   }
 
   async function mountRoomGuide(container) {
@@ -202,38 +209,52 @@
     ]);
   }
 
-  async function mountEmail(container) {
-    loadCSSOnce("email/style.css");
-    await loadScriptsSequential(["email/module.js"]);
-    window.CPMountEmail(container);
-  }
-
   /* ============================================================
      Home dashboard
      ============================================================ */
-  function renderHome() {
+  async function renderHome() {
     const hour = new Date().getHours();
     $("#homeGreet").textContent = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     $("#homeDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
-    let dueouts = 0, checkedOut = 0, roomsSeen = 0, templates = 0;
-    try {
-      const raw = JSON.parse(localStorage.getItem("checkpoint_v2") || "{}");
-      const rows = raw.dueouts && raw.dueouts.rows || [];
-      dueouts = rows.length;
-      checkedOut = Object.keys((raw.co && raw.co.processed) || {}).length;
-    } catch (e) {}
-    try { roomsSeen = JSON.parse(localStorage.getItem("rbab-recent") || "[]").length; } catch (e) {}
-    try { templates = window.CPEmailCount ? window.CPEmailCount() : (JSON.parse(localStorage.getItem("cp_email_cache") || "null")?.categories || []).reduce((n, c) => n + c.templates.length, 0); } catch (e) {}
+    await ensureDeparturesDataLoaded();
+    const s = window.CP.state();
+    const hasImport = !!s.dueouts;
+    const checkRooms = hasImport ? window.CP.dep.checkRooms(s) : [];
+    const stats = hasImport ? window.CP.dep.buildingStats(s) : null;
+    const checkedOutToday = Object.keys((s.co && s.co.processed) || {}).length;
 
-    const stats = [
-      { num: dueouts, label: "Due-outs today" },
-      { num: checkedOut, label: "Checked out" },
-      { num: roomsSeen, label: "Rooms viewed recently" },
-      { num: templates || "–", label: "Email templates" }
+    let roomsSeen = 0;
+    try { roomsSeen = JSON.parse(localStorage.getItem("rbab-recent") || "[]").length; } catch (e) {}
+
+    // primary attention hero
+    const heroEl = $("#homeAttn");
+    if (!hasImport) {
+      heroEl.innerHTML = `
+        <div class="cp-attn-num cp-serif">—</div>
+        <div class="cp-attn-label">No due-outs imported yet today</div>
+        <div class="cp-attn-sub">Import the Opera export in Departures to see what still needs a physical check.</div>`;
+    } else {
+      const chips = window.CP.BUILDING_ORDER
+        .filter(b => stats[b] && stats[b].total > 0)
+        .map(b => `<span class="cp-attn-chip${stats[b].check > 0 ? " hot" : ""}">${b} · ${stats[b].check}</span>`)
+        .join("");
+      const mins = Math.round((Date.now() - s.dueouts.importedAt) / 60000);
+      const freshness = mins < 1 ? "just now" : mins === 1 ? "1 min ago" : mins < 60 ? mins + " min ago" : Math.floor(mins / 60) + "h ago";
+      heroEl.innerHTML = `
+        <div class="cp-attn-num cp-serif">${checkRooms.length}</div>
+        <div class="cp-attn-label">${checkRooms.length === 1 ? "room still needs a physical check" : "rooms still need a physical check"}</div>
+        <div class="cp-attn-chips">${chips}</div>
+        <div class="cp-attn-sub">Due-outs imported ${freshness}</div>`;
+    }
+    heroEl.onclick = () => { pendingSub = "departures"; location.hash = "#/departures"; };
+
+    const secondary = [
+      { num: checkedOutToday, label: "Checked out today" },
+      { num: roomsSeen, label: "Rooms viewed recently" }
     ];
-    $("#homeStats").innerHTML = stats.map(s =>
-      `<div class="cp-slab cp-stat-block"><div class="cp-stat-num cp-serif">${s.num}</div><div class="cp-stat-label">${s.label}</div></div>`
+    $("#homeStats").innerHTML = secondary.map(st =>
+      `<div class="cp-slab cp-stat-block"><div class="cp-stat-num cp-serif">${st.num}</div><div class="cp-stat-label">${st.label}</div></div>`
     ).join("");
   }
 
@@ -246,8 +267,7 @@
       { label: "Home", tag: "page", route: "#/" },
       { label: "Room Guide", tag: "page", route: "#/roomguide" },
       { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
-      { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },
-      { label: "Email Templates", tag: "page", route: "#/email" }
+      { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" }
     ];
   }
   buildStaticIndex();
@@ -270,19 +290,6 @@
     return out;
   }
 
-  function templateResults(query) {
-    try {
-      const cache = JSON.parse(localStorage.getItem("cp_email_cache") || "null");
-      if (!cache) return [];
-      const q = query.toLowerCase();
-      const out = [];
-      cache.categories.forEach(c => c.templates.forEach(t => {
-        if (t.title.toLowerCase().includes(q)) out.push({ label: t.title, tag: c.name, route: "#/email", templateId: t.id });
-      }));
-      return out.slice(0, 8);
-    } catch (e) { return []; }
-  }
-
   function openPalette() {
     $("#paletteOverlay").classList.add("show");
     $("#paletteInput").value = "";
@@ -300,7 +307,6 @@
     } else {
       results = paletteIndex.filter(r => r.label.toLowerCase().includes(q.toLowerCase()));
       if (/^\d+$/.test(q)) results = results.concat(roomResults(q));
-      results = results.concat(templateResults(q));
     }
     const box = $("#paletteResults");
     if (!results.length) { box.innerHTML = '<div class="cp-palette-empty">No matches</div>'; return; }
@@ -322,9 +328,6 @@
       await ensureMounted("roomguide");
       setTimeout(() => { if (window.CPRoomGuideGoTo) window.CPRoomGuideGoTo(r.room.bkey, r.room.num); }, 60);
     }
-    if (r.templateId) {
-      setTimeout(() => { if (window.CPEmailGoTo) window.CPEmailGoTo(r.templateId); }, 60);
-    }
   }
 
   /* ============================================================
@@ -343,6 +346,7 @@
 
   function boot() {
     bindDock();
+    ensureDeparturesDataLoaded();
     window.addEventListener("hashchange", route);
     route();
 

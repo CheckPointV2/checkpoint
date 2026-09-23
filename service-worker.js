@@ -1,4 +1,4 @@
-const CACHE = "checkpoint-v3";
+const CACHE = "checkpoint-v4";
 const APP_SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "shared/tokens.css", "shared/app.js",
@@ -7,11 +7,10 @@ const APP_SHELL = [
   "roomguide/index.html", "roomguide/style.css", "roomguide/app.js",
   "departures/index.html", "departures/css/app.css",
   "departures/js/store.js", "departures/js/departures.js", "departures/js/checkouts.js",
-  "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js",
-  "email/module.js", "email/style.css"
+  "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js"
 ];
 // Data files: prefer a fresh copy, fall back to cache when offline.
-const NETWORK_FIRST = ["roomguide/data.js", "email/templates.json"];
+const NETWORK_FIRST = ["roomguide/data.js"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP_SHELL)).then(() => self.skipWaiting()));
