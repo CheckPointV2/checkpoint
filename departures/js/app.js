@@ -187,12 +187,11 @@
     // Each sub-view wires its own listeners here, once, now that its markup
     // is guaranteed to be in the DOM. They can't self-bind on script load:
     // departures.js is also loaded early (before this markup exists) so Home
-    // can read CP.dep's business logic for its dashboard.
-    if (CP.bindDepartures) CP.bindDepartures();
-    if (CP.bindCheckouts) CP.bindCheckouts();
-    if (CP.bindFinder) CP.bindFinder();
-    if (CP.bindTools) CP.bindTools();
-    if (CP.bindDayList) CP.bindDayList();
+    // can read CP.dep's business logic for its dashboard. Isolated like
+    // renderAll() below, so one sub-view's bind failing can't take the
+    // clock, keyboard shortcuts, or the rest of Departures down with it.
+    [CP.bindDepartures, CP.bindCheckouts, CP.bindFinder, CP.bindTools, CP.bindDayList]
+      .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
 
     document.addEventListener('click', e => {
       const nav = e.target.closest('.nav-btn[data-view]');
