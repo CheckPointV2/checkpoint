@@ -12,7 +12,7 @@ const APP_SHELL = [
   "departures/index.html", "departures/css/app.css",
   "departures/js/store.js", "departures/js/departures.js", "departures/js/checkouts.js",
   "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js",
-  "allocation/module.js", "allocation/style.css"
+  "allocation/module.js", "allocation/style.css", "allocation/parse.js", "allocation/rules.js", "allocation/match.js"
 ];
 const CODE_EXTENSIONS = [".html", ".css", ".js", ".json", ".webmanifest"];
 

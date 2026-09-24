@@ -212,7 +212,8 @@
 
   async function mountAllocation(container) {
     loadCSSOnce("allocation/style.css");
-    await loadScriptsSequential(["allocation/module.js"]);
+    await loadScriptsSequential(["allocation/parse.js", "allocation/rules.js", "allocation/match.js", "allocation/module.js"]);
+    await ensureRoomDataLoaded(); // Allocation's room matching needs RBAB_DATA too
     window.CPMountAllocation(container);
   }
 

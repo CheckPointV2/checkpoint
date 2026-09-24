@@ -122,7 +122,7 @@
 
   const vipRows = (s) => activeRows(s).filter(r => r.vip || r.memberLevel);
 
-  CP.dep = { parseHTMLText, parseFile, checkRooms, conciergeText, linkedGroups, vipRows, tagKey, activeRows, buildingStats, importRows, importFile };
+  CP.dep = { parseHTMLText, parseFile, checkRooms, conciergeText, linkedGroups, vipRows, tagKey, activeRows, buildingStats, importRows, importFile, checkUrgency, checkSub };
 
   // ---------- import ----------
   function importRows(rows, fileName) {

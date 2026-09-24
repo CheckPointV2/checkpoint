@@ -14,46 +14,12 @@ const UPSELL_TIERS = [{"key": "t1", "label": "Occupancy 85\u2013100%", "extraPax
 const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 400, "room": 300, "fb": 100}, {"category": "Deluxe", "time": "18:00", "charges": 600, "room": 450, "fb": 150}, {"category": "Premium / Family Suite / Interconnecting", "time": "16:00", "charges": 600, "room": 450, "fb": 150}, {"category": "Premium / Family Suite / Interconnecting", "time": "18:00", "charges": 800, "room": 600, "fb": 200}, {"category": "All Suites", "time": "16:00", "charges": 750, "room": 562.5, "fb": 187.5}, {"category": "All Suites", "time": "18:00", "charges": 950, "room": 712.5, "fb": 237.5}];
 
 
-const TYPE_DESC = {
-  KGA: "Deluxe King Garden", KGAOV: "Deluxe King View", KGE: "Premium King Garden", KGEOV: "Premium King View",
-  PI: "Posting Interface", SKA: "Kids Escape Suite", SKB: "Family Room Garden", SKC: "Family Room View",
-  SKD: "Junior Suite", SKP: "Senior Suite", SXA: "King Suite", TWA: "Deluxe Twin Garden", TWAOV: "Deluxe Twin View",
-};
-
-// Feature code meanings, confirmed against the hotel's official Opera code list.
-const GLOSSARY = {
-  BAL:    { label: "Balcony", conf: "high" },
-  NBA:    { label: "No Balcony", conf: "high" },
-  S:      { label: "Small Balcony", conf: "high" },
-  KGB:    { label: "King Bed", conf: "high" },
-  TWB:    { label: "Twin Bed", conf: "high" },
-  BBE:    { label: "Bunk Bed", conf: "high" },
-  SOF:    { label: "Sofa Cum Bed", conf: "high" },
-  "1EXBED": { label: "1 Extra Bed Space in Room", conf: "high" },
-  "2EXBED": { label: "2 Extra Bed Space in Room", conf: "high" },
-  GAR:    { label: "Garden View", conf: "high" },
-  GRD:    { label: "Ground Floor", conf: "high" },
-  POO:    { label: "Pool View", conf: "high" },
-  BEA:    { label: "Beach View", conf: "high" },
-  ROA:    { label: "Road View", conf: "high" },
-  CAV:    { label: "Car Park View", conf: "high" },
-  MAN:    { label: "Main Entrance View", conf: "high" },
-  COS:    { label: "Corniche Sea View", conf: "high" },
-  TER:    { label: "Terrace", conf: "high" },
-  NSM:    { label: "Non-Smoking", conf: "high" },
-  HCA:    { label: "Disabled Room (Handicap Accessible)", conf: "high" },
-  INT:    { label: "Interconnecting Room", conf: "high" },
-  KTC:    { label: "Kitchenette", conf: "high" },
-  COR:    { label: "Corner Room", conf: "high" },
-  SA:     { label: "Small Room, No Extra Bed Space", conf: "high" },
-  ZMR:    { label: "Zumroud (building reference)", conf: "high" },
-  AMJ:    { label: "Amwaj (building reference)", conf: "high" },
-  MRM:    { label: "Marmar (building reference)", conf: "high" },
-  "1ST": { label: "First Floor", conf: "high" }, "2ND": { label: "Second Floor", conf: "high" },
-  "3RD": { label: "Third Floor", conf: "high" }, "4TH": { label: "Fourth Floor", conf: "high" },
-  "5TH": { label: "Fifth Floor", conf: "high" }, "6TH": { label: "Sixth Floor", conf: "high" },
-  "7TH": { label: "Seventh Floor", conf: "high" }, "8TH": { label: "Eighth Floor", conf: "high" },
-};
+// Room type descriptions and feature-code meanings live in RBAB_DATA
+// (roomguide/data.js) now, not here, so any module that loads the data file
+// (Allocation Intelligence, Room Finder) gets the same real, hotel-confirmed
+// definitions instead of a second hand-copied version.
+const TYPE_DESC = RBAB_DATA.typeDesc;
+const GLOSSARY = RBAB_DATA.glossary;
 
 const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 

@@ -3,8 +3,13 @@
 
   // ---------- extraction ----------
   // A room (or a short list of rooms on one line) followed by a checkout word.
+  // "C Out" / "c/out" / "c-out" (a spelled-out "out" after a bare "c") is its
+  // own branch, listed before the bare "co" form: the bare form's negative
+  // lookahead deliberately rejects a following lowercase letter (so it
+  // doesn't fire inside "corner" or "cottage"), which also means it rejects
+  // "C Out" 's "ut" — the dedicated branch below covers that case instead.
   const NUM = '(?<![\\d:./])\\d{4}(?![\\d:/])';
-  const KW = '(?:c\\s*[\\/.]?\\s*[o0](?![a-z])|checked\\s*-?\\s*out\\b|check\\s*-?\\s*out\\b|checkout\\b|chk\\s*out\\b|vacant\\b|vac\\b|vd\\b)';
+  const KW = '(?:c\\s*[\\/.\\-]?\\s*out\\b|c\\s*[\\/.]?\\s*[o0](?![a-z])|checked\\s*-?\\s*out\\b|check\\s*-?\\s*out\\b|checkout\\b|chk\\s*out\\b|vacant\\b|vac\\b|vd\\b)';
   const SEQ = `((?:${NUM}[ \\t]*(?:,|&|and|\\/|\\+)?[ \\t]*)+)${KW}`;
 
   function extract(text) {

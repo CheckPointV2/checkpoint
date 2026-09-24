@@ -26,6 +26,8 @@
   --danger: #B0532E;
   --ok: #2E7D5B;
   --ok-soft: #DCEFE3;
+  --warn: #A5620D;
+  --warn-soft: #FBEBD2;
 
   /* dark "slab" block — the Aurora-style stat strip */
   --slab: #201810;
@@ -64,6 +66,8 @@ html[data-theme="dark"] {
   --danger: #E08052;
   --ok: #6FCB9F;
   --ok-soft: #17301F;
+  --warn: #E6A64A;
+  --warn-soft: #3B2C14;
 
   --slab: #0E0B07;
   --slab-ink: #F3EDE3;

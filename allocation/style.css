@@ -36,7 +36,82 @@
 
 .alloc-hint { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
 
+.alloc-raw { margin-top: 10px; }
+.alloc-raw summary { cursor: pointer; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
+.alloc-raw[open] summary { margin-bottom: 8px; }
+
+/* ---------- analysis results ---------- */
+#alloc-results { margin-top: 28px; }
+#alloc-results:empty { margin-top: 0; }
+
+.alloc-warnings {
+  padding: 16px 18px; margin-bottom: 22px; border-left: 3px solid var(--warn);
+}
+.alloc-warnings-head { font-weight: 700; font-size: 13.5px; color: var(--warn); margin-bottom: 6px; }
+.alloc-warnings ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+
+.alloc-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.alloc-section-head h2 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0; }
+.alloc-section-meta { font-size: 12.5px; color: var(--ink-soft); }
+.alloc-empty { color: var(--ink-soft); font-size: 13.5px; margin: 10px 0 0; }
+
+.alloc-tier-group { margin-top: 22px; }
+.alloc-tier-heading {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; margin: 0 0 10px;
+}
+.alloc-tier-heading span {
+  font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--ink-faint);
+  background: var(--panel-2); border-radius: 999px; padding: 1px 8px;
+}
+.alloc-tier-heading.tier-high { color: var(--danger); }
+.alloc-tier-heading.tier-medium { color: var(--warn); }
+
+.alloc-arrival {
+  border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); padding: 14px 16px; margin-bottom: 10px;
+}
+.alloc-arrival.tier-high { border-left-color: var(--danger); }
+.alloc-arrival.tier-medium { border-left-color: var(--warn); }
+.alloc-arrival-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.alloc-arrival-name { font-weight: 700; font-size: 14.5px; }
+.alloc-arrival-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.alloc-tier-pill {
+  flex-shrink: 0; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+.alloc-tier-pill.tier-high { background: var(--danger-soft); color: var(--danger); }
+.alloc-tier-pill.tier-medium { background: var(--warn-soft); color: var(--warn); }
+
+.alloc-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.alloc-reason-chip {
+  font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: var(--panel-2); color: var(--ink-soft); border: 1px solid var(--line);
+}
+.alloc-reason-chip.hard { background: var(--bronze-soft); color: var(--bronze-deep); border-color: transparent; }
+
+.alloc-match { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.alloc-match-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-faint); margin-bottom: 8px; }
+.alloc-match-note { font-size: 13px; color: var(--ink-soft); margin: 0; }
+.alloc-match-warn { font-size: 12px; color: var(--warn); margin: 8px 0 0; }
+.alloc-candidates { display: flex; flex-direction: column; gap: 6px; }
+.alloc-candidate {
+  display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm); background: var(--panel-2);
+}
+.alloc-candidate-room { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.alloc-candidate-type { font-size: 12px; color: var(--ink-soft); }
+.alloc-candidate-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.alloc-candidate-status.st-free { background: var(--ok-soft); color: var(--ok); }
+.alloc-candidate-status.st-check { background: var(--bronze-soft); color: var(--bronze-deep); }
+.alloc-candidate-status.st-later, .alloc-candidate-status.st-ext, .alloc-candidate-status.st-unknown {
+  background: var(--panel); color: var(--ink-faint); border: 1px solid var(--line);
+}
+
 @media (max-width: 900px) {
   .alloc-slots { grid-template-columns: 1fr; }
   .alloc-wrap { padding: 16px 20px 30px; }
+  .alloc-candidate { grid-template-columns: 44px 1fr; }
+  .alloc-candidate-status { grid-column: 1 / -1; justify-self: start; }
+  .alloc-arrival-head { flex-direction: column; }
 }

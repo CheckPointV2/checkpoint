@@ -535,3 +535,35 @@ input[type=checkbox] { accent-color: var(--brass); width: 16px; height: 16px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ============ mobile ============
+   Departures had no responsive breakpoint at all — every other tool
+   (Room Guide, Allocation, the shell) already has one. Two real, confirmed
+   breakages: the topbar's title fighting the actions/clock for space in a
+   single row collapses to zero width and vanishes entirely, and the
+   3-column import panel's fixed 230px first column has no room left for
+   the other two on a phone, so they overlap. Both get stacked instead. The
+   panels below with 2-3 equal columns (split/log-grid/diff-grid/fd-lanes)
+   aren't broken, just cramped enough at this width to hurt readability, so
+   they stack too. The key rack's 3 building columns are left alone — they
+   already hold up fine down to phone width since they're built from
+   minmax(0, 1fr) rather than a fixed column, confirmed on a 390px screen. */
+@media (max-width: 760px) {
+  .main { padding: 0 16px 40px; }
+
+  .topbar {
+    position: static;
+    flex-direction: column; align-items: stretch; gap: 10px;
+    padding: 16px 0 14px;
+  }
+  .topbar h1 { font-size: 26px; white-space: normal; overflow: visible; text-overflow: clip; }
+  .topbar-right { justify-content: space-between; gap: 12px; }
+  .view-actions { flex-wrap: wrap; }
+  .clock { padding-left: 12px; }
+  .clock-time { font-size: 22px; }
+
+  .import-panel { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .split, .log-grid, .diff-grid, .fd-lanes { grid-template-columns: minmax(0, 1fr); }
+  .diff-grid .diff-cell { padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+  .diff-grid .diff-cell:first-child { padding-top: 0; border-top: 0; }
+}
