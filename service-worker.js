@@ -1,4 +1,8 @@
-const CACHE = "checkpoint-v6";
+// While this app is under active development, code files (HTML/CSS/JS) are
+// network-first: always try the live version first, fall back to cache only
+// when offline. Only large static assets (room photos, fonts) are cache-first,
+// since those don't change and are worth saving data on.
+const CACHE = "checkpoint-v7";
 const APP_SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "shared/tokens.css", "shared/app.js",
@@ -10,8 +14,7 @@ const APP_SHELL = [
   "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js",
   "allocation/module.js", "allocation/style.css"
 ];
-// Data files: prefer a fresh copy, fall back to cache when offline.
-const NETWORK_FIRST = ["roomguide/data.js"];
+const CODE_EXTENSIONS = [".html", ".css", ".js", ".json", ".webmanifest"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -27,13 +30,14 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return; // leave GitHub API / fonts to the network
+  if (url.origin !== location.origin) return; // leave GitHub API / fonts / CDN libs to the network
 
-  const isNetworkFirst = NETWORK_FIRST.some(p => url.pathname.endsWith(p));
+  const isCode = CODE_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) || url.pathname.endsWith("/");
 
-  if (isNetworkFirst) {
+  if (isCode) {
+    // Network-first: always get the latest code when online.
     e.respondWith(
-      fetch(e.request).then(res => {
+      fetch(e.request, { cache: "no-store" }).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
         return res;
@@ -42,6 +46,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
+  // Static assets (images, etc.): cache-first, since they don't change.
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const copy = res.clone();

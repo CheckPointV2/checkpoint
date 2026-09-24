@@ -985,6 +985,7 @@ function initApp() {
     $$(".fdrop.open").forEach((el) => el.classList.remove("open"));
   });
 
+  $("#themeToggle").addEventListener("click", toggleTheme);
   $("#overviewBtn").addEventListener("click", openOverview);
   $("#upsellBtn").addEventListener("click", openUpsell);
   $("#upOccInput").addEventListener("input", (e) => {
