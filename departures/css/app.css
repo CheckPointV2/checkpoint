@@ -5,61 +5,39 @@
 .nav-btn[data-view="finder"], .nav-btn[data-view="tools"], .nav-btn[data-view="daylist"] { display: none; }
 .rail { display: none !important; }
 
+/* Token values live in shared/tokens.css, loaded before this file in
+   every tool. These are local aliases only — this file's own selectors
+   were written against these names, so we keep them, but the values
+   themselves now come from one place instead of drifting independently. */
 :root {
-  --bg: #F7F5F1;
-  --surface: #FFFFFF;
-  --surface-2: #FBF9F5;
-  --ink: #2B2118;
-  --muted: #6B5D4F;
-  --line: #E6DFD3;
-  --brass: #6B4E33;
-  --brass-soft: #EFE4D2;
-  --slab: #201810;
-  --slab-ink: #F3EDE3;
-  --slab-muted: #B4A38D;
-  --slab-line: #3A2E20;
-  --slab-brass: #D2AC76;
+  /* --ink, --line, --slab, --slab-ink, --slab-muted, --slab-line, --ok(-soft),
+     --warn(-soft), --info(-soft), --ext(-soft) share their name with the
+     shared token and are simply inherited from shared/tokens.css — giving
+     each one `var(--same-name)` here would be a self-reference cycle. */
+  --bg: var(--paper);
+  --surface: var(--panel);
+  --surface-2: var(--panel-2);
+  --muted: var(--ink-soft);
+  --brass: var(--bronze);
+  --brass-soft: var(--bronze-soft);
+  --slab-brass: var(--slab-accent);
+  --hot: var(--danger);      --hot-soft: var(--danger-soft);
 
-  --ok: #2E7D5B;       --ok-soft: #DCEFE3;
-  --warn: #A5620D;     --warn-soft: #FBEBD2;
-  --hot: #B0532E;      --hot-soft: #F6E4DD;
-  --info: #1E6E9E;     --info-soft: #DCEBF4;
-  --ext: #6246A8;      --ext-soft: #E7E0F6;
+  --zumroud: var(--bld-zumroud);
+  --amwaj: var(--bld-amwaj);
+  --marmar: var(--bld-marmar);
 
-  --zumroud: #1F8A5F;
-  --amwaj: #2A78AE;
-  --marmar: #9A8C74;
+  --display: var(--font-display);
+  --body: var(--font-body);
 
-  --display: "Source Serif 4", Georgia, serif;
-  --body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
-
-  --r-lg: 16px;
-  --r-md: 10px;
-  --r-sm: 7px;
+  --r-lg: var(--radius-lg);
+  --r-md: var(--radius);
+  --r-sm: var(--radius-sm);
   --shadow: 0 1px 0 rgba(15, 40, 48, .04), 0 8px 24px -16px rgba(15, 40, 48, .35);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --bg: #17130E;
-  --surface: #201A13;
-  --surface-2: #241D15;
-  --ink: #EEE7DC;
-  --muted: #AB9C8B;
-  --line: #34291B;
-  --brass: #D2AC76;
-  --brass-soft: #2E2519;
-  --slab: #0E0B07;
-  --slab-line: #241C13;
-
-  --ok: #6FCB9F;   --ok-soft: #17301F;
-  --warn: #E6A64A; --warn-soft: #3B2C14;
-  --hot: #E08052;  --hot-soft: #3A2419;
-  --info: #6DB3DE; --info-soft: #15324A;
-  --ext: #A993E8;  --ext-soft: #2B2447;
-  --zumroud: #4CC08E;
-  --amwaj: #5AA9DC;
-  --marmar: #C9BCA3;
   --shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 10px 30px -18px rgba(0, 0, 0, .8);
   color-scheme: dark;
 }
@@ -319,7 +297,13 @@ input[type=checkbox] { accent-color: var(--brass); width: 16px; height: 16px; }
   background: var(--brass); transform: rotate(45deg);
 }
 .s-check { --tone: var(--brass); --tone-soft: var(--brass-soft); }
-.tile.is-overdue { --tone: var(--hot); --tone-soft: var(--hot-soft); }
+.tile.is-overdue { --tone: var(--hot); --tone-soft: var(--hot-soft); position: relative; }
+.tile.is-overdue::after {
+  content: ""; position: absolute; top: -4px; right: -4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--hot);
+  box-shadow: 0 0 0 2px var(--surface);
+  animation: cp-pulse 1.8s var(--ease-out) infinite;
+}
 .tile.is-soon { --tone: var(--warn); --tone-soft: var(--warn-soft); }
 .s-co, .s-left { --tone: var(--ok); --tone-soft: var(--ok-soft); }
 .s-ext { --tone: var(--ext); --tone-soft: var(--ext-soft); }

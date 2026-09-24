@@ -104,10 +104,10 @@
 
 </div>
 
-<div class="cp-palette-overlay" id="paletteOverlay">
+<div class="cp-palette-overlay" id="paletteOverlay" role="dialog" aria-modal="true" aria-label="Search">
   <div class="cp-palette">
-    <input class="cp-palette-input" id="paletteInput" placeholder="Search rooms, templates, tools…" autocomplete="off">
-    <div class="cp-palette-results" id="paletteResults"></div>
+    <input class="cp-palette-input" id="paletteInput" placeholder="Search rooms, templates, tools…" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="paletteResults" aria-autocomplete="list">
+    <div class="cp-palette-results" id="paletteResults" role="listbox"></div>
   </div>
 </div>
 

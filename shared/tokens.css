@@ -28,6 +28,16 @@
   --ok-soft: #DCEFE3;
   --warn: #A5620D;
   --warn-soft: #FBEBD2;
+  --info: #1E6E9E;
+  --info-soft: #DCEBF4;
+  --ext: #6246A8;
+  --ext-soft: #E7E0F6;
+
+  /* building identity colors — shared across Departures' key rack,
+     Room Guide's floor plan and any future cross-tool building reference */
+  --bld-zumroud: #1F8A5F;
+  --bld-amwaj: #2A78AE;
+  --bld-marmar: #9A8C74;
 
   /* dark "slab" block — the Aurora-style stat strip */
   --slab: #201810;
@@ -42,6 +52,11 @@
   --radius-sm: 8px;
   --radius: 14px;
   --radius-lg: 20px;
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --dur-fast: .12s;
+  --dur: .18s;
+  --dur-slow: .32s;
 
   color-scheme: light;
   font-family: var(--font-body);
@@ -68,6 +83,14 @@ html[data-theme="dark"] {
   --ok-soft: #17301F;
   --warn: #E6A64A;
   --warn-soft: #3B2C14;
+  --info: #6DB3DE;
+  --info-soft: #15324A;
+  --ext: #A993E8;
+  --ext-soft: #2B2447;
+
+  --bld-zumroud: #4CC08E;
+  --bld-amwaj: #5AA9DC;
+  --bld-marmar: #C9BCA3;
 
   --slab: #0E0B07;
   --slab-ink: #F3EDE3;
@@ -78,6 +101,15 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
@@ -85,6 +117,10 @@ body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 ::selection { background: var(--gold-accent); color: #201810; }
 
 a { color: inherit; }
+
+:focus-visible { outline: 2px solid var(--bronze); outline-offset: 2px; border-radius: 3px; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
 
 .cp-serif { font-family: var(--font-display); }
 
@@ -254,6 +290,20 @@ html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
   .cp-dock-word { display: none; }
 }
 
+@media (max-width: 480px) {
+  /* the dock's icon count (brand + 5 nav + 4 utils) doesn't fit 40px
+     circles in a 390px viewport — shrink them, and let the dock itself
+     scroll horizontally (scrollbar hidden) as a safety net rather than
+     ever clipping a button off the edge unreachably. */
+  .cp-dock-wrap { padding: 0 10px; }
+  .cp-dock { max-width: 100%; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .cp-dock::-webkit-scrollbar { display: none; }
+  .cp-dock-btn { width: 36px; height: 36px; flex-shrink: 0; }
+  .cp-dock-btn svg { width: 16px; height: 16px; }
+  .cp-dock-brand { padding: 0 6px 0 2px; }
+  .cp-stat-grid, .cp-home-links { grid-template-columns: 1fr; }
+}
+
 /* ============================================================
    Command palette
    ============================================================ */
@@ -305,6 +355,99 @@ html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
 .cp-auth-error { color: var(--danger); font-size: 12.5px; margin: -4px 0 12px; display: none; }
 .cp-auth-error.show { display: block; }
 .cp-auth-card button[type="submit"] { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
+
+/* ============================================================
+   Shared status language — every tool's priority/urgency/verdict
+   indicator draws from this one set so "urgent" looks the same
+   everywhere: a colored dot + label, never color alone.
+   ============================================================ */
+.cp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  background: var(--panel-2); color: var(--ink-faint);
+}
+.cp-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.cp-badge.tone-danger { background: var(--danger-soft); color: var(--danger); }
+.cp-badge.tone-warn { background: var(--warn-soft); color: var(--warn); }
+.cp-badge.tone-ok { background: var(--ok-soft); color: var(--ok); }
+.cp-badge.tone-info { background: var(--info-soft); color: var(--info); }
+.cp-badge.tone-bronze { background: var(--bronze-soft); color: var(--bronze-deep); }
+/* urgent items get a slow, subtle attention pulse — never on the whole
+   card, just the indicator dot, and never for reduced-motion users */
+.cp-badge.pulse::before { animation: cp-pulse 1.8s var(--ease-out) infinite; }
+@keyframes cp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  70% { box-shadow: 0 0 0 5px transparent; opacity: .55; }
+}
+
+/* ---------- toast ---------- */
+.cp-toast-wrap { position: fixed; left: 50%; bottom: 28px; z-index: 600; transform: translateX(-50%); pointer-events: none; }
+.cp-toast {
+  background: var(--slab); color: var(--slab-ink);
+  padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: 13.5px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateY(10px) scale(.98);
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.cp-toast.show { opacity: 1; transform: translateY(0) scale(1); }
+
+/* ---------- modal ---------- */
+.cp-modal-overlay {
+  position: fixed; inset: 0; background: rgba(20, 15, 10, .5);
+  display: none; align-items: flex-start; justify-content: center;
+  z-index: 550; padding: 6vh 20px; overflow-y: auto;
+  opacity: 0; transition: opacity var(--dur) var(--ease-out);
+}
+.cp-modal-overlay.show { display: flex; opacity: 1; }
+.cp-modal {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 640px; padding: 26px 28px 28px;
+  position: relative;
+  transform: translateY(10px) scale(.98); transition: transform var(--dur) var(--ease-out);
+}
+.cp-modal-overlay.show .cp-modal { transform: translateY(0) scale(1); }
+
+/* ---------- spinner ---------- */
+.cp-spinner {
+  display: inline-block; width: 13px; height: 13px; flex-shrink: 0;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  opacity: .7; animation: cp-spin .7s linear infinite;
+}
+@keyframes cp-spin { to { transform: rotate(360deg); } }
+
+/* ---------- skeleton loading ---------- */
+.cp-skeleton {
+  background: linear-gradient(90deg, var(--line) 25%, var(--panel-2) 50%, var(--line) 75%);
+  background-size: 200% 100%; border-radius: var(--radius-sm);
+  animation: cp-shimmer 1.3s ease infinite;
+}
+@keyframes cp-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ---------- empty / error states ---------- */
+.cp-state {
+  text-align: center; padding: 48px 24px; color: var(--ink-soft);
+}
+.cp-state svg { opacity: .35; margin-bottom: 12px; color: var(--bronze); width: 32px; height: 32px; }
+.cp-state-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.cp-state-sub { font-size: 13px; line-height: 1.6; max-width: 380px; margin: 0 auto; }
+.cp-state.tone-danger svg { color: var(--danger); }
+
+/* ---------- entrance animation ---------- */
+@keyframes cp-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.cp-view.active { animation: cp-rise var(--dur-slow) var(--ease-out); }
+.cp-enter { animation: cp-rise var(--dur) var(--ease-out) both; }
+.cp-enter-1 { animation-delay: .02s; }
+.cp-enter-2 { animation-delay: .05s; }
+.cp-enter-3 { animation-delay: .08s; }
+.cp-enter-4 { animation-delay: .11s; }
+
+/* ---------- expand/collapse ---------- */
+.cp-collapse {
+  display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-slow) var(--ease-out);
+}
+.cp-collapse.open { grid-template-rows: 1fr; }
+.cp-collapse > div { overflow: hidden; }
 
 /* ============================================================
    Print

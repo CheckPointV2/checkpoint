@@ -255,14 +255,15 @@
         <div class="cp-attn-chips">${chips}</div>
         <div class="cp-attn-sub">Due-outs imported ${freshness}</div>`;
     }
+    heroEl.classList.add("cp-enter", "cp-enter-1");
     heroEl.onclick = () => { pendingSub = "departures"; location.hash = "#/departures"; };
 
     const secondary = [
       { num: checkedOutToday, label: "Checked out today" },
       { num: roomsSeen, label: "Rooms viewed recently" }
     ];
-    $("#homeStats").innerHTML = secondary.map(st =>
-      `<div class="cp-slab cp-stat-block"><div class="cp-stat-num cp-serif">${st.num}</div><div class="cp-stat-label">${st.label}</div></div>`
+    $("#homeStats").innerHTML = secondary.map((st, i) =>
+      `<div class="cp-slab cp-stat-block cp-enter cp-enter-${i + 2}"><div class="cp-stat-num cp-serif">${st.num}</div><div class="cp-stat-label">${st.label}</div></div>`
     ).join("");
   }
 
@@ -320,7 +321,7 @@
     const box = $("#paletteResults");
     if (!results.length) { box.innerHTML = '<div class="cp-palette-empty">No matches</div>'; return; }
     box.innerHTML = results.slice(0, 12).map((r, i) =>
-      `<div class="cp-palette-item${i === 0 ? " active" : ""}" data-i="${i}"><span>${r.label}</span><span class="cp-palette-tag">${r.tag}</span></div>`
+      `<div class="cp-palette-item${i === 0 ? " active" : ""}" role="option" aria-selected="${i === 0}" id="cp-palette-opt-${i}" data-i="${i}"><span>${r.label}</span><span class="cp-palette-tag">${r.tag}</span></div>`
     ).join("");
     box.dataset.results = JSON.stringify(results.slice(0, 12));
     $$(".cp-palette-item", box).forEach(el => el.addEventListener("click", () => selectPaletteItem(+el.dataset.i)));
@@ -367,12 +368,28 @@
     $("#searchTrigger").addEventListener("click", openPalette);
     $("#paletteOverlay").addEventListener("click", (e) => { if (e.target.id === "paletteOverlay") closePalette(); });
     $("#paletteInput").addEventListener("input", (e) => renderPaletteResults(e.target.value));
+    function moveActive(delta) {
+      const items = $$(".cp-palette-item");
+      if (!items.length) return;
+      const curIdx = items.findIndex(el => el.classList.contains("active"));
+      const nextIdx = (curIdx + delta + items.length) % items.length;
+      items.forEach(el => { el.classList.remove("active"); el.setAttribute("aria-selected", "false"); });
+      items[nextIdx].classList.add("active");
+      items[nextIdx].setAttribute("aria-selected", "true");
+      items[nextIdx].scrollIntoView({ block: "nearest" });
+      $("#paletteInput").setAttribute("aria-activedescendant", items[nextIdx].id);
+    }
+
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
       else if (e.key === "Escape") closePalette();
-      else if (e.key === "Enter" && $("#paletteOverlay").classList.contains("show")) {
-        const active = $(".cp-palette-item.active") || $(".cp-palette-item");
-        if (active) selectPaletteItem(+active.dataset.i);
+      else if ($("#paletteOverlay").classList.contains("show")) {
+        if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
+        else if (e.key === "Enter") {
+          const active = $(".cp-palette-item.active") || $(".cp-palette-item");
+          if (active) selectPaletteItem(+active.dataset.i);
+        }
       }
     });
 

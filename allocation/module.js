@@ -123,7 +123,7 @@
     } else {
       const sizeKB = Math.round(slot.file.size / 1024);
       let statusLine = `<span class="alloc-file-status">Ready to extract</span>`;
-      if (slot.result === "loading") statusLine = `<span class="alloc-file-status">Extracting…</span>`;
+      if (slot.result === "loading") statusLine = `<span class="alloc-file-status"><span class="cp-spinner" aria-hidden="true"></span> Extracting…</span>`;
       else if (slot.result && slot.result.error) statusLine = `<span class="alloc-file-status err">${esc(slot.result.error)}</span>`;
       else if (slot.result && slot.result.kind === "text") statusLine = `<span class="alloc-file-status ok">${slot.result.pages} page(s) · ${slot.result.text.length.toLocaleString()} characters extracted</span>`;
       else if (slot.result && slot.result.kind === "rows") statusLine = `<span class="alloc-file-status ok">${slot.result.rows.length} row(s) read (${slot.result.format})</span>`;
@@ -174,6 +174,8 @@
   async function runExtraction() {
     const btn = $("#allocExtractBtn", container);
     btn.disabled = true;
+    const originalLabel = btn.innerHTML;
+    btn.innerHTML = '<span class="cp-spinner" aria-hidden="true"></span> Extracting…';
     for (const key of Object.keys(slots)) {
       const slot = slots[key];
       if (!slot.file) continue;
@@ -186,6 +188,7 @@
       }
       renderSlot(key);
     }
+    btn.innerHTML = originalLabel;
     updateExtractBtn();
     runAnalysis();
     renderAnalysis();
@@ -299,7 +302,7 @@
     req.occasions.forEach(o => reqChips.push(o));
     const cs = compareState[idx] || { input: "", result: null };
 
-    return `<div class="alloc-brief">
+    return `<div class="alloc-brief cp-enter">
       <div class="alloc-brief-row">
         <div class="alloc-brief-col">
           <div class="alloc-brief-label">Guest</div>
@@ -354,7 +357,8 @@
     const roomLabel = record.room ? `Room ${esc(record.room)}` : "No room assigned yet";
     const headTag = opts.alwaysOpen ? "div" : "button";
     const headAttrs = opts.alwaysOpen ? "" : `type="button" data-brief-toggle="${idx}" aria-expanded="${isOpen}"`;
-    return `<div class="alloc-arrival tier-${tier || "normal"}">
+    const enterClass = Number.isInteger(opts.enterDelay) ? ` cp-enter cp-enter-${Math.min(opts.enterDelay, 4) + 1}` : "";
+    return `<div class="alloc-arrival tier-${tier || "normal"}${enterClass}">
       <${headTag} class="alloc-arrival-head" ${headAttrs}>
         <div>
           <div class="alloc-arrival-name">${esc(record.name || "Unnamed guest")}</div>
@@ -369,7 +373,7 @@
   function renderTierGroup(label, tier, items) {
     return `<div class="alloc-tier-group">
       <h3 class="alloc-tier-heading tier-${tier}">${label}<span>${items.length}</span></h3>
-      ${items.map(item => renderArrivalCard(item, { alwaysOpen: true })).join("")}
+      ${items.map((item, i) => renderArrivalCard(item, { alwaysOpen: true, enterDelay: i })).join("")}
     </div>`;
   }
 
@@ -381,7 +385,8 @@
   }
 
   // ---------- Group / linked reservation intelligence ----------
-  function renderGroup(g) {
+  function renderGroup(g, i) {
+    const enterClass = Number.isInteger(i) ? ` cp-enter cp-enter-${Math.min(i, 4) + 1}` : "";
     const conn = g.connectivity;
     let connNote = "";
     if (conn.checked) {
@@ -395,7 +400,7 @@
       if (req.viewLabel) requirementSet.add(req.viewLabel);
       if (req.connecting) requirementSet.add("Connecting room");
     });
-    return `<div class="alloc-group cp-card">
+    return `<div class="alloc-group cp-card${enterClass}">
       <div class="alloc-group-head">
         <div class="alloc-group-lead">${esc(g.leadName || "Linked group")}</div>
         <span class="alloc-group-count">${plural(g.members.length, "member")}</span>
@@ -417,7 +422,7 @@
       <h2>Linked reservation groups</h2>
       <span class="alloc-section-meta">${plural(groups.length, "group")}</span>
     </div>
-    ${groups.map(renderGroup).join("")}`;
+    ${groups.map((g, i) => renderGroup(g, i)).join("")}`;
   }
 
   function renderAnalysis() {
@@ -477,7 +482,7 @@
         </div>
         <button class="cp-btn cp-btn-primary" id="allocExtractBtn" disabled>Extract &amp; analyze</button>
         <div class="alloc-hint">Any one file is enough to start. Add the Confirmation export for arrival priorities and room suggestions.</div>
-        <div id="alloc-results"></div>
+        <div id="alloc-results" aria-live="polite"></div>
       </div>`;
   }
 

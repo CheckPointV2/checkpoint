@@ -1,18 +1,10 @@
+/* Base tokens (paper/panel/ink/bronze/shadow/danger) are no longer
+   redeclared here — shared/tokens.css (loaded before this file, in the
+   same document) already sets them on :root, and this file's selectors
+   just consume them via var(). Two separate dark-mode values that had
+   quietly drifted apart now converge on one. Room-type and facility
+   colors below are Room Guide-specific and stay local. */
 :root {
-  --paper: #F7F5F1;
-  --panel: #FFFFFF;
-  --ink: #2B2118;
-  --ink-soft: #6B5D4F;
-  --line: #E6DFD3;
-  --bronze: #6B4E33;
-  --bronze-deep: #4F3A26;
-  --bronze-soft: #EFE4D2;
-  --gold-accent: #C9A24B;
-  --shadow: 0 10px 28px rgba(43, 33, 24, 0.09);
-  --shadow-sm: 0 3px 10px rgba(43, 33, 24, 0.08);
-  --danger-soft: #F6E4DD;
-  --danger: #B0532E;
-
   --c-kga: #3D6FA8;
   --c-kgaov: #8FB6DC;
   --c-kge: #17395C;
@@ -29,26 +21,6 @@
 
   --c-facility: #837763;
   --c-atrium: #2E7D6E;
-
-  color-scheme: light;
-  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-html[data-theme="dark"] {
-  --paper: #191510;
-  --panel: #221C15;
-  --ink: #EEE7DC;
-  --ink-soft: #AB9C8B;
-  --line: #382E23;
-  --bronze: #D2AC76;
-  --bronze-deep: #E7C98F;
-  --bronze-soft: #33291C;
-  --gold-accent: #E3B23C;
-  --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.3);
-  --danger-soft: #3A2419;
-  --danger: #E08052;
-  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -1283,7 +1255,10 @@ header.topbar {
 @media (max-width: 860px) {
   .app { height: auto; min-height: 100vh; overflow: visible; }
   .body-wrap { flex-direction: column; overflow: visible; }
-  .plan-col { overflow: visible; }
+  /* the floor plan is naturally wider than a phone screen — let it scroll
+     horizontally within its own box instead of pushing the whole page
+     sideways (overflow-x: hidden would just clip rooms unreachably). */
+  .plan-col { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
   .detail-col { width: auto; border-left: none; border-top: 1px solid var(--line); max-height: 62vh; }
   .plan-col { padding: 16px; }
   .plan-frame { padding: 18px; }
