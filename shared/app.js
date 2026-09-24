@@ -154,7 +154,13 @@
     if (mounted[tool]) return mounted[tool];
     const container = document.createElement("div");
     container.className = "cp-view";
-    container.id = "view-" + tool;
+    // Namespaced deliberately: Departures' own markup (copied in wholesale from its
+    // standalone site) has its own internal id="view-departures" section. Using the
+    // same "view-" prefix here collided with it — getElementById returned this
+    // wrapper instead of Departures' own section, so its internal router calling
+    // $('view-departures').hidden = true (to switch to Checkouts) hid this whole
+    // wrapper instead, blanking the tool.
+    container.id = "cp-tool-" + tool;
     container.innerHTML = '<div class="cp-loading">Loading…</div>';
     $("#viewRoot").appendChild(container);
     mounted[tool] = container;
