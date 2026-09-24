@@ -212,7 +212,7 @@
 
   async function mountAllocation(container) {
     loadCSSOnce("allocation/style.css");
-    await loadScriptsSequential(["allocation/module.js"]);
+    await Promise.all([ensureRoomDataLoaded(), ensureDeparturesDataLoaded(), loadScriptsSequential(["allocation/module.js"])]);
     window.CPMountAllocation(container);
   }
 
