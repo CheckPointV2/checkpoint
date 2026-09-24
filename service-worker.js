@@ -1,4 +1,4 @@
-const CACHE = "checkpoint-v5";
+const CACHE = "checkpoint-v6";
 const APP_SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "shared/tokens.css", "shared/app.js",

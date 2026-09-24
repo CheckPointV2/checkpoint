@@ -155,6 +155,8 @@ html[data-theme="dark"] body {
    ============================================================ */
 .cp-app { display: block; min-height: 100vh; }
 .cp-content { display: flex; flex-direction: column; }
+.cp-view { display: none; }
+.cp-view.active { display: block; }
 
 .cp-dock-wrap {
   position: fixed; top: 16px; left: 0; right: 0;
