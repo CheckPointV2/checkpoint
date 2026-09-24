@@ -192,6 +192,13 @@
   }
 
   // ---------- analysis: normalize -> validate -> apply rules -> match rooms ----------
+  // Brief/compare panel state — module-level since it's UI interaction state,
+  // not analysis output. Only one brief open at a time (keeps re-renders
+  // simple and matches how a controller actually works: look at one guest,
+  // decide, move on).
+  let openIdx = null;
+  const compareState = {}; // idx -> { input: string, result: {checks,verdict,reason} | null }
+
   function runAnalysis() {
     const confResult = slots.confirmation.result;
     if (!confResult || confResult === "loading" || confResult.error || confResult.kind !== "rows") {
@@ -200,7 +207,7 @@
     }
     const normalized = window.CPAllocParse.normalizeArrivals(confResult.rows);
     if (!normalized.length) {
-      analysis = { flagged: [], warnings: ["No arrival rows were found in the Confirmation export — check it's the right file."], totalArrivals: 0 };
+      analysis = { items: [], warnings: ["No arrival rows were found in the Confirmation export — check it's the right file."], totalArrivals: 0, groups: [], ctx: null };
       return;
     }
     const { valid, warnings } = window.CPAllocParse.validateArrivals(normalized);
@@ -212,18 +219,21 @@
       alertSignals: window.CPAllocParse.extractAlertSignals(alertsText)
     };
 
-    const flagged = [];
-    valid.forEach(record => {
+    const items = valid.map((record, idx) => {
       const { tier, reasons } = window.CPAllocRules.applyRules(record, ctx);
-      if (!tier) return;
       const match = record.roomType
         ? window.CPAllocMatch.findCandidates(record, { preferConnecting: record.needsRoom && !!record.linked })
         : null;
-      flagged.push({ record, tier, reasons, match });
+      return { idx, record, tier, reasons, match };
     });
-    flagged.sort((a, b) => (a.tier === "high" ? 0 : 1) - (b.tier === "high" ? 0 : 1));
 
-    analysis = { flagged, warnings, totalArrivals: valid.length };
+    const groups = window.CPAllocGroup.groupLinkedArrivals(valid).map(g => {
+      const connectivity = window.CPAllocGroup.checkGroupConnectivity(g, (roomNum) => window.CPAllocMatch.getRoom(roomNum));
+      return Object.assign({}, g, { connectivity });
+    });
+
+    analysis = { items, warnings, totalArrivals: valid.length, groups, ctx };
+    openIdx = null;
   }
 
   const STATUS_LABEL = { free: "Free now", check: "Checking out", later: "Departs later", ext: "Extension", unknown: "Not in due-outs" };
@@ -261,49 +271,193 @@
     </div>`;
   }
 
-  function renderArrivalCard({ record, tier, reasons, match }) {
+  // ---------- Allocation Brief + Candidate Room Comparison ----------
+  const TIER_LABEL = { high: "High priority", medium: "Medium priority" };
+  const VERDICT_LABEL = { MATCH: "Match", COMPROMISE: "Compromise", CONFLICT: "Conflict", UNKNOWN: "Unknown" };
+  const CHECK_ICON = { pass: "✅", warn: "⚠️", fail: "❌" };
+
+  function renderCompareResult(result) {
+    return `<div class="alloc-compare-result">
+      ${result.checks.length ? `<ul class="alloc-compare-checks">${result.checks.map(c => `<li>${CHECK_ICON[c.status]} ${esc(c.label)}</li>`).join("")}</ul>` : ""}
+      <div class="alloc-verdict verdict-${result.verdict.toLowerCase()}">${VERDICT_LABEL[result.verdict]}</div>
+      <p class="alloc-verdict-reason">${esc(result.reason)}</p>
+    </div>`;
+  }
+
+  // The structured brief: GUEST / BOOKED / REQUIREMENTS / PRIORITY / WHY /
+  // CHECK IN OPERA, plus the room-comparison tool. This is the single
+  // rendering path for both an always-expanded flagged card and a
+  // click-to-expand row in the full arrivals list — same content either way.
+  function renderBrief(item) {
+    const { idx, record, tier, reasons, match } = item;
+    const req = window.CPAllocCompare.extractRequirements(record, analysis.ctx);
+    const reqChips = [];
+    if (record.needsRoom) reqChips.push("Room type: " + (record.roomType || "not specified in export"));
+    if (req.viewLabel) reqChips.push(req.viewLabel);
+    if (req.floorPreference) reqChips.push(req.floorPreference);
+    if (req.connecting) reqChips.push("Connecting room");
+    req.occasions.forEach(o => reqChips.push(o));
+    const cs = compareState[idx] || { input: "", result: null };
+
+    return `<div class="alloc-brief">
+      <div class="alloc-brief-row">
+        <div class="alloc-brief-col">
+          <div class="alloc-brief-label">Guest</div>
+          <div class="alloc-brief-body">${esc(record.name || "Unnamed guest")}${record.conf ? " · Conf " + esc(record.conf) : ""}${record.vip ? " · VIP " + esc(record.vip) : ""}${record.eta ? " · Arrival " + esc(record.eta) : ""}</div>
+        </div>
+        <div class="alloc-brief-col">
+          <div class="alloc-brief-label">Booked</div>
+          <div class="alloc-brief-body">${esc(record.roomType || "Room type not in export")} · Rate ${record.rate ? esc(record.rate) : "not in this export"} · Source ${esc(record.source || record.ta || record.company) || "not in this export"}</div>
+        </div>
+      </div>
+      ${reqChips.length ? `<div class="alloc-brief-section">
+        <div class="alloc-brief-label">Requirements</div>
+        <div class="alloc-reasons">${reqChips.map(c => `<span class="alloc-reason-chip">${esc(c)}</span>`).join("")}</div>
+      </div>` : ""}
+      <div class="alloc-brief-row">
+        <div class="alloc-brief-col">
+          <div class="alloc-brief-label">Priority</div>
+          <span class="alloc-tier-pill tier-${tier || "normal"}">${TIER_LABEL[tier] || "Normal"}</span>
+        </div>
+        ${reasons.length ? `<div class="alloc-brief-col alloc-brief-col-wide">
+          <div class="alloc-brief-label">Why</div>
+          <div class="alloc-reasons">${reasons.map(r => `<span class="alloc-reason-chip${r.hard ? " hard" : ""}">${esc(r.text)}</span>`).join("")}</div>
+        </div>` : ""}
+      </div>
+      ${renderMatch(record, match)}
+      <div class="alloc-brief-section">
+        <div class="alloc-brief-label">Check in Opera</div>
+        <ul class="alloc-checklist">
+          <li>Verify available rooms for ${esc(record.roomType || "the booked type")}</li>
+          <li>Verify the current room status of any candidate room</li>
+          <li>Verify room readiness (housekeeping status)</li>
+          <li>Verify room features match what's requested</li>
+          <li>Verify connecting rooms, if required</li>
+          <li>Verify any operational restrictions (Out of Order/Service, sell limits)</li>
+        </ul>
+      </div>
+      <div class="alloc-brief-section">
+        <div class="alloc-brief-label">Compare a candidate room you found in Opera</div>
+        <div class="alloc-compare-form">
+          <input type="text" inputmode="numeric" maxlength="4" placeholder="Room number, e.g. 3132" value="${esc(cs.input)}" data-compare-input="${idx}">
+          <button class="cp-btn cp-btn-primary" type="button" data-compare-btn="${idx}">Compare</button>
+        </div>
+        ${cs.result ? renderCompareResult(cs.result) : ""}
+      </div>
+    </div>`;
+  }
+
+  function renderArrivalCard(item, opts) {
+    opts = opts || {};
+    const { idx, record, tier } = item;
+    const isOpen = opts.alwaysOpen || openIdx === idx;
     const roomLabel = record.room ? `Room ${esc(record.room)}` : "No room assigned yet";
-    return `<div class="alloc-arrival tier-${tier}">
-      <div class="alloc-arrival-head">
+    const headTag = opts.alwaysOpen ? "div" : "button";
+    const headAttrs = opts.alwaysOpen ? "" : `type="button" data-brief-toggle="${idx}" aria-expanded="${isOpen}"`;
+    return `<div class="alloc-arrival tier-${tier || "normal"}">
+      <${headTag} class="alloc-arrival-head" ${headAttrs}>
         <div>
           <div class="alloc-arrival-name">${esc(record.name || "Unnamed guest")}</div>
           <div class="alloc-arrival-meta">${roomLabel}${record.roomType ? " · " + esc(record.roomType) : ""}${record.arrival ? " · Arriving " + esc(record.arrival) : ""}${record.conf ? " · Conf " + esc(record.conf) : ""}</div>
         </div>
-        <span class="alloc-tier-pill tier-${tier}">${tier === "high" ? "High priority" : "Medium priority"}</span>
-      </div>
-      <div class="alloc-reasons">${reasons.map(r => `<span class="alloc-reason-chip${r.hard ? " hard" : ""}">${esc(r.text)}</span>`).join("")}</div>
-      ${renderMatch(record, match)}
+        <span class="alloc-tier-pill tier-${tier || "normal"}">${TIER_LABEL[tier] || "Normal"}</span>
+      </${headTag}>
+      ${isOpen ? renderBrief(item) : ""}
     </div>`;
   }
 
   function renderTierGroup(label, tier, items) {
     return `<div class="alloc-tier-group">
       <h3 class="alloc-tier-heading tier-${tier}">${label}<span>${items.length}</span></h3>
-      ${items.map(renderArrivalCard).join("")}
+      ${items.map(item => renderArrivalCard(item, { alwaysOpen: true })).join("")}
     </div>`;
+  }
+
+  function renderAllArrivals(items) {
+    return `<details class="alloc-all-arrivals">
+      <summary>All ${plural(items.length, "arrival")} in this import</summary>
+      <div class="alloc-all-list">${items.map(item => renderArrivalCard(item, {})).join("")}</div>
+    </details>`;
+  }
+
+  // ---------- Group / linked reservation intelligence ----------
+  function renderGroup(g) {
+    const conn = g.connectivity;
+    let connNote = "";
+    if (conn.checked) {
+      connNote = conn.allConnected
+        ? `<p class="alloc-group-conn ok">All assigned rooms in this group connect to at least one other member's room.</p>`
+        : `<p class="alloc-group-conn warn">Room(s) ${g.connectivity.isolated.map(esc).join(", ")} don't connect to any other member's room in this group — check whether that's intended.</p>`;
+    }
+    const requirementSet = new Set();
+    g.members.forEach(m => {
+      const req = window.CPAllocCompare.extractRequirements(m, analysis.ctx);
+      if (req.viewLabel) requirementSet.add(req.viewLabel);
+      if (req.connecting) requirementSet.add("Connecting room");
+    });
+    return `<div class="alloc-group cp-card">
+      <div class="alloc-group-head">
+        <div class="alloc-group-lead">${esc(g.leadName || "Linked group")}</div>
+        <span class="alloc-group-count">${plural(g.members.length, "member")}</span>
+      </div>
+      ${requirementSet.size ? `<div class="alloc-reasons">${[...requirementSet].map(r => `<span class="alloc-reason-chip">${esc(r)}</span>`).join("")}</div>` : ""}
+      <div class="alloc-group-members">
+        ${g.members.map(m => `<div class="alloc-group-member">
+          <span class="alloc-group-member-name">${esc(m.name || "Unnamed guest")}</span>
+          <span class="alloc-group-member-room">${m.room ? "Room " + esc(m.room) : "No room yet"}${m.roomType ? " · " + esc(m.roomType) : ""}</span>
+        </div>`).join("")}
+      </div>
+      ${connNote}
+    </div>`;
+  }
+
+  function renderGroups(groups) {
+    if (!groups.length) return "";
+    return `<div class="alloc-section-head">
+      <h2>Linked reservation groups</h2>
+      <span class="alloc-section-meta">${plural(groups.length, "group")}</span>
+    </div>
+    ${groups.map(renderGroup).join("")}`;
   }
 
   function renderAnalysis() {
     const el = $("#alloc-results", container);
     if (!el) return;
     if (!analysis) { el.innerHTML = ""; return; }
-    const { flagged, warnings, totalArrivals } = analysis;
-    const high = flagged.filter(f => f.tier === "high");
-    const medium = flagged.filter(f => f.tier === "medium");
+    const { items, warnings, totalArrivals, groups } = analysis;
+    const high = items.filter(i => i.tier === "high");
+    const medium = items.filter(i => i.tier === "medium");
+    const flaggedCount = high.length + medium.length;
 
     el.innerHTML = `
       ${warnings.length ? `<div class="alloc-warnings cp-card">
         <div class="alloc-warnings-head">Check before relying on this — ${plural(warnings.length, "issue")} found</div>
         <ul>${warnings.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       </div>` : ""}
-      ${totalArrivals ? `<div class="alloc-section-head">
+      ${totalArrivals ? `
+      ${renderGroups(groups)}
+      <div class="alloc-section-head">
         <h2>Arrivals needing attention</h2>
-        <span class="alloc-section-meta">${flagged.length} of ${plural(totalArrivals, "arrival")} flagged</span>
+        <span class="alloc-section-meta">${flaggedCount} of ${plural(totalArrivals, "arrival")} flagged</span>
       </div>
-      ${flagged.length ? "" : `<p class="alloc-empty">No arrivals matched a priority rule in this import — nothing here needs special attention beyond the normal check-in flow.</p>`}
+      ${flaggedCount ? "" : `<p class="alloc-empty">No arrivals matched a priority rule in this import — nothing here needs special attention beyond the normal check-in flow.</p>`}
       ${high.length ? renderTierGroup("High priority", "high", high) : ""}
-      ${medium.length ? renderTierGroup("Medium priority", "medium", medium) : ""}` : ""}
+      ${medium.length ? renderTierGroup("Medium priority", "medium", medium) : ""}
+      ${items.length > flaggedCount ? renderAllArrivals(items) : ""}
+      ` : ""}
     `;
+  }
+
+  function runCompare(idx) {
+    const item = analysis && analysis.items.find(i => i.idx === idx);
+    if (!item) return;
+    const cs = compareState[idx] || (compareState[idx] = { input: "", result: null });
+    const roomNum = (cs.input || "").trim();
+    if (!roomNum) return;
+    const room = window.CPAllocMatch.getRoom(roomNum);
+    const req = window.CPAllocCompare.extractRequirements(item.record, analysis.ctx);
+    cs.result = window.CPAllocCompare.compareRoom(req, room);
+    renderAnalysis();
   }
 
   function shell() {
@@ -334,5 +488,32 @@
     updateExtractBtn();
     renderAnalysis();
     $("#allocExtractBtn", container).addEventListener("click", runExtraction);
+
+    // Delegated on #alloc-results itself (stable across renderAnalysis()
+    // rebuilding its innerHTML) rather than on individual cards, which get
+    // discarded and recreated on every render.
+    const results = $("#alloc-results", container);
+    results.addEventListener("click", e => {
+      const toggle = e.target.closest("[data-brief-toggle]");
+      if (toggle) {
+        const idx = +toggle.dataset.briefToggle;
+        openIdx = openIdx === idx ? null : idx;
+        renderAnalysis();
+        return;
+      }
+      const compareBtn = e.target.closest("[data-compare-btn]");
+      if (compareBtn) { runCompare(+compareBtn.dataset.compareBtn); return; }
+    });
+    results.addEventListener("input", e => {
+      const input = e.target.closest("[data-compare-input]");
+      if (!input) return;
+      const idx = +input.dataset.compareInput;
+      if (!compareState[idx]) compareState[idx] = { input: "", result: null };
+      compareState[idx].input = input.value;
+    });
+    results.addEventListener("keydown", e => {
+      const input = e.target.closest("[data-compare-input]");
+      if (input && e.key === "Enter") { e.preventDefault(); runCompare(+input.dataset.compareInput); }
+    });
   };
 })();

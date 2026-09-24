@@ -59,6 +59,36 @@ test('a nonzero balance fires the balance rule; a zero or blank balance does not
   assert.equal(applyRules({ balance: '', adults: 1, children: 0 }).tier, null);
 });
 
+test('a connecting-room request found in the arrival report is a hard rule on its own -> HIGH', () => {
+  const ctx = { arrivalSignals: new Map([['1041', new Set(['Connecting room requested'])]]) };
+  const { tier, reasons } = applyRules({ room: '1041', adults: 1, children: 0 }, ctx);
+  assert.equal(tier, 'high');
+  assert.match(reasons[0].text, /Connecting room requested/);
+});
+
+test('a view request alone is MEDIUM, and the reason names the actual view found', () => {
+  const ctx = { arrivalSignals: new Map([['1041', new Set(['View: Sea view (COS)'])]]) };
+  const { tier, reasons } = applyRules({ room: '1041', adults: 1, children: 0 }, ctx);
+  assert.equal(tier, 'medium');
+  assert.match(reasons[0].text, /Sea view/);
+});
+
+test('a floor preference alone is MEDIUM', () => {
+  const ctx = { arrivalSignals: new Map([['1041', new Set(['Floor: High floor requested'])]]) };
+  const { tier } = applyRules({ room: '1041', adults: 1, children: 0 }, ctx);
+  assert.equal(tier, 'medium');
+});
+
+test('view and floor labels never leak into the occasion rule\'s reason text', () => {
+  const ctx = { arrivalSignals: new Map([['1041', new Set(['View: Sea view (COS)', 'Floor: High floor requested', 'Honeymoon'])]]) };
+  const { reasons } = applyRules({ room: '1041', adults: 1, children: 0 }, ctx);
+  const occasionReason = reasons.find(r => r.id === 'occasion');
+  assert.ok(occasionReason);
+  assert.equal(occasionReason.text.includes('View:'), false);
+  assert.equal(occasionReason.text.includes('Floor:'), false);
+  assert.match(occasionReason.text, /Honeymoon/);
+});
+
 test('an alert-flagged room is a hard rule regardless of anything else', () => {
   const ctx = { alertSignals: new Map([['1041', new Set(['Out of order'])]]) };
   const { tier, reasons } = applyRules({ room: '1041', adults: 1, children: 0 }, ctx);

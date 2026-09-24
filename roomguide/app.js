@@ -16,7 +16,7 @@ const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 4
 
 // Room type descriptions and feature-code meanings live in RBAB_DATA
 // (roomguide/data.js) now, not here, so any module that loads the data file
-// (Allocation Intelligence, Room Finder) gets the same real, hotel-confirmed
+// (Allocation Copilot, Room Finder) gets the same real, hotel-confirmed
 // definitions instead of a second hand-copied version.
 const TYPE_DESC = RBAB_DATA.typeDesc;
 const GLOSSARY = RBAB_DATA.glossary;

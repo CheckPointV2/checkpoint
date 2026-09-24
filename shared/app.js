@@ -76,7 +76,7 @@
   /* ============================================================
      Router
      ============================================================ */
-  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Intelligence" };
+  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Copilot" };
   window.CPActiveTool = "home";
   window.CPActiveSub = null;
   let pendingSub = null;
@@ -212,7 +212,7 @@
 
   async function mountAllocation(container) {
     loadCSSOnce("allocation/style.css");
-    await loadScriptsSequential(["allocation/parse.js", "allocation/rules.js", "allocation/match.js", "allocation/module.js"]);
+    await loadScriptsSequential(["allocation/parse.js", "allocation/rules.js", "allocation/match.js", "allocation/compare.js", "allocation/group.js", "allocation/module.js"]);
     await ensureRoomDataLoaded(); // Allocation's room matching needs RBAB_DATA too
     window.CPMountAllocation(container);
   }
@@ -276,7 +276,7 @@
       { label: "Room Guide", tag: "page", route: "#/roomguide" },
       { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
       { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },
-      { label: "Allocation Intelligence", tag: "page", route: "#/allocation" }
+      { label: "Allocation Copilot", tag: "page", route: "#/allocation" }
     ];
   }
   buildStaticIndex();

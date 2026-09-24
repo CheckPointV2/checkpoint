@@ -87,6 +87,35 @@ test('extractArrivalSignals does not attach a keyword to a room far away in the 
   assert.ok(signals.get('2205'));
 });
 
+test('extractArrivalSignals finds a view request and tags it with the real Room Guide glossary code', () => {
+  const text = 'Room 3132 requests a sea view if possible for their anniversary.';
+  const signals = extractArrivalSignals(text);
+  const labels = [...signals.get('3132')];
+  assert.ok(labels.some(l => l.startsWith('View:') && l.includes('COS')));
+  assert.ok(labels.includes('Anniversary'));
+});
+
+test('extractArrivalSignals finds a floor preference', () => {
+  const text = 'Room 3132 - guest prefers a high floor away from the elevator.';
+  const signals = extractArrivalSignals(text);
+  assert.ok([...signals.get('3132')].some(l => l.startsWith('Floor:') && /high/i.test(l)));
+});
+
+test('extractArrivalSignals finds a connecting-room request alongside other signals', () => {
+  const text = 'Room 3132 traveling with family, needs a connecting room, celebrating a birthday.';
+  const signals = extractArrivalSignals(text);
+  const labels = [...signals.get('3132')];
+  assert.ok(labels.includes('Connecting room requested'));
+  assert.ok(labels.includes('Birthday'));
+});
+
+test('normalizeArrivals reads rate and source columns when present', () => {
+  const rows = [{ Room: '1041', Name: 'A Guest', 'Rate Code': 'BAR', Source: 'WEB' }];
+  const out = normalizeArrivals(rows);
+  assert.equal(out[0].rate, 'BAR');
+  assert.equal(out[0].source, 'WEB');
+});
+
 test('extractAlertSignals flags an out-of-order room', () => {
   const text = 'Room 3040 is OUT OF ORDER due to plumbing issue.';
   const signals = extractAlertSignals(text);

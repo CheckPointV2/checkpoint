@@ -1,4 +1,4 @@
-// Allocation Intelligence — room candidate matching.
+// Allocation Copilot — room candidate matching.
 // Never assigns a room. Given what a reservation needs, it ranks the rooms
 // that could work and says why, so the controller picks and does the actual
 // assignment in Opera. rankCandidates() is the pure part (plain data in,
@@ -120,7 +120,17 @@
     return rankCandidates(rooms, record.roomType, buildDueoutIndex(), opts);
   }
 
-  root.CPAllocMatch = { rankCandidates, findCandidates, baseType };
+  // For the Candidate Room Comparison feature: look up one specific room the
+  // controller typed in, by number, regardless of type. Returns null if it
+  // isn't in Room Guide's room list at all (a typo, or a room this data
+  // doesn't cover) — compare.js reports that honestly rather than guessing.
+  function getRoom(roomNumber) {
+    const num = String(roomNumber || '').trim();
+    if (!num) return null;
+    return allRoomGuideRooms().find(r => String(r.room) === num) || null;
+  }
+
+  root.CPAllocMatch = { rankCandidates, findCandidates, getRoom, baseType };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = { rankCandidates, baseType };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,4 +1,4 @@
-// Allocation Intelligence — priority rules.
+// Allocation Copilot — priority rules.
 // A plain array of rule objects, not a scoring model: every rule that fires
 // contributes a human-readable reason, and the reasons ARE the explanation
 // ("VIP + Sea View Request + Early Arrival"), never a bare number. Add,
@@ -80,16 +80,39 @@
       test: (r, ctx) => {
         const labels = ctx && ctx.arrivalSignals && r.room ? ctx.arrivalSignals.get(r.room) : null;
         if (!labels) return null;
-        const occasions = [...labels].filter(l => l !== 'Connecting room requested');
+        const occasions = [...labels].filter(l => l === 'Connecting room requested' || l.startsWith('View:') || l.startsWith('Floor:') ? false : true);
         return occasions.length ? occasions.join(', ') + ' (from arrival report)' : null;
       }
     },
     {
+      // A connecting-room requirement is its own HIGH rule, not just a soft
+      // contributor: a family or linked group that doesn't get connecting
+      // rooms is a real service failure, not a minor preference miss.
       id: 'connecting-requested',
-      hard: false,
+      hard: true,
       test: (r, ctx) => {
         const labels = ctx && ctx.arrivalSignals && r.room ? ctx.arrivalSignals.get(r.room) : null;
         return labels && labels.has('Connecting room requested') ? 'Connecting room requested (from arrival report)' : null;
+      }
+    },
+    {
+      id: 'view-request',
+      hard: false,
+      test: (r, ctx) => {
+        const labels = ctx && ctx.arrivalSignals && r.room ? ctx.arrivalSignals.get(r.room) : null;
+        if (!labels) return null;
+        const view = [...labels].find(l => l.startsWith('View:'));
+        return view ? view.replace(/^View: /, '') + ' requested (from arrival report)' : null;
+      }
+    },
+    {
+      id: 'floor-preference',
+      hard: false,
+      test: (r, ctx) => {
+        const labels = ctx && ctx.arrivalSignals && r.room ? ctx.arrivalSignals.get(r.room) : null;
+        if (!labels) return null;
+        const floor = [...labels].find(l => l.startsWith('Floor:'));
+        return floor ? floor.replace(/^Floor: /, '') + ' (from arrival report)' : null;
       }
     },
     {

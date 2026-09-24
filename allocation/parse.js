@@ -1,4 +1,4 @@
-// Allocation Intelligence — parsing & normalization.
+// Allocation Copilot — parsing & normalization.
 // Pure functions only: no DOM, no fetch, no globals besides the CPAllocParse
 // export itself. That's what makes this testable with plain Node (see
 // tests/parse.test.js) and keeps it reusable from module.js without coupling
@@ -33,6 +33,8 @@
     ta: ['Travel Agent'],
     company: ['Company'],
     roomType: ['Room Type'],
+    rate: ['Rate Code', 'Rate'],
+    source: ['Source', 'Source Code'],
     linked: ['Linked Name'],
     adults: ['Adults'],
     children: ['Children'],
@@ -125,6 +127,19 @@
     ['WEDDING', 'Wedding'], ['PROPOSAL', 'Proposal']
   ];
   const CONNECTING_WORDS = ['CONNECT', 'INTERCONNECT'];
+  // View/floor words map to Room Guide's own glossary codes (roomguide/data.js
+  // glossary — confirmed against the hotel's real Opera feature-code list) so
+  // a requirement found in free text can be compared against a real room's
+  // actual codes later, not just displayed as loose text.
+  const VIEW_WORDS = [
+    ['SEA VIEW', 'View: Sea view (COS)'], ['CORNICHE', 'View: Sea view (COS)'],
+    ['POOL VIEW', 'View: Pool view (POO)'], ['BEACH VIEW', 'View: Beach view (BEA)'],
+    ['GARDEN VIEW', 'View: Garden view (GAR)']
+  ];
+  const FLOOR_WORDS = [
+    ['HIGH FLOOR', 'Floor: High floor requested'], ['TOP FLOOR', 'Floor: High floor requested'],
+    ['GROUND FLOOR', 'Floor: Ground floor requested (GRD)'], ['LOW FLOOR', 'Floor: Low/ground floor requested']
+  ];
   const OOO_WORDS = [
     ['OUT OF ORDER', 'Out of order'], ['OUT OF SERVICE', 'Out of service'], ['OOO', 'Out of order'],
     ['OOS', 'Out of service'], ['MAINTENANCE', 'Maintenance'], ['BLOCKED', 'Blocked'], ['DAMAGE', 'Damage']
@@ -155,15 +170,20 @@
   }
 
   function extractArrivalSignals(text) {
-    const occasion = scanTextForRooms(text, SPECIAL_OCCASION_WORDS);
-    const connecting = scanTextForRooms(text, CONNECTING_WORDS.map(w => [w, 'Connecting room requested']));
+    const scans = [
+      scanTextForRooms(text, SPECIAL_OCCASION_WORDS),
+      scanTextForRooms(text, CONNECTING_WORDS.map(w => [w, 'Connecting room requested'])),
+      scanTextForRooms(text, VIEW_WORDS),
+      scanTextForRooms(text, FLOOR_WORDS)
+    ];
     const out = new Map();
-    for (const [room, labels] of occasion) out.set(room, new Set(labels));
-    for (const [room, labels] of connecting) {
-      if (!out.has(room)) out.set(room, new Set());
-      labels.forEach(l => out.get(room).add(l));
-    }
-    return out; // Map<room, Set<label>>
+    scans.forEach(scan => {
+      for (const [room, labels] of scan) {
+        if (!out.has(room)) out.set(room, new Set());
+        labels.forEach(l => out.get(room).add(l));
+      }
+    });
+    return out; // Map<room, Set<label>> — labels are either bare occasion/connecting text, or "View: ..." / "Floor: ..." prefixed
   }
 
   function extractAlertSignals(text) {
