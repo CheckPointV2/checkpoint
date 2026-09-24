@@ -1,6 +1,9 @@
 (function (CP) {
   const $ = (id) => document.getElementById(id);
   let rackFilter = 'check';
+  // A "to check" room whose own ETD has already passed, or is this close, gets
+  // singled out from the rest of the rack instead of blending in as plain "to check".
+  const CHECK_SOON_MINS = 15;
 
   // ---------- parsing ----------
   const HEADERS = {
@@ -153,6 +156,37 @@
   }
 
   // ---------- rendering ----------
+
+  // Only real clock times count: a handful of ETD values (12:01, 12:02, 12:04)
+  // are Opera status codes such as "Preparing", not actual departure times, so
+  // comparing them against the current time would produce a meaningless
+  // "overdue by 3 hours". Those keep their existing ETD_CODES label untouched.
+  function checkUrgency(r) {
+    if (!r.etd || CP.ETD_CODES[r.etd]) return null;
+    const etdMins = CP.toMinutes(r.etd);
+    if (etdMins === null) return null;
+    const diff = etdMins - CP.nowMinutes();
+    if (diff <= 0) return 'overdue';
+    if (diff <= CHECK_SOON_MINS) return 'soon';
+    return null;
+  }
+
+  // Kept to the same rough length as the tile's other labels ("Checked out",
+  // "Unreachable"): the tile is 84px wide with no wrap, so anything longer
+  // than about 11-12 characters silently truncates and hides the number the
+  // whole feature exists to show.
+  function checkSub(r, st) {
+    if (st === 'co') return 'Checked out';
+    if (CP.ETD_CODES[r.etd]) return CP.ETD_CODES[r.etd];
+    if (st !== 'check') return '';
+    if (!r.etd) return 'No ETD';
+    const urgency = checkUrgency(r);
+    const etdMins = CP.toMinutes(r.etd);
+    if (urgency === 'overdue') return 'Late ' + CP.fmtDur(CP.nowMinutes() - etdMins);
+    if (urgency === 'soon') return 'Due ' + CP.fmtDur(etdMins - CP.nowMinutes());
+    return 'ETD ' + r.etd;
+  }
+
   function progressBar(c, total) {
     if (!total) return '';
     const seg = (n, cls, label) => n ? `<i class="${cls}" style="flex:${n}" title="${label}: ${n}"></i>` : '';
@@ -185,9 +219,14 @@
 
     const rows = activeRows(s);
     const counts = { check: 0, cleared: 0, ext: 0, later: 0 };
+    const urgent = { overdue: 0, soon: 0 };
     rows.forEach(r => {
       const st = CP.roomStatus(r, s);
       if (st === 'co' || st === 'left') counts.cleared++; else if (counts[st] !== undefined) counts[st]++;
+      if (st === 'check') {
+        const u = checkUrgency(r);
+        if (u) urgent[u]++;
+      }
     });
 
     let html = '';
@@ -229,6 +268,10 @@
           <button class="btn" data-act="copy-check-opera" type="button">Copy as Opera list</button>
         </div>
       </div>
+      ${urgent.overdue || urgent.soon ? `<div class="urgency-key">
+        ${urgent.overdue ? `<span class="u-overdue">${CP.plural(urgent.overdue, 'room')} overdue for check</span>` : ''}
+        ${urgent.soon ? `<span class="u-soon">${CP.plural(urgent.soon, 'room')} due within ${CHECK_SOON_MINS} min</span>` : ''}
+      </div>` : ''}
       ${progressBar(counts, rows.length)}
       <div class="chips" role="tablist">${filters.map(([k, l, n]) =>
         `<button class="chip ${rackFilter === k ? 'on' : ''}" data-rack="${k}" type="button">${l}<b>${n}</b></button>`).join('')}</div>
@@ -244,8 +287,9 @@
           ${list.length ? `<div class="tiles">${CP.sortRooms(list.map(r => r.room)).map(room => {
             const r = list.find(x => x.room === room);
             const st = CP.roomStatus(r, s);
-            const sub = st === 'co' ? 'Checked out' : (CP.ETD_CODES[r.etd] || '');
-            return CP.tile(room, 's-' + st + (r.vip || r.memberLevel ? ' vip' : ''), sub);
+            const urgency = st === 'check' ? checkUrgency(r) : null;
+            const cls = 's-' + st + (urgency ? ' is-' + urgency : '') + (r.vip || r.memberLevel ? ' vip' : '');
+            return CP.tile(room, cls, checkSub(r, st));
           }).join('')}</div>` : `<p class="empty">Clear</p>`}
         </div>`;
       }).join('')}</div>

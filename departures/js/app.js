@@ -176,7 +176,12 @@
     const s = CP.state();
     if (s.day !== CP.todayStr()) { CP.newShift(); return; }
     const m = CP.nowMinutes();
-    if (m !== lastMinute) { lastMinute = m; renderClock(); if (CP.renderDepLast) CP.renderDepLast(); }
+    if (m !== lastMinute) {
+      lastMinute = m; renderClock(); if (CP.renderDepLast) CP.renderDepLast();
+      // Keeps "Late 1 h 37" etc. in the key rack accurate minute to minute,
+      // the same way renderDepLast above already keeps "checked X min ago" accurate.
+      if (CP.renderDepartures) CP.renderDepartures();
+    }
   }
 
   // ---------- events ----------

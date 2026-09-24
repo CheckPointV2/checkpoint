@@ -319,6 +319,8 @@ input[type=checkbox] { accent-color: var(--brass); width: 16px; height: 16px; }
   background: var(--brass); transform: rotate(45deg);
 }
 .s-check { --tone: var(--brass); --tone-soft: var(--brass-soft); }
+.tile.is-overdue { --tone: var(--hot); --tone-soft: var(--hot-soft); }
+.tile.is-soon { --tone: var(--warn); --tone-soft: var(--warn-soft); }
 .s-co, .s-left { --tone: var(--ok); --tone-soft: var(--ok-soft); }
 .s-ext { --tone: var(--ext); --tone-soft: var(--ext-soft); }
 .s-later, .s-plain, .s-na { --tone: var(--muted); --tone-soft: var(--surface-2); }
@@ -407,6 +409,13 @@ input[type=checkbox] { accent-color: var(--brass); width: 16px; height: 16px; }
 .k-check::before { background: var(--brass); }
 .k-later::before { background: color-mix(in srgb, var(--muted) 45%, var(--line)); }
 .k-ext::before { background: var(--ext); }
+
+.urgency-key { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 -2px; font-size: 12.5px; font-weight: 600; }
+.urgency-key span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px; vertical-align: 0; }
+.u-overdue { color: var(--hot); }
+.u-overdue::before { background: var(--hot); }
+.u-soon { color: var(--warn); }
+.u-soon::before { background: var(--warn); }
 
 .bld-progress { height: 4px; border-radius: 999px; background: var(--line); overflow: hidden; margin: -2px 0 4px; }
 .bld-progress i { display: block; height: 100%; background: var(--bld); border-radius: 999px; transition: width .4s ease; }
