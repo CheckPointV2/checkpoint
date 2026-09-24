@@ -36,7 +36,11 @@
       if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
     $('view-title').textContent = $('view-' + view).dataset.title;
-    if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+    // Only self-manage the hash when running standalone. Embedded in CheckPoint
+    // (window.CPActiveTool exists there), the shell owns the hash as "#/departures" —
+    // rewriting it to our own bare "#checkouts" format breaks the shell's own router
+    // on a later reload or back/forward.
+    if (!window.CPActiveTool && location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     renderActions();
     window.scrollTo(0, 0);
   }
