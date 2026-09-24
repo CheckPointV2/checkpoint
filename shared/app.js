@@ -375,8 +375,14 @@
       }
     });
 
+    // Service worker is paused while we're actively iterating — it was causing
+    // stale code to stick even after cache clears. Self-heal anyone who already
+    // has one installed from before, automatically, no manual steps needed.
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+    }
+    if ("caches" in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
     }
   }
 
