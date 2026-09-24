@@ -213,5 +213,5 @@
   };
 
   CP.renderCheckouts = render;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindCheckouts = bind;
 })(window.CP);

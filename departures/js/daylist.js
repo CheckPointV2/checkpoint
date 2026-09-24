@@ -132,7 +132,7 @@
     const file = $('dl-file');
     $('dl-browse').addEventListener('click', () => file.click());
     file.addEventListener('change', () => { if (file.files[0]) handleFile(file.files[0]); file.value = ''; });
-    const view = $('view-daylist');
+    const view = $('dv-daylist');
     ['dragenter', 'dragover'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
     ['dragleave', 'drop'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === view) drop.classList.remove('over'); }));
     view.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
@@ -140,5 +140,5 @@
 
   CP.renderDayList = render;
   CP.importDayListFile = handleFile;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindDayList = bind;
 })(window.CP);

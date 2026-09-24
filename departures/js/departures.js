@@ -358,7 +358,7 @@
     const file = $('dep-file');
     $('dep-browse').addEventListener('click', () => file.click());
     file.addEventListener('change', () => { importFile(file.files[0]); file.value = ''; });
-    const view = $('view-departures');
+    const view = $('dv-departures');
     ['dragenter', 'dragover'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
     ['dragleave', 'drop'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === view) drop.classList.remove('over'); }));
     view.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) importFile(f); });
@@ -435,5 +435,5 @@
   };
 
   CP.renderDepartures = render;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindDepartures = bind;
 })(window.CP);

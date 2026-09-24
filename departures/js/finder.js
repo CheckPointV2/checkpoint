@@ -115,7 +115,7 @@
   }
 
   function bind() {
-    const view = $('view-finder');
+    const view = $('dv-finder');
     view.addEventListener('click', e => {
       const t = e.target.closest('[data-type]');
       if (t) { type = t.dataset.type; if (type === 'all') seaView = false; render(); return; }
@@ -131,5 +131,5 @@
   }
 
   CP.renderFinder = render;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindFinder = bind;
 })(window.CP);

@@ -32,5 +32,5 @@
     render();
   }
   CP.renderTools = render;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindTools = bind;
 })(window.CP);

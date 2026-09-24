@@ -31,11 +31,11 @@
   function go(view) {
     if (!VIEWS.includes(view)) view = 'departures';
     current = view;
-    VIEWS.forEach(v => { $('view-' + v).hidden = v !== view; });
+    VIEWS.forEach(v => { $('dv-' + v).hidden = v !== view; });
     document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
       if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
-    $('view-title').textContent = $('view-' + view).dataset.title;
+    $('view-title').textContent = $('dv-' + view).dataset.title;
     if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     renderActions();
     window.scrollTo(0, 0);
@@ -183,6 +183,16 @@
   function bind() {
     const t = CP.state().theme;
     if (t) document.documentElement.setAttribute('data-theme', t);
+
+    // Each sub-view wires its own listeners here, once, now that its markup
+    // is guaranteed to be in the DOM. They can't self-bind on script load:
+    // departures.js is also loaded early (before this markup exists) so Home
+    // can read CP.dep's business logic for its dashboard.
+    if (CP.bindDepartures) CP.bindDepartures();
+    if (CP.bindCheckouts) CP.bindCheckouts();
+    if (CP.bindFinder) CP.bindFinder();
+    if (CP.bindTools) CP.bindTools();
+    if (CP.bindDayList) CP.bindDayList();
 
     document.addEventListener('click', e => {
       const nav = e.target.closest('.nav-btn[data-view]');
