@@ -32,24 +32,20 @@
 
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand">
-        <div class="logo-chip"><img src="roomguide/assets/rixos-logo.png" alt="Rixos Bab Al Bahr"></div>
-        <div class="divider"></div>
-        <div>
-          <div class="wordmark">Room Guide</div>
-          <div class="tagline">Rooms Controller Reference</div>
-        </div>
+      <div class="rg-title">
+        <h1 class="cp-serif">Room Guide</h1>
+        <span class="rg-title-sub">Room intelligence — features, connections, upsell &amp; late checkout reference</span>
       </div>
 
       <div class="header-actions">
-        <a class="text-btn" href="https://scnv.io/Ax0g/?qr=1" target="_blank" rel="noopener" title="Hotel info (opens in a new tab)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-          Hotel Info
-        </a>
-        <a class="text-btn" href="https://easymap.ae/rixos-bab-al-bahr/" target="_blank" rel="noopener" title="Resort map (opens in a new tab)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V5l6 3m0 12l6-3m-6 3V8m6 9l6 3V7l-6-3m0 15V5m0 0L9 8"/></svg>
-          Resort Map
-        </a>
+        <div class="search-box" id="searchWrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input id="searchInput" type="text" placeholder="Go to room #" inputmode="numeric" autocomplete="off">
+          <kbd>/</kbd>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
         <button class="text-btn" id="overviewBtn" title="All-buildings overview">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           Overview
@@ -62,16 +58,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 3.5"/></svg>
           Late Checkout
         </button>
+        <a class="icon-btn" href="https://scnv.io/Ax0g/?qr=1" target="_blank" rel="noopener" title="Hotel info (opens in a new tab)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        </a>
+        <a class="icon-btn" href="https://easymap.ae/rixos-bab-al-bahr/" target="_blank" rel="noopener" title="Resort map (opens in a new tab)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V5l6 3m0 12l6-3m-6 3V8m6 9l6 3V7l-6-3m0 15V5m0 0L9 8"/></svg>
+        </a>
         <button class="icon-btn" id="tourBtn" title="Show walkthrough">?</button>
         <button class="icon-btn" id="themeToggle" title="Toggle dark mode (D)"></button>
-        <div class="search-box" id="searchWrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input id="searchInput" type="text" placeholder="Go to room #" inputmode="numeric" autocomplete="off">
-          <kbd>/</kbd>
-          <div class="search-dropdown" id="searchDropdown"></div>
-        </div>
       </div>
     </div>
 
