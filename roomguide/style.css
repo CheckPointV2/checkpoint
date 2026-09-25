@@ -44,6 +44,11 @@ html, body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  /* A little breathing room below the shell's floating dock — 0 felt
+     flush/cramped against it, and this isn't inside the sticky topbar's
+     own offset math (that stays top:0), so it can't reopen the overlap
+     that fixed. */
+  padding-top: 20px;
 }
 
 /* ================= Auth gate ================= */
