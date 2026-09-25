@@ -776,6 +776,11 @@ html, body  {
   gap: 6px;
   margin-bottom: 10px;
 }
+ #view-roomguide .connect-box .connect-title svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
  #view-roomguide .connect-room-card {
   cursor: pointer;
   border-radius: 10px;

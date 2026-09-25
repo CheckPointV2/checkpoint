@@ -37,6 +37,7 @@
     });
     $('view-title').textContent = $('dv-' + view).dataset.title;
     $('depSubtabs').hidden = !(view === 'departures' || view === 'checkouts');
+    $('reportSubtabs').hidden = !(view === 'daylist' || view === 'tools');
     if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     renderActions();
     window.scrollTo(0, 0);

@@ -611,7 +611,7 @@ function showDetail(bkey, roomNum) {
   const connectWrap = $("#dConnect");
   if (room.connecting != null) {
     const other = b.rooms[String(room.connecting)];
-    connectWrap.innerHTML = `<div class="connect-title">🔗 Interconnecting with Room ${room.connecting}</div>`;
+    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";

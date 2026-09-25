@@ -34,6 +34,14 @@
             <span>Formatting</span><em class="nav-count" data-count="checkouts"></em>
           </button>
         </nav>
+        <nav class="dep-subtabs" id="reportSubtabs" aria-label="Reports section" hidden>
+          <button class="nav-btn dep-subtab" data-view="daylist" type="button">
+            <span>Day list</span><em class="nav-count" data-count="daylist"></em>
+          </button>
+          <button class="nav-btn dep-subtab" data-view="tools" type="button">
+            <span>Room lists</span>
+          </button>
+        </nav>
       </div>
       <div class="topbar-right">
         <div class="view-actions" id="view-actions"></div>
@@ -107,7 +115,7 @@
     </section>
 
     <!-- ROOM LISTS -->
-    <section class="view" id="dv-tools" data-title="Room lists">
+    <section class="view" id="dv-tools" data-title="Reports">
       <div class="split">
         <div class="panel">
           <div class="panel-head"><h2>Any text to Opera format</h2></div>
@@ -118,7 +126,7 @@
       </div>
     </section>
 
-    <section class="view" id="dv-daylist" data-title="Day list" hidden>
+    <section class="view" id="dv-daylist" data-title="Reports" hidden>
       <div class="panel">
         <div class="panel-head"><h2>Full-day departures PDF</h2></div>
         <div class="drop" id="dl-drop">
