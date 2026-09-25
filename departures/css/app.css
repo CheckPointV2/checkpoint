@@ -18,9 +18,7 @@
   --muted: var(--ink-soft);
   --brass: var(--bronze);
   --brass-soft: var(--bronze-soft);
-  --on-brass: var(--on-bronze);
   --slab-brass: var(--slab-accent);
-  --on-slab-brass: var(--on-accent);
   --hot: var(--danger);      --hot-soft: var(--danger-soft);
 
   --zumroud: var(--bld-zumroud);
@@ -144,7 +142,7 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures .btn:active { transform: translateY(1px); }
  #view-departures .btn:disabled { opacity: .45; cursor: default; transform: none; }
  #view-departures .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
- #view-departures .btn.primary:hover { background: var(--brass); border-color: var(--brass); color: var(--on-brass); }
+ #view-departures .btn.primary:hover { background: var(--brass); border-color: var(--brass); color: #fff; }
  #view-departures .btn.ghost { background: none; border-color: transparent; color: var(--muted); }
  #view-departures .btn.ghost:hover { color: var(--ink); }
  #view-departures .btn.danger { color: var(--hot); }
@@ -328,7 +326,7 @@ html  { -webkit-text-size-adjust: 100%; }
   padding: 3px 10px; font-size: 12px; color: var(--muted);
 }
  #view-departures .mini:hover { color: var(--ink); }
- #view-departures .mini.on { background: var(--brass); border-color: var(--brass); color: var(--on-brass); }
+ #view-departures .mini.on { background: var(--brass); border-color: var(--brass); color: #fff; }
  #view-departures .bal.tagged .li-name { color: var(--muted); }
 
 /* table */
