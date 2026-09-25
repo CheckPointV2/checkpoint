@@ -109,8 +109,17 @@ window.CP = window.CP || {};
     // itself is left at its default of 12:04, an "Unreachable" room would
     // compare 12:04 < 12:04 (false) and be wrongly dropped from the list.
     if (etd === '' || etd === '12:01' || etd === '12:02' || etd === '12:04') return 'check';
-    const cut = CP.toMinutes(s.cutoff), m = CP.toMinutes(etd);
-    if (m === null || cut === null || m < cut) return 'check';
+    const m = CP.toMinutes(etd);
+    if (m === null) return 'check';
+    // The configured cutoff only ever pulls rooms in early (so staff can
+    // get ahead of upcoming checks) — it can never push a room out past
+    // "now". Without this, any real ETD later than a stale/default cutoff
+    // (e.g. a 13:00 checkout with the 12:04 default) would stay hidden
+    // from the check list long after it was actually due, even though the
+    // clock has already passed it.
+    const cut = CP.toMinutes(s.cutoff);
+    const effectiveCut = Math.max(cut === null ? -Infinity : cut, CP.nowMinutes());
+    if (m < effectiveCut) return 'check';
     return 'later';
   };
   CP.rowByRoom = (room, s) => {
