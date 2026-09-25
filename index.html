@@ -9,6 +9,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="shared/assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="shared/assets/favicon-16.png">
 <link rel="apple-touch-icon" href="shared/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="shared/tokens.css">
 <style>
   .cp-topbar-actions { display:flex; align-items:center; gap:8px; }
@@ -40,9 +44,6 @@
       <div class="cp-dock-sep"></div>
 
       <nav class="cp-dock-nav">
-        <button class="cp-dock-btn" data-route="#/" data-tip="Home" title="Home" aria-label="Home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-        </button>
         <button class="cp-dock-btn" data-route="#/roomguide" data-tip="Room Guide" title="Room Guide" aria-label="Room Guide">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
         </button>
@@ -77,28 +78,7 @@
 
   <div class="cp-content">
     <div id="viewRoot" style="flex:1; position:relative;">
-      <div class="cp-view active" id="view-home">
-        <div class="cp-home">
-          <div class="cp-home-greet cp-serif" id="homeGreet">Welcome back</div>
-          <div class="cp-home-date" id="homeDate"></div>
-
-          <div class="cp-slab cp-attn-hero no-print" id="homeAttn"></div>
-
-          <div class="cp-stat-grid" id="homeStats"></div>
-
-          <div class="cp-home-links">
-            <button class="cp-card cp-quicklink" data-route="#/roomguide">
-              <div class="cp-quicklink-title">Room Guide</div>
-              <div class="cp-quicklink-sub">Floor plans, features, upsell &amp; late checkout</div>
-            </button>
-            <button class="cp-card cp-quicklink" data-route="#/departures" data-sub="departures">
-              <div class="cp-quicklink-title">Departures</div>
-              <div class="cp-quicklink-sub">Due-outs and checkouts</div>
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- other tool views are mounted here on demand -->
+      <!-- tool views are mounted here on demand, Room Guide first on boot -->
     </div>
   </div>
 

@@ -156,6 +156,28 @@ function roomsForFloor(bkey, fkey) {
   return Object.values(buildingData(bkey).rooms).filter((r) => r.floor === fkey);
 }
 
+// One observer, reused across every floor render, rooted on the actual
+// scroll container (.plan-col scrolls internally — the document itself
+// doesn't) with a margin so tiles load a little before they're on screen.
+let thumbObserver = null;
+function getThumbObserver() {
+  if (thumbObserver) return thumbObserver;
+  thumbObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const tile = entry.target;
+      const src = tile.dataset.thumbSrc;
+      if (src) {
+        tile.style.backgroundImage = `linear-gradient(to bottom, rgba(20,15,10,0.18), rgba(20,15,10,0.62)), url(${src})`;
+        delete tile.dataset.thumbSrc;
+      }
+      thumbObserver.unobserve(tile);
+    });
+  }, { root: $(".plan-col"), rootMargin: "600px 0px", threshold: 0.01 });
+  return thumbObserver;
+}
+function observeLazyThumb(tile) { getThumbObserver().observe(tile); }
+
 function renderFloor(key) {
   const grid = $("#grid");
   grid.classList.add("transitioning");
@@ -179,6 +201,7 @@ function renderFloorContent(key) {
 
   const grid = $("#grid");
   grid.innerHTML = "";
+  if (thumbObserver) thumbObserver.disconnect(); // drop any still-pending tiles from the floor we just left
   const tileSize = isTouch ? 48 : 62;
   grid.style.gridTemplateColumns = `repeat(${f.cols}, ${tileSize}px)`;
   grid.style.gridTemplateRows = `repeat(${f.rows}, ${tileSize}px)`;
@@ -192,7 +215,11 @@ function renderFloorContent(key) {
 
     if (r.hasPhoto) {
       tile.classList.add("has-thumb");
-      tile.style.backgroundImage = `linear-gradient(to bottom, rgba(20,15,10,0.18), rgba(20,15,10,0.62)), url(${thumbPath(currentBuilding, r.room)})`;
+      // Lazy: a floor can hold 60+ rooms, most below the fold. Only fetch a
+      // thumbnail once its tile is actually about to be visible, instead of
+      // firing every request on the floor the instant it renders.
+      tile.dataset.thumbSrc = thumbPath(currentBuilding, r.room);
+      observeLazyThumb(tile);
       tile.innerHTML = `<span class="type-dot" style="background:${typeColor(r.type)}"></span><div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>`;
     } else {
       tile.style.background = typeColor(r.type);

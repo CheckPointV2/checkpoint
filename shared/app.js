@@ -76,8 +76,10 @@
   /* ============================================================
      Router
      ============================================================ */
-  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Copilot" };
-  window.CPActiveTool = "home";
+  // Room Guide is the landing tool — there is no separate dashboard "home"
+  // view anymore. "#/" and "#/roomguide" are the same destination.
+  const TOOL_TITLES = { roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Copilot" };
+  window.CPActiveTool = "roomguide";
   window.CPActiveSub = null;
   let pendingSub = null;
 
@@ -85,28 +87,23 @@
     const hash = location.hash || "#/";
     if (!hash.startsWith("#/")) return; // not ours — a mounted tool owns it (e.g. Departures' own #checkouts)
     const parts = hash.slice(2).split("/").filter(Boolean);
-    const tool = parts[0] || "home";
+    const tool = parts[0] || "roomguide";
     const sub = pendingSub;
     pendingSub = null;
     await showTool(tool, sub);
   }
 
   async function showTool(tool, sub) {
-    if (!TOOL_TITLES[tool]) tool = "home";
+    if (!TOOL_TITLES[tool]) tool = "roomguide";
     window.CPActiveTool = tool;
     window.CPActiveSub = sub || (tool === "departures" ? "departures" : null);
-    document.title = tool === "home" ? "CheckPoint — Rixos Bab Al Bahr" : TOOL_TITLES[tool] + " — CheckPoint";
+    document.title = tool === "roomguide" ? "CheckPoint — Rixos Bab Al Bahr" : TOOL_TITLES[tool] + " — CheckPoint";
     $$(".cp-view").forEach(v => v.classList.remove("active"));
 
-    if (tool === "home") {
-      $("#view-home").classList.add("active");
-      renderHome();
-    } else {
-      const view = await ensureMounted(tool);
-      view.classList.add("active");
-      if (tool === "departures" && sub && window.CP && window.CP.go) {
-        window.CP.go(sub);
-      }
+    const view = await ensureMounted(tool);
+    view.classList.add("active");
+    if (tool === "departures" && sub && window.CP && window.CP.go) {
+      window.CP.go(sub);
     }
     updateDockActive();
     window.scrollTo(0, 0);
@@ -120,7 +117,7 @@
     if (tool === "departures") {
       match = document.querySelector(`.cp-dock-btn[data-route="#/departures"][data-sub="${sub}"]`);
     } else {
-      match = document.querySelector(`.cp-dock-btn[data-route="#/${tool === "home" ? "" : tool}"]`);
+      match = document.querySelector(`.cp-dock-btn[data-route="#/${tool}"]`);
     }
     if (match) match.setAttribute("aria-current", "page");
   }
@@ -218,62 +215,11 @@
   }
 
   /* ============================================================
-     Home dashboard
-     ============================================================ */
-  async function renderHome() {
-    const hour = new Date().getHours();
-    $("#homeGreet").textContent = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-    $("#homeDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-
-    await ensureDeparturesDataLoaded();
-    const s = window.CP.state();
-    const hasImport = !!s.dueouts;
-    const checkRooms = hasImport ? window.CP.dep.checkRooms(s) : [];
-    const stats = hasImport ? window.CP.dep.buildingStats(s) : null;
-    const checkedOutToday = Object.keys((s.co && s.co.processed) || {}).length;
-
-    let roomsSeen = 0;
-    try { roomsSeen = JSON.parse(localStorage.getItem("rbab-recent") || "[]").length; } catch (e) {}
-
-    // primary attention hero
-    const heroEl = $("#homeAttn");
-    if (!hasImport) {
-      heroEl.innerHTML = `
-        <div class="cp-attn-num cp-serif">—</div>
-        <div class="cp-attn-label">No due-outs imported yet today</div>
-        <div class="cp-attn-sub">Import the Opera export in Departures to see what still needs a physical check.</div>`;
-    } else {
-      const chips = window.CP.BUILDING_ORDER
-        .filter(b => stats[b] && stats[b].total > 0)
-        .map(b => `<span class="cp-attn-chip${stats[b].check > 0 ? " hot" : ""}">${b} · ${stats[b].check}</span>`)
-        .join("");
-      const mins = Math.round((Date.now() - s.dueouts.importedAt) / 60000);
-      const freshness = mins < 1 ? "just now" : mins === 1 ? "1 min ago" : mins < 60 ? mins + " min ago" : Math.floor(mins / 60) + "h ago";
-      heroEl.innerHTML = `
-        <div class="cp-attn-num cp-serif">${checkRooms.length}</div>
-        <div class="cp-attn-label">${checkRooms.length === 1 ? "room still needs a physical check" : "rooms still need a physical check"}</div>
-        <div class="cp-attn-chips">${chips}</div>
-        <div class="cp-attn-sub">Due-outs imported ${freshness}</div>`;
-    }
-    heroEl.classList.add("cp-enter", "cp-enter-1");
-    heroEl.onclick = () => { pendingSub = "departures"; location.hash = "#/departures"; };
-
-    const secondary = [
-      { num: checkedOutToday, label: "Checked out today" },
-      { num: roomsSeen, label: "Rooms viewed recently" }
-    ];
-    $("#homeStats").innerHTML = secondary.map((st, i) =>
-      `<div class="cp-slab cp-stat-block cp-enter cp-enter-${i + 2}"><div class="cp-stat-num cp-serif">${st.num}</div><div class="cp-stat-label">${st.label}</div></div>`
-    ).join("");
-  }
-
-  /* ============================================================
      Command palette
      ============================================================ */
   let paletteIndex = [];
   function buildStaticIndex() {
     paletteIndex = [
-      { label: "Home", tag: "page", route: "#/" },
       { label: "Room Guide", tag: "page", route: "#/roomguide" },
       { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
       { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },

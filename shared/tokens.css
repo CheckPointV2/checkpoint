@@ -5,7 +5,10 @@
    shell itself pulls colors from these variables only.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Fonts are loaded from index.html as a non-blocking <link>, not an
+   @import here — @import inside a stylesheet is render-blocking and
+   forces a second serial round-trip (fetch this file, parse it, discover
+   the @import, THEN fetch the font CSS) before anything can paint. */
 
 :root {
   --paper: #F7F5F1;
@@ -254,44 +257,12 @@ html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
 
 .cp-content { padding-top: 78px; min-height: 100vh; }
 
-/* ---------- home dashboard ---------- */
-.cp-home { padding: 20px 44px 44px; max-width: 1000px; }
-.cp-home-greet { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0 0 6px; }
-.cp-home-date { color: var(--ink-soft); font-size: 14px; margin: 0 0 28px; }
-.cp-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 34px; }
-.cp-stat-block { padding: 20px; background: linear-gradient(155deg, var(--slab), color-mix(in srgb, var(--slab) 85%, var(--bronze))); }
-.cp-stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 600; }
-.cp-stat-label { font-size: 12px; color: var(--slab-muted); margin-top: 2px; }
-
-.cp-attn-hero {
-  padding: 28px 30px; margin-bottom: 18px; cursor: pointer;
-  background: linear-gradient(155deg, var(--slab), color-mix(in srgb, var(--slab) 82%, var(--bronze)));
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.cp-attn-hero:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-.cp-attn-num { font-size: 48px; font-weight: 600; line-height: 1; }
-.cp-attn-label { font-size: 15px; color: var(--slab-ink); margin-top: 6px; font-weight: 600; }
-.cp-attn-sub { font-size: 12px; color: var(--slab-muted); margin-top: 10px; }
-.cp-attn-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.cp-attn-chip {
-  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
-  background: rgba(255, 255, 255, .07); color: var(--slab-muted);
-}
-.cp-attn-chip.hot { background: color-mix(in srgb, var(--slab-accent) 22%, transparent); color: var(--slab-accent); }
-.cp-home-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-.cp-quicklink { padding: 18px; cursor: pointer; text-align: left; transition: transform .15s ease, box-shadow .15s ease; }
-.cp-quicklink:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.cp-quicklink-title { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
-.cp-quicklink-sub { font-size: 12px; color: var(--ink-soft); }
-
 @media (max-width: 900px) {
-  .cp-stat-grid, .cp-home-links { grid-template-columns: 1fr 1fr; }
-  .cp-home { padding: 16px 20px 26px; }
   .cp-dock-word { display: none; }
 }
 
 @media (max-width: 480px) {
-  /* the dock's icon count (brand + 5 nav + 4 utils) doesn't fit 40px
+  /* the dock's icon count (brand + 4 nav + 4 utils) doesn't fit 40px
      circles in a 390px viewport — shrink them, and let the dock itself
      scroll horizontally (scrollbar hidden) as a safety net rather than
      ever clipping a button off the edge unreachably. */
@@ -301,7 +272,6 @@ html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
   .cp-dock-btn { width: 36px; height: 36px; flex-shrink: 0; }
   .cp-dock-btn svg { width: 16px; height: 16px; }
   .cp-dock-brand { padding: 0 6px 0 2px; }
-  .cp-stat-grid, .cp-home-links { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
