@@ -36,6 +36,7 @@
       if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
     $('view-title').textContent = $('dv-' + view).dataset.title;
+    $('depSubtabs').hidden = !(view === 'departures' || view === 'checkouts');
     if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     renderActions();
     window.scrollTo(0, 0);
@@ -148,14 +149,22 @@
   // ---------- clock + render loop ----------
   // Rail badges (the count on Departures/Arrivals/Reports in the shell nav)
   // are shared/app.js's job now — it owns the one visible nav and reads
-  // both Departures and Allocation, not just this bundle's own state.
+  // both Departures and Allocation, not just this bundle's own state. The
+  // two subtab counts below are purely local to this screen's own header.
   function renderClock() {
     const d = new Date();
     $('clock').innerHTML = `<span class="clock-time">${CP.nowHHMM()}</span><span class="clock-date">${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>`;
   }
 
+  function renderSubtabCounts() {
+    const s = CP.state();
+    const set = (k, n) => { const el = document.querySelector(`.dep-subtab .nav-count[data-count="${k}"]`); if (el) el.textContent = n || ''; };
+    set('departures', s.dueouts ? CP.dep.checkRooms(s).length : 0);
+    set('checkouts', CP.unprocessedCheckouts ? CP.unprocessedCheckouts().length : 0);
+  }
+
   function renderAll() {
-    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock]
+    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock, renderSubtabCounts]
       .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
   }
 
@@ -192,9 +201,8 @@
       const a = e.target.closest('[data-action]');
       if (a) runAction(a.dataset.action);
     });
-    $('theme-btn').addEventListener('click', toggleTheme);
-    $('newshift-btn').addEventListener('click', confirmNewShift);
-
+    // Theme and "new shift" now live in the shell rail and Settings — the
+    // command palette (commands(), above) still reaches both from here.
     const dlg = $('sheet');
     dlg.addEventListener('click', e => { if (e.target === dlg) CP.closeSheet(); });
 

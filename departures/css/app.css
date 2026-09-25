@@ -2,8 +2,6 @@
    Lagoon ink + brass. Numbers set in a condensed departure-board face.
    Rooms are drawn as key tags, the one decorative idea in the system. */
 
- #view-departures .nav-btn[data-view="finder"], #view-departures .nav-btn[data-view="tools"], #view-departures .nav-btn[data-view="daylist"] { display: none; }
- #view-departures .rail { display: none !important; }
 
 /* Token values live in shared/tokens.css, loaded before this file in
    every tool. These are local aliases only — this file's own selectors
@@ -60,55 +58,14 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures h1, #view-departures h2, #view-departures h3 { margin: 0; }
 
 /* ============ shell ============ */
- #view-departures .shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  min-height: 100vh;
-}
- #view-departures .rail {
-  position: sticky; top: 0;
-  height: 100vh;
-  display: flex; flex-direction: column;
-  gap: 28px;
-  padding: 26px 18px 20px;
-  background: var(--slab);
-  color: var(--slab-ink);
-}
- #view-departures .brand { display: flex; gap: 12px; align-items: center; padding: 0 6px; }
- #view-departures .brand-mark { width: 34px; height: 34px; flex: none; }
- #view-departures .brand-mark path { fill: var(--slab-brass); }
- #view-departures .brand-mark circle { fill: var(--slab); }
- #view-departures .brand-name { font: 700 26px/1 var(--display); letter-spacing: .01em; }
- #view-departures .brand-sub { font-size: 12px; color: var(--slab-muted); margin-top: 3px; }
-
- #view-departures .nav { display: flex; flex-direction: column; gap: 2px; }
- #view-departures .nav-btn {
-  display: grid; grid-template-columns: 22px 1fr auto auto; align-items: center; gap: 10px;
-  padding: 10px 10px; border: 0; border-radius: var(--r-md);
-  background: none; color: var(--slab-muted); text-align: left; font-weight: 500;
-}
- #view-departures .nav-btn svg, #view-departures .tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
- #view-departures .nav-btn:hover { color: var(--slab-ink); background: rgba(255, 255, 255, .04); }
- #view-departures .nav-btn[aria-current="page"] { color: var(--slab-ink); background: rgba(224, 180, 90, .12); }
- #view-departures .nav-btn[aria-current="page"] svg { color: var(--slab-brass); }
- #view-departures .nav-btn kbd {
-  font: 500 11px/1 var(--body); color: var(--slab-muted);
-  border: 1px solid var(--slab-line); border-radius: 5px; padding: 3px 6px;
-}
- #view-departures .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
- #view-departures .rail-link {
-  border: 0; background: none; color: var(--slab-muted); text-align: left;
-  padding: 7px 10px; border-radius: var(--r-sm); font-size: 13px;
-}
- #view-departures .rail-link:hover { color: var(--slab-ink); background: rgba(255, 255, 255, .04); }
-
- #view-departures .main { min-width: 0; padding: 0 40px 64px; max-width: 1680px; }
+ #view-departures .shell { display: block; }
+ #view-departures .main { min-width: 0; padding: 0 40px 64px; max-width: 1680px; margin: 0 auto; }
 
 /* ============ topbar ============ */
  #view-departures .topbar {
-  position: sticky; top: 78px; z-index: 5;
-  display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  padding: 22px 0 18px;
+  position: sticky; top: 0; z-index: 5;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  padding: 22px 0 16px;
   margin-bottom: 22px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
@@ -116,12 +73,31 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures .view-actions { display: flex; gap: 8px; }
  #view-departures .view-actions:empty { display: none; }
  #view-departures .topbar-title { min-width: 0; }
- #view-departures .topbar h1 { font: 700 40px/1 var(--display); letter-spacing: .005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ #view-departures .topbar h1 { font: 700 32px/1 var(--display); letter-spacing: .005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
  #view-departures .phase { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
- #view-departures .topbar-right { display: flex; align-items: center; gap: 22px; }
+ #view-departures .topbar-right { display: flex; align-items: flex-start; gap: 22px; padding-top: 2px; }
  #view-departures .clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; padding-left: 22px; border-left: 1px solid var(--line); }
- #view-departures .clock-time { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+ #view-departures .clock-time { font: 700 26px/1 var(--display); font-variant-numeric: tabular-nums; }
  #view-departures .clock-date { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* Physical check / Formatting are one Departures workflow — the two phases
+   of one shift task — not two separate tools, so they're switched with an
+   in-page tab strip under the title instead of the shell's own nav. */
+ #view-departures .dep-subtabs { display: flex; gap: 4px; margin-top: 10px; }
+ #view-departures .dep-subtab {
+  display: flex; align-items: center; gap: 7px;
+  border: 0; background: none; color: var(--muted);
+  font-size: 13.5px; font-weight: 600; padding: 6px 4px 10px;
+  border-bottom: 2px solid transparent;
+}
+ #view-departures .dep-subtab:hover { color: var(--ink); }
+ #view-departures .dep-subtab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--brass); }
+ #view-departures .dep-subtab .nav-count {
+  font: 700 11px/1 var(--body); font-variant-numeric: tabular-nums;
+  background: var(--surface-2); color: var(--muted); border-radius: 999px; padding: 2px 7px;
+}
+ #view-departures .dep-subtab .nav-count:empty { display: none; }
+ #view-departures .dep-subtab[aria-current="page"] .nav-count { background: var(--brass-soft); color: var(--brass); }
 /* ============ panels ============ */
  #view-departures .view { display: flex; flex-direction: column; gap: 20px; }
  #view-departures .panel {
@@ -378,14 +354,6 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures .small-head b { font: 700 20px/1 var(--display); color: var(--brass); }
  #view-departures .log-grid .opera { margin-top: 8px; }
 
-/* ============ sidebar counts ============ */
- #view-departures .nav-count {
-  font: 700 15px/1 var(--display); font-style: normal; color: var(--slab-ink);
-  min-width: 22px; text-align: right;
-}
- #view-departures .nav-count.hot { color: var(--slab-brass); }
- #view-departures .nav-count:empty { display: none; }
-
 /* ============ departures progress ============ */
  #view-departures .progress { margin: 2px 0 18px; }
  #view-departures .progress-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
@@ -414,6 +382,27 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures .bld-progress { height: 4px; border-radius: 999px; background: var(--line); overflow: hidden; margin: -2px 0 4px; }
  #view-departures .bld-progress i { display: block; height: 100%; background: var(--bld); border-radius: 999px; transition: width .4s ease; }
  #view-departures .bld-meta { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+
+/* ============ waiting: named guests, from Arrivals ============ */
+ #view-departures .fd-waiting { margin-bottom: 22px; }
+ #view-departures .fd-waiting h2 { display: flex; align-items: center; gap: 10px; font: 600 19px/1 var(--display); margin: 0 0 12px; }
+ #view-departures .fd-waiting-count { font: 700 12px/1 var(--body); background: var(--brass-soft); color: var(--brass); border-radius: 999px; padding: 3px 9px; }
+ #view-departures .fd-waiting-empty { color: var(--muted); font-size: 13.5px; }
+ #view-departures .fd-waiting-list { display: flex; flex-direction: column; gap: 10px; }
+ #view-departures .fd-waiting-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--shadow); }
+ #view-departures .fd-waiting-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+ #view-departures .fd-waiting-name { font-weight: 700; font-size: 14.5px; }
+ #view-departures .fd-waiting-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+ #view-departures .fd-waiting-candidates { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+ #view-departures .fd-waiting-room {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: var(--r-md);
+  padding: 6px 10px 6px 12px; transition: border-color .12s ease;
+}
+ #view-departures .fd-waiting-room:hover { border-color: var(--brass); }
+ #view-departures .fd-waiting-room .fd-num { font: 700 16px/1 var(--display); }
+ #view-departures .fd-waiting-nomatch { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+ #view-departures .fd-section-title { font: 600 15px/1 var(--display); color: var(--muted); margin: 0 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
 
 /* ============ room finder ============ */
  #view-departures .fd-controls { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }

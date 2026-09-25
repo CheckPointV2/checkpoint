@@ -402,6 +402,7 @@
 
   // ---------- Arrivals: scannable list row ----------
   const ROOM_STATE_LABEL = { unassigned: "No room", unknown: "Not checked", ready: "Room ready", "not-ready": "Not ready" };
+  const ROOM_STATE_TONE = { unassigned: "", unknown: "", ready: "tone-ok", "not-ready": "tone-warn" };
 
   function matchesArrFilters(item) {
     for (const key of arrFilters) {
@@ -430,7 +431,7 @@
         <span class="arr-row-name">${esc(record.name || "Unnamed guest")}</span>
         <span class="arr-row-sub">${record.conf ? "Conf " + esc(record.conf) : (record.room ? "Room " + esc(record.room) : "No confirmation number")}</span>
       </span>
-      <span class="arr-status-pill st-${roomState}">${ROOM_STATE_LABEL[roomState]}</span>
+      <span class="cp-badge ${ROOM_STATE_TONE[roomState]}">${ROOM_STATE_LABEL[roomState]}</span>
       <span class="arr-row-meta"><span class="arr-row-when">${esc(when)}</span><span class="arr-row-dot">·</span><span class="arr-row-what">${esc(what)}</span></span>
       <span class="arr-row-important">${important.length ? important.map(r => `<span class="arr-tag${r.hard ? " hard" : ""}">${esc(r.text)}</span>`).join("") : ""}</span>
     </button>`;

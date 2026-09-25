@@ -209,15 +209,7 @@
   background: var(--panel-2); color: var(--ink-soft); border: 1px solid var(--line);
 }
 .arr-tag.hard { background: var(--bronze-soft); color: var(--bronze-deep); border-color: transparent; }
-.arr-status-pill {
-  grid-area: status; align-self: start;
-  font-size: 10px; font-weight: 700; letter-spacing: .01em; white-space: nowrap;
-  padding: 3px 9px; border-radius: 999px;
-}
-.arr-status-pill.st-ready { background: var(--ok-soft); color: var(--ok); }
-.arr-status-pill.st-not-ready { background: var(--warn-soft); color: var(--warn); }
-.arr-status-pill.st-unassigned { background: var(--panel-2); color: var(--ink-faint); }
-.arr-status-pill.st-unknown { background: var(--panel-2); color: var(--ink-faint); }
+.arr-row .cp-badge { grid-area: status; align-self: start; }
 
 .arr-detail-col { min-height: 320px; }
 .arr-detail-col .alloc-brief { padding: 4px 2px; }

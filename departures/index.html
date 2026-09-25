@@ -22,31 +22,18 @@
 <body>
 <div class="shell">
 
-  <aside class="rail">
-    <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 4h10l4 5v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9z"/><circle cx="16" cy="10" r="2.2"/></svg>
-      <div>
-        <div class="brand-name">Checkpoint</div>
-        <div class="brand-sub">Rooms control, Rixos Bab Al Bahr</div>
-      </div>
-    </div>
-    <nav class="nav" aria-label="Sections">
-      <button class="nav-btn" data-view="departures"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg><span>Physical check</span><em class="nav-count" data-count="departures"></em><kbd>1</kbd></button>
-      <button class="nav-btn" data-view="checkouts"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4z"/><path d="M9 10l2 2 4-4"/></svg><span>Formatting</span><em class="nav-count" data-count="checkouts"></em><kbd>2</kbd></button>
-      <button class="nav-btn" data-view="finder"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>Room finder</span><kbd>3</kbd></button>
-      <button class="nav-btn" data-view="tools"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg><span>Room lists</span><kbd>4</kbd></button>
-      <button class="nav-btn" data-view="daylist"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M10 12h7M10 16h7M10 8h3"/></svg><span>Day list</span><em class="nav-count" data-count="daylist"></em><kbd>5</kbd></button>
-    </nav>
-    <div class="rail-foot">
-      <button class="rail-link" id="theme-btn" type="button">Night mode</button>
-      <button class="rail-link" id="newshift-btn" type="button">Start new shift</button>
-    </div>
-  </aside>
-
   <div class="main">
     <header class="topbar">
       <div class="topbar-title">
-        <h1 id="view-title">Physical check</h1>
+        <h1 id="view-title">Departures</h1>
+        <nav class="dep-subtabs" id="depSubtabs" aria-label="Departures phase">
+          <button class="nav-btn dep-subtab" data-view="departures" type="button">
+            <span>Physical check</span><em class="nav-count" data-count="departures"></em>
+          </button>
+          <button class="nav-btn dep-subtab" data-view="checkouts" type="button">
+            <span>Formatting</span><em class="nav-count" data-count="checkouts"></em>
+          </button>
+        </nav>
       </div>
       <div class="topbar-right">
         <div class="view-actions" id="view-actions"></div>
@@ -55,7 +42,7 @@
     </header>
 
     <!-- DEPARTURES -->
-    <section class="view" id="dv-departures" data-title="Physical check">
+    <section class="view" id="dv-departures" data-title="Departures">
       <div class="panel import-panel">
         <div class="last-checked" id="dep-last"></div>
         <div class="drop" id="dep-drop">
@@ -87,7 +74,7 @@
     </section>
 
     <!-- CHECKOUTS -->
-    <section class="view" id="dv-checkouts" data-title="Formatting">
+    <section class="view" id="dv-checkouts" data-title="Departures">
       <div class="split">
         <div class="panel">
           <div class="panel-head"><h2>Read a screenshot</h2></div>
@@ -112,7 +99,9 @@
     </section>
 
     <!-- WAITING CARDS -->
-    <section class="view" id="dv-finder" data-title="Room finder" hidden>
+    <section class="view" id="dv-finder" data-title="Waiting" hidden>
+      <div id="fd-waiting"></div>
+      <h2 class="fd-section-title">Find by room type</h2>
       <div class="panel fd-controls" id="fd-controls"></div>
       <div id="fd-body"></div>
     </section>

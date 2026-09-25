@@ -15,6 +15,62 @@
   const baseType = (t) => t.replace(/OV$/, '');
   const isSea = (t) => /OV$/.test(t);
 
+  // ---------- named waiting guests, from Allocation ----------
+  // finder.js's own model has always been room-type-driven, not guest-driven
+  // — a controller picks a type, not a name. That undersells what's actually
+  // known once a Confirmation export has been read in Arrivals: which named
+  // guests have no room yet. This cross-references that (window.CPAlloc)
+  // against the exact same candidate-ranking Arrivals itself uses
+  // (window.CPAllocMatch), so "who is waiting" means an actual guest with a
+  // name and a priority, not just an empty room-type bucket.
+  function waitingGuests() {
+    if (!window.CPAlloc || !window.CPAllocMatch) return null;
+    const analysis = window.CPAlloc.getAnalysis();
+    if (!analysis) return null;
+    return analysis.items
+      .filter(it => it.record.needsRoom && it.record.roomType)
+      .sort((a, b) => {
+        const rank = { high: 0, medium: 1 };
+        return (rank[a.tier] ?? 2) - (rank[b.tier] ?? 2);
+      });
+  }
+
+  function renderWaitingGuests(box) {
+    if (!window.RBAB_DATA && CP.loadScript) {
+      CP.loadScript('roomguide/data.js').then(render).catch(() => {});
+    }
+    const items = waitingGuests();
+    if (items === null) return '';
+    if (!items.length) {
+      return `<section class="fd-waiting"><h2>Waiting for a room</h2><p class="fd-waiting-empty">No named arrival is waiting on a room right now, per the last Arrivals import.</p></section>`;
+    }
+    return `<section class="fd-waiting">
+      <h2>Waiting for a room<span class="fd-waiting-count">${items.length}</span></h2>
+      <div class="fd-waiting-list">
+        ${items.map(it => {
+          const r = it.record;
+          const match = window.CPAllocMatch.findCandidates(r, { preferConnecting: !!r.linked });
+          const candidates = (match.candidates.length ? match.candidates : match.alternatives).slice(0, 3);
+          return `<div class="fd-waiting-card">
+            <div class="fd-waiting-head">
+              <div>
+                <div class="fd-waiting-name">${CP.esc(r.name || 'Unnamed guest')}</div>
+                <div class="fd-waiting-meta">${CP.esc(r.roomType)}${r.eta ? ' · Arriving ' + CP.esc(r.eta) : ''}${r.vip ? ' · VIP' : ''}</div>
+              </div>
+              ${it.tier ? `<span class="cp-badge tone-${it.tier === 'high' ? 'danger' : 'warn'}">${it.tier === 'high' ? 'High priority' : 'Medium priority'}</span>` : ''}
+            </div>
+            ${candidates.length ? `<div class="fd-waiting-candidates">
+              ${candidates.map(c => `<button class="fd-waiting-room" data-room="${CP.esc(c.room)}" type="button">
+                <span class="fd-num">${CP.esc(c.room)}</span>
+                <span class="cp-badge ${c.status === 'free' ? 'tone-ok' : c.status === 'check' ? 'tone-warn' : ''}">${c.status === 'free' ? 'Free now' : c.status === 'check' ? 'Checking out' : c.status === 'later' ? 'Later' : 'No signal'}</span>
+              </button>`).join('')}
+            </div>` : `<p class="fd-waiting-nomatch">${CP.esc(match.warnings[0] || 'No candidate rooms found.')}</p>`}
+          </div>`;
+        }).join('')}
+      </div>
+    </section>`;
+  }
+
   function lane(r, s) {
     const st = CP.roomStatus(r, s);
     if (st === 'co' || st === 'left') return 'free';
@@ -45,11 +101,13 @@
     const s = CP.state();
     const box = $('fd-body');
     if (!box) return;
+    const waitingBox = $('fd-waiting');
+    if (waitingBox) waitingBox.innerHTML = renderWaitingGuests(waitingBox);
     if (!s.dueouts) {
       $('fd-controls').innerHTML = '';
       box.innerHTML = `<div class="panel fd-empty">
         <h2>Import today's due-out export first</h2>
-        <p class="meta">The finder works from the same Opera export as Physical check. Once it's in, pick the room type a waiting guest needs and every matching departing room is ranked by how soon it frees up.</p>
+        <p class="meta">Once it's in, pick the room type a waiting guest needs and every matching departing room is ranked by how soon it frees up.</p>
         <button class="btn primary" data-fd="import" type="button">Import export</button>
       </div>`;
       return;
