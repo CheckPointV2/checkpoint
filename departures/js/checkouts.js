@@ -132,14 +132,14 @@
       const fresh = unique.filter(r => !s.co.reported[r] && !notDue.includes(r));
       res.innerHTML = `
         <div class="panel-head"><h2>Result</h2><span class="meta">from ${last.source === 'image' ? 'screenshot' : 'text'}</span></div>
-        <div class="tally">
+        <div class="tally cp-enter">
           <div><strong>${last.found.length}</strong><span>mentions found</span></div>
           <div><strong>${unique.length}</strong><span>unique rooms</span></div>
           ${dupes.length ? `<div><strong>${dupes.length}</strong><span>said twice</span></div>` : ''}
         </div>
         ${notDue.length ? `<p class="warn-text">Not found in today's departures${s.dayList ? ' (due-out export or full-day list)' : ''}: ${notDue.join(', ')}. Check in Opera — wrong room number, or checking out a different day. ${notDue.length === 1 ? 'It is' : 'They are'} left out of the log; tap the tag to log it by hand.</p>` : ''}
         ${already.length ? `<p class="fine">Already logged: ${already.join(', ')}</p>` : ''}
-        <div class="tiles">${unique.map(r => CP.tile(r,
+        <div class="tiles cp-enter cp-enter-2">${unique.map(r => CP.tile(r,
           (notDue.includes(r) ? 's-alert' : s.co.reported[r] ? 's-co' : 's-fresh'),
           counts[r] > 1 ? '×' + counts[r] : (notDue.includes(r) ? 'Not due out' : CP.building(r)))).join('')}</div>
         ${CP.operaBox(unique)}
@@ -180,7 +180,7 @@
               <button class="btn" id="log-done" type="button">Mark all processed</button>
             </div>` : `<p class="empty">All reported checkouts are processed.</p>`}
           </div>
-          <div class="tiles">${all.map(r => CP.tile(r, s.co.processed[r] ? 's-done' : 's-co', s.co.processed[r] ? 'Processed' : 'Reported')).join('')}</div>
+          <div class="tiles cp-enter">${all.map(r => CP.tile(r, s.co.processed[r] ? 's-done' : 's-co', s.co.processed[r] ? 'Processed' : 'Reported')).join('')}</div>
         </div>` : `<p class="empty">Nothing logged yet. Read a screenshot and log the rooms, or mark rooms from the key rack.</p>`}`;
     const lc = $('log-copy'), ld = $('log-done');
     if (lc) lc.onclick = () => CP.copy(todo.join(','), `Copied ${CP.plural(todo.length, 'room')}`);

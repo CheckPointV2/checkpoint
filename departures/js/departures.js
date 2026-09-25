@@ -275,12 +275,12 @@
       ${progressBar(counts, rows.length)}
       <div class="chips" role="tablist">${filters.map(([k, l, n]) =>
         `<button class="chip ${rackFilter === k ? 'on' : ''}" data-rack="${k}" type="button">${l}<b>${n}</b></button>`).join('')}</div>
-      <div class="rack-cols">${CP.BUILDINGS.map(bd => bd.name).concat(g.Other ? ['Other'] : []).map(b => {
+      <div class="rack-cols">${CP.BUILDINGS.map(bd => bd.name).concat(g.Other ? ['Other'] : []).map((b, i) => {
         const list = g[b] || [];
         const all = rows.filter(r => CP.building(r.room) === b);
         const done = all.filter(r => { const st = CP.roomStatus(r, s); return st === 'co' || st === 'left'; }).length;
         const pct = all.length ? Math.round(done / all.length * 100) : 0;
-        return `<div class="rack-col">
+        return `<div class="rack-col cp-enter cp-enter-${Math.min(i, 4) + 1}">
           <h3 class="bld-name">${b}<span>${list.length}</span></h3>
           <div class="bld-progress" title="${done} of ${all.length} departures cleared"><i style="width:${pct}%"></i></div>
           <p class="bld-meta">${done} of ${all.length} cleared</p>

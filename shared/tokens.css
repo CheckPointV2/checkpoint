@@ -16,7 +16,7 @@
   --panel-2: #FBF9F5;
   --ink: #2B2118;
   --ink-soft: #6B5D4F;
-  --ink-faint: #9C8F7E;
+  --ink-faint: #796F62;
   --line: #E6DFD3;
   --bronze: #6B4E33;
   --bronze-deep: #4F3A26;
@@ -71,7 +71,7 @@ html[data-theme="dark"] {
   --panel-2: #241D15;
   --ink: #EEE7DC;
   --ink-soft: #AB9C8B;
-  --ink-faint: #7D7061;
+  --ink-faint: #8C8173;
   --line: #34291B;
   --bronze: #D2AC76;
   --bronze-deep: #E7C98F;
@@ -118,6 +118,14 @@ html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink);
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 
 ::selection { background: var(--gold-accent); color: #201810; }
+
+/* Scrollbars are the cheapest tell that a page was assembled rather than
+   built — theme them from the palette instead of leaving the OS default. */
+* { scrollbar-color: var(--line) transparent; scrollbar-width: thin; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); background-clip: padding-box; }
 
 a { color: inherit; }
 
@@ -379,6 +387,7 @@ html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
 .cp-enter-2 { animation-delay: .05s; }
 .cp-enter-3 { animation-delay: .08s; }
 .cp-enter-4 { animation-delay: .11s; }
+.cp-enter-5 { animation-delay: .14s; }
 
 /* ---------- expand/collapse ---------- */
 .cp-collapse {

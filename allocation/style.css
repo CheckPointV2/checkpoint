@@ -45,7 +45,7 @@
 #alloc-results:empty { margin-top: 0; }
 
 .alloc-warnings {
-  padding: 16px 18px; margin-bottom: 22px; border-left: 3px solid var(--warn);
+  padding: 16px 18px; margin-bottom: 22px; border-top: 3px solid var(--warn);
 }
 .alloc-warnings-head { font-weight: 700; font-size: 13.5px; color: var(--warn); margin-bottom: 6px; }
 .alloc-warnings ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
@@ -68,11 +68,12 @@
 .alloc-tier-heading.tier-medium { color: var(--warn); }
 
 .alloc-arrival {
-  border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius);
+  border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--radius);
   background: var(--panel); padding: 14px 16px; margin-bottom: 10px;
+  transition: border-color .15s ease;
 }
-.alloc-arrival.tier-high { border-left-color: var(--danger); }
-.alloc-arrival.tier-medium { border-left-color: var(--warn); }
+.alloc-arrival.tier-high { border-top-color: var(--danger); }
+.alloc-arrival.tier-medium { border-top-color: var(--warn); }
 .alloc-arrival-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .alloc-arrival-name { font-weight: 700; font-size: 14.5px; }
 .alloc-arrival-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }

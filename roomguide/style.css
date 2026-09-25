@@ -450,10 +450,20 @@ html, body  {
   border-radius: 12px;
   box-shadow: var(--shadow);
   z-index: 60;
-  display: none;
   overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px) scale(.98);
+  transform-origin: top left;
+  transition: opacity .15s ease, transform .15s cubic-bezier(.16, 1, .3, 1), visibility .15s;
 }
- #view-roomguide .fdrop.open .fdrop-panel { display: block; }
+ #view-roomguide .fdrop.open .fdrop-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
  #view-roomguide .fdrop-search-wrap {
   padding: 10px;
   border-bottom: 1px solid var(--line);
