@@ -215,78 +215,6 @@
   }
 
   /* ============================================================
-     Command palette
-     ============================================================ */
-  let paletteIndex = [];
-  function buildStaticIndex() {
-    paletteIndex = [
-      { label: "Room Guide", tag: "page", route: "#/roomguide" },
-      { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
-      { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },
-      { label: "Allocation Copilot", tag: "page", route: "#/allocation" }
-    ];
-  }
-  buildStaticIndex();
-
-  async function ensureRoomIndex() {
-    await ensureRoomDataLoaded();
-  }
-
-  function roomResults(query) {
-    if (!window.RBAB_DATA) return [];
-    const q = query.toUpperCase();
-    const out = [];
-    for (const bkey of RBAB_DATA.buildingOrder) {
-      const rooms = RBAB_DATA.buildings[bkey].rooms;
-      for (const num in rooms) {
-        if (num.startsWith(query)) out.push({ label: "Room " + num, tag: RBAB_DATA.buildings[bkey].label, route: "#/roomguide", room: { bkey, num } });
-        if (out.length > 8) return out;
-      }
-    }
-    return out;
-  }
-
-  function openPalette() {
-    $("#paletteOverlay").classList.add("show");
-    $("#paletteInput").value = "";
-    $("#paletteInput").focus();
-    renderPaletteResults("");
-    ensureRoomIndex();
-  }
-  function closePalette() { $("#paletteOverlay").classList.remove("show"); }
-
-  function renderPaletteResults(query) {
-    const q = query.trim();
-    let results;
-    if (!q) {
-      results = paletteIndex;
-    } else {
-      results = paletteIndex.filter(r => r.label.toLowerCase().includes(q.toLowerCase()));
-      if (/^\d+$/.test(q)) results = results.concat(roomResults(q));
-    }
-    const box = $("#paletteResults");
-    if (!results.length) { box.innerHTML = '<div class="cp-palette-empty">No matches</div>'; return; }
-    box.innerHTML = results.slice(0, 12).map((r, i) =>
-      `<div class="cp-palette-item${i === 0 ? " active" : ""}" role="option" aria-selected="${i === 0}" id="cp-palette-opt-${i}" data-i="${i}"><span>${r.label}</span><span class="cp-palette-tag">${r.tag}</span></div>`
-    ).join("");
-    box.dataset.results = JSON.stringify(results.slice(0, 12));
-    $$(".cp-palette-item", box).forEach(el => el.addEventListener("click", () => selectPaletteItem(+el.dataset.i)));
-  }
-
-  async function selectPaletteItem(i) {
-    const results = JSON.parse($("#paletteResults").dataset.results || "[]");
-    const r = results[i];
-    if (!r) return;
-    closePalette();
-    pendingSub = r.sub || null;
-    location.hash = r.route;
-    if (r.room) {
-      await ensureMounted("roomguide");
-      setTimeout(() => { if (window.CPRoomGuideGoTo) window.CPRoomGuideGoTo(r.room.bkey, r.room.num); }, 60);
-    }
-  }
-
-  /* ============================================================
      Boot
      ============================================================ */
   function bindDock() {
@@ -309,35 +237,6 @@
     $("#lockBtn").addEventListener("click", window.CPLock);
     $("#themeBtn").addEventListener("click", window.CPSetTheme);
     updateThemeIcon(getTheme());
-    $("#printBtn").addEventListener("click", () => window.print());
-
-    $("#searchTrigger").addEventListener("click", openPalette);
-    $("#paletteOverlay").addEventListener("click", (e) => { if (e.target.id === "paletteOverlay") closePalette(); });
-    $("#paletteInput").addEventListener("input", (e) => renderPaletteResults(e.target.value));
-    function moveActive(delta) {
-      const items = $$(".cp-palette-item");
-      if (!items.length) return;
-      const curIdx = items.findIndex(el => el.classList.contains("active"));
-      const nextIdx = (curIdx + delta + items.length) % items.length;
-      items.forEach(el => { el.classList.remove("active"); el.setAttribute("aria-selected", "false"); });
-      items[nextIdx].classList.add("active");
-      items[nextIdx].setAttribute("aria-selected", "true");
-      items[nextIdx].scrollIntoView({ block: "nearest" });
-      $("#paletteInput").setAttribute("aria-activedescendant", items[nextIdx].id);
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
-      else if (e.key === "Escape") closePalette();
-      else if ($("#paletteOverlay").classList.contains("show")) {
-        if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
-        else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
-        else if (e.key === "Enter") {
-          const active = $(".cp-palette-item.active") || $(".cp-palette-item");
-          if (active) selectPaletteItem(+active.dataset.i);
-        }
-      }
-    });
 
     // Service worker is paused while we're actively iterating — it was causing
     // stale code to stick even after cache clears. Self-heal anyone who already

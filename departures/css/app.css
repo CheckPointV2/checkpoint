@@ -277,21 +277,21 @@ input[type=checkbox] { accent-color: var(--brass); width: 16px; height: 16px; }
   --tone: var(--muted); --tone-soft: var(--surface-2);
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-  width: 84px; min-height: 76px; padding: 18px 6px 8px;
+  width: 60px; min-height: 54px; padding: 12px 4px 6px;
   box-shadow: 0 1px 0 rgba(15, 40, 48, .05);
   border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line));
-  border-radius: 12px 12px 10px 10px;
+  border-radius: 10px 10px 8px 8px;
   background: var(--tone-soft);
   transition: transform .08s, box-shadow .12s;
 }
 .tile::before { /* the punched hole */
-  content: ""; position: absolute; top: 7px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px;
+  content: ""; position: absolute; top: 5px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px;
   border-radius: 50%; background: var(--surface); box-shadow: inset 0 1px 1px rgba(0, 0, 0, .18);
   border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--line));
 }
 .tile:hover { transform: translateY(-2px); box-shadow: 0 6px 14px -8px rgba(15, 40, 48, .5); }
-.tile .num { font: 700 28px/1 var(--display); color: var(--tone); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
-.tile .sub { font-size: 10.5px; line-height: 1.2; color: var(--muted); margin-top: 4px; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .num { font: 700 19px/1 var(--display); color: var(--tone); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.tile .sub { font-size: 8.5px; line-height: 1.2; color: var(--muted); margin-top: 3px; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile.vip::after {
   content: ""; position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 2px;
   background: var(--brass); transform: rotate(45deg);

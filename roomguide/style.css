@@ -144,7 +144,14 @@ header.topbar {
   background: var(--panel);
   border-bottom: 1px solid var(--line);
   position: sticky;
-  top: 78px;
+  /* Not 78px: that was clearance for a second fixed bar that doesn't
+     exist here. .app already starts below the shell's own floating dock
+     (via #viewRoot's layout), so the topbar only needs to stick to the
+     top of its own scroll container — 0, not another 78px on top of
+     that. The old value pushed the topbar down an extra 78px (the gap
+     under the shell's dock) while the plan/detail columns below it laid
+     out as if it hadn't moved, so the columns' top 78px sat under it. */
+  top: 0;
   z-index: 40;
   box-shadow: var(--shadow-sm);
 }
