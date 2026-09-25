@@ -145,29 +145,17 @@
   }
   CP.openPalette = openPalette;
 
-  // ---------- sidebar counts ----------
-  function renderNav() {
-    const s = CP.state();
-    const set = (k, n, hot) => {
-      const el = document.querySelector(`[data-count="${k}"]`);
-      if (!el) return;
-      el.textContent = n || '';
-      el.classList.toggle('hot', !!hot);
-    };
-    set('departures', s.dueouts ? CP.dep.checkRooms(s).length : 0, true);
-    set('checkouts', CP.unprocessedCheckouts().length, false);
-    set('daylist', s.dayList ? s.dayList.rooms.length : 0, false);
-  }
-
   // ---------- clock + render loop ----------
+  // Rail badges (the count on Departures/Arrivals/Reports in the shell nav)
+  // are shared/app.js's job now — it owns the one visible nav and reads
+  // both Departures and Allocation, not just this bundle's own state.
   function renderClock() {
     const d = new Date();
     $('clock').innerHTML = `<span class="clock-time">${CP.nowHHMM()}</span><span class="clock-date">${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>`;
-    $('theme-btn').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Day mode' : 'Night mode';
   }
 
   function renderAll() {
-    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock, renderNav]
+    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock]
       .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
   }
 
@@ -213,7 +201,7 @@
     const typing = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 
     document.addEventListener('keydown', e => {
-      if (window.CPActiveTool && window.CPActiveTool !== 'departures') return;
+      if (window.CPActiveMount && window.CPActiveMount !== 'departures') return;
       if (typing(document.activeElement) || dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === '/') { e.preventDefault(); openPalette(); return; }
       const n = parseInt(e.key, 10);

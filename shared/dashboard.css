@@ -1,0 +1,70 @@
+/* Dashboard — the command-center landing screen. Priority order, not a
+   stat-card grid: four lanes (Urgent/Today/Watch/Clear), each an ordered
+   list of scannable rows, not a wall of equal-weight cards. */
+#view-dashboard .dash-wrap { padding: 32px 40px 56px; max-width: 1040px; margin: 0 auto; }
+
+#view-dashboard .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+#view-dashboard .dash-head h1 { font-size: 32px; font-weight: 600; margin: 0; letter-spacing: -.005em; }
+#view-dashboard .dash-head-sub { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+#view-dashboard .dash-clock { text-align: right; line-height: 1; flex-shrink: 0; }
+#view-dashboard .dash-clock-time { display: block; font: 700 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+#view-dashboard .dash-clock-date { display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+#view-dashboard .dash-lanes { display: flex; flex-direction: column; gap: 20px; }
+
+#view-dashboard .dash-lane {
+  background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--line);
+  border-radius: var(--radius); padding: 18px 20px 20px;
+}
+#view-dashboard .dash-lane.tone-danger { border-top-color: var(--danger); }
+#view-dashboard .dash-lane.tone-warn { border-top-color: var(--warn); }
+#view-dashboard .dash-lane.tone-ok { border-top-color: var(--ok); }
+#view-dashboard .dash-lane.tone-ink { border-top-color: var(--bronze); }
+
+#view-dashboard .dash-lane-head { display: flex; align-items: baseline; gap: 10px; }
+#view-dashboard .dash-lane-head h2 { font: 600 17px/1 var(--font-display); margin: 0; }
+#view-dashboard .dash-lane-count {
+  font: 700 12px/1 var(--font-body); font-variant-numeric: tabular-nums;
+  background: var(--panel-2); color: var(--ink-faint); border-radius: 999px; padding: 3px 9px;
+}
+#view-dashboard .dash-lane.tone-danger .dash-lane-count:not(:empty) { background: var(--danger-soft); color: var(--danger); }
+#view-dashboard .dash-lane.tone-warn .dash-lane-count:not(:empty) { background: var(--warn-soft); color: var(--warn); }
+#view-dashboard .dash-lane-sub { margin: 3px 0 14px; font-size: 12.5px; color: var(--ink-faint); }
+
+#view-dashboard .dash-lane-list { display: flex; flex-direction: column; gap: 6px; }
+#view-dashboard .dash-lane-empty { margin: 0; padding: 10px 2px; font-size: 13.5px; color: var(--ink-faint); }
+
+#view-dashboard .dash-item {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border: 1px solid var(--line); background: var(--panel-2);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  text-align: left; cursor: pointer;
+  transition: border-color .13s ease, transform .1s ease, background .13s ease;
+}
+#view-dashboard .dash-item:hover { border-color: var(--bronze); transform: translateX(2px); }
+#view-dashboard .dash-item-icon {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--panel); color: var(--ink-faint);
+}
+#view-dashboard .dash-item-icon svg { width: 15px; height: 15px; }
+#view-dashboard .dash-item.tone-danger .dash-item-icon { background: var(--danger-soft); color: var(--danger); }
+#view-dashboard .dash-item.tone-warn .dash-item-icon { background: var(--warn-soft); color: var(--warn); }
+#view-dashboard .dash-item.tone-ink .dash-item-icon { background: var(--bronze-soft); color: var(--bronze-deep); }
+#view-dashboard .dash-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#view-dashboard .dash-item-title { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view-dashboard .dash-item-meta { font-size: 12px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view-dashboard .dash-item-arrow { flex-shrink: 0; color: var(--ink-faint); font-size: 14px; opacity: 0; transition: opacity .13s ease, transform .13s ease; }
+#view-dashboard .dash-item:hover .dash-item-arrow { opacity: 1; transform: translateX(2px); }
+
+#view-dashboard .dash-clear-row { display: flex; gap: 32px; }
+#view-dashboard .dash-clear-stat { display: flex; flex-direction: column; }
+#view-dashboard .dash-clear-stat strong { font: 700 30px/1 var(--font-display); color: var(--ok); font-variant-numeric: tabular-nums; }
+#view-dashboard .dash-clear-stat span { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+@media (max-width: 640px) {
+  #view-dashboard .dash-wrap { padding: 22px 18px 40px; }
+  #view-dashboard .dash-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  #view-dashboard .dash-clock { text-align: left; }
+  #view-dashboard .dash-head h1 { font-size: 26px; }
+}

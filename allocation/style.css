@@ -1,4 +1,4 @@
-.alloc-wrap { padding: 20px 28px 40px; max-width: 1000px; }
+.alloc-wrap { padding: 20px 28px 48px; max-width: 1400px; }
 .alloc-banner {
   padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: var(--ink-soft); line-height: 1.5;
 }
@@ -55,28 +55,6 @@
 .alloc-section-meta { font-size: 12.5px; color: var(--ink-soft); }
 .alloc-empty { color: var(--ink-soft); font-size: 13.5px; margin: 10px 0 0; }
 
-.alloc-tier-group { margin-top: 22px; }
-.alloc-tier-heading {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-display); font-size: 15px; font-weight: 600; margin: 0 0 10px;
-}
-.alloc-tier-heading span {
-  font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--ink-faint);
-  background: var(--panel-2); border-radius: 999px; padding: 1px 8px;
-}
-.alloc-tier-heading.tier-high { color: var(--danger); }
-.alloc-tier-heading.tier-medium { color: var(--warn); }
-
-.alloc-arrival {
-  border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: var(--radius);
-  background: var(--panel); padding: 14px 16px; margin-bottom: 10px;
-  transition: border-color .15s ease;
-}
-.alloc-arrival.tier-high { border-top-color: var(--danger); }
-.alloc-arrival.tier-medium { border-top-color: var(--warn); }
-.alloc-arrival-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.alloc-arrival-name { font-weight: 700; font-size: 14.5px; }
-.alloc-arrival-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
 .alloc-tier-pill {
   flex-shrink: 0; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 999px; white-space: nowrap;
@@ -91,14 +69,6 @@
 }
 .alloc-tier-pill.tier-medium { background: var(--warn-soft); color: var(--warn); }
 .alloc-tier-pill.tier-normal { background: var(--panel-2); color: var(--ink-faint); }
-
-/* the card header doubles as a toggle button in the collapsed "all arrivals"
-   list, and as a plain non-interactive heading on always-open flagged cards
-   — same layout either way, so the button reset just makes it look the same */
-button.alloc-arrival-head {
-  width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer;
-}
-button.alloc-arrival-head:hover .alloc-arrival-name { color: var(--bronze); }
 
 .alloc-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .alloc-reason-chip {
@@ -146,7 +116,16 @@ button.alloc-arrival-head:hover .alloc-arrival-name { color: var(--bronze); }
 }
 .alloc-compare-form input:focus { outline: none; border-color: var(--bronze); }
 .alloc-compare-result { margin-top: 12px; }
-.alloc-compare-checks { list-style: none; margin: 0 0 10px; padding: 0; font-size: 13.5px; line-height: 1.9; }
+.alloc-compare-checks { list-style: none; margin: 0 0 10px; padding: 0; font-size: 13.5px; line-height: 1.4; display: flex; flex-direction: column; gap: 8px; }
+.alloc-compare-checks li { display: flex; align-items: center; gap: 9px; }
+.alloc-compare-checks .check-icon {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.alloc-compare-checks .check-icon svg { width: 11px; height: 11px; }
+.alloc-compare-checks li.check-pass .check-icon { background: var(--ok-soft); color: var(--ok); }
+.alloc-compare-checks li.check-warn .check-icon { background: var(--warn-soft); color: var(--warn); }
+.alloc-compare-checks li.check-fail .check-icon { background: var(--danger-soft); color: var(--danger); }
 .alloc-verdict {
   display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
   padding: 4px 12px; border-radius: 999px;
@@ -173,21 +152,88 @@ button.alloc-arrival-head:hover .alloc-arrival-name { color: var(--bronze); }
 .alloc-group-conn.ok { color: var(--ok); }
 .alloc-group-conn.warn { color: var(--warn); }
 
-/* ---------- all-arrivals roster ---------- */
-.alloc-all-arrivals { margin-top: 18px; }
-.alloc-all-arrivals summary {
-  cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-soft); padding: 4px 0;
+/* ============================================================
+   Arrivals — scan list + detail panel, side by side. Context (the
+   list), details and action (the brief) stay visible together; opening
+   one arrival's brief never navigates away from the list of the rest.
+   ============================================================ */
+.arr-split { display: grid; grid-template-columns: minmax(340px, 420px) 1fr; gap: 20px; align-items: start; margin-top: 24px; }
+.arr-list-col { position: sticky; top: 20px; }
+.arr-list-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.arr-list-head h2 { font: 600 17px/1 var(--font-display); margin: 0; }
+
+.arr-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.arr-filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-soft);
+  border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 500;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
-.alloc-all-arrivals summary:hover { color: var(--ink); }
-.alloc-all-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.alloc-all-list .alloc-arrival { padding: 12px 14px; }
+.arr-filter-chip b { font: 700 11px/1 var(--font-body); color: var(--ink-faint); }
+.arr-filter-chip:hover { border-color: var(--bronze); }
+.arr-filter-chip.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.arr-filter-chip.on b { color: var(--bronze-soft); }
+
+.arr-search {
+  width: 100%; margin-bottom: 12px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel);
+  font: inherit; font-size: 13.5px; color: var(--ink);
+}
+.arr-search:focus { outline: none; border-color: var(--bronze); }
+
+.arr-list { display: flex; flex-direction: column; gap: 6px; max-height: calc(100vh - 260px); overflow-y: auto; padding-right: 2px; }
+
+.arr-row {
+  position: relative;
+  display: grid; grid-template-columns: 3px 1fr auto; grid-template-areas: "tier who status" "tier meta status" "tier important important";
+  column-gap: 12px; row-gap: 3px;
+  width: 100%; text-align: left;
+  border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius-sm);
+  padding: 10px 12px 10px 0; cursor: pointer;
+  transition: border-color .13s ease, background .13s ease;
+}
+.arr-row:hover { border-color: var(--bronze); }
+.arr-row.is-selected { border-color: var(--bronze); background: var(--bronze-soft); }
+.arr-row-tier { grid-area: tier; border-radius: 3px 0 0 3px; background: var(--line); }
+.arr-row-tier.tier-high { background: var(--danger); }
+.arr-row-tier.tier-medium { background: var(--warn); }
+.arr-row-who { grid-area: who; display: flex; flex-direction: column; padding-left: 12px; align-self: start; }
+.arr-row-name { font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arr-row-sub { font-size: 11.5px; color: var(--ink-faint); }
+.arr-row-meta { grid-area: meta; padding-left: 12px; font-size: 11.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 5px; }
+.arr-row-dot { color: var(--ink-faint); }
+.arr-row-important { grid-area: important; padding-left: 12px; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.arr-row-important:empty { display: none; margin: 0; }
+.arr-tag {
+  font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--panel-2); color: var(--ink-soft); border: 1px solid var(--line);
+}
+.arr-tag.hard { background: var(--bronze-soft); color: var(--bronze-deep); border-color: transparent; }
+.arr-status-pill {
+  grid-area: status; align-self: start;
+  font-size: 10px; font-weight: 700; letter-spacing: .01em; white-space: nowrap;
+  padding: 3px 9px; border-radius: 999px;
+}
+.arr-status-pill.st-ready { background: var(--ok-soft); color: var(--ok); }
+.arr-status-pill.st-not-ready { background: var(--warn-soft); color: var(--warn); }
+.arr-status-pill.st-unassigned { background: var(--panel-2); color: var(--ink-faint); }
+.arr-status-pill.st-unknown { background: var(--panel-2); color: var(--ink-faint); }
+
+.arr-detail-col { min-height: 320px; }
+.arr-detail-col .alloc-brief { padding: 4px 2px; }
+.arr-detail-col .cp-state { padding-top: 60px; }
+
+@media (max-width: 1100px) {
+  .arr-split { grid-template-columns: 1fr; }
+  .arr-list-col { position: static; }
+  .arr-list { max-height: none; }
+}
 
 @media (max-width: 900px) {
   .alloc-slots { grid-template-columns: 1fr; }
   .alloc-wrap { padding: 16px 20px 30px; }
   .alloc-candidate { grid-template-columns: 44px 1fr; }
   .alloc-candidate-status { grid-column: 1 / -1; justify-self: start; }
-  .alloc-arrival-head { flex-direction: column; }
   .alloc-brief-row { flex-direction: column; gap: 14px; }
   .alloc-compare-form { max-width: none; flex-direction: column; }
 }

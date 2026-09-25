@@ -19,6 +19,38 @@
   };
   let analysis = null; // set by runAnalysis() once a Confirmation export has been extracted
 
+  // ---------- Arrivals list: filters + search ----------
+  // Independent toggles, AND-combined — "VIP" + "Connecting" shows arrivals
+  // that are both, matching Room Guide's own filter-chip convention so the
+  // app has one filtering idiom, not two.
+  const ARR_FILTER_DEFS = [
+    { key: "high", label: "High priority", test: (it) => it.tier === "high" },
+    { key: "vip", label: "VIP", test: (it) => !!it.record.vip },
+    { key: "needsRoom", label: "Needs allocation", test: (it) => !!it.record.needsRoom },
+    { key: "special", label: "Special request", test: (it) => it.reasons.some(r => r.id === "occasion" || r.id === "view-request" || r.id === "floor-preference") },
+    { key: "connecting", label: "Connecting", test: (it) => it.reasons.some(r => r.id === "connecting-requested") },
+    { key: "early", label: "Early arrival", test: (it) => it.reasons.some(r => r.id === "early-arrival") },
+    { key: "roomReady", label: "Room ready", test: (it) => arrivalRoomState(it.record) === "ready" },
+    { key: "roomNotReady", label: "Room not ready", test: (it) => arrivalRoomState(it.record) === "not-ready" }
+  ];
+  let arrFilters = new Set();
+  let arrSearch = "";
+
+  // Whether an arrival's already-assigned room is actually free per today's
+  // live due-out signal from Departures — "ready" only when Departures has
+  // positive confirmation, never assumed from silence.
+  function arrivalRoomState(record) {
+    if (!record.room) return "unassigned";
+    const CP = window.CP;
+    if (!CP || !CP.state) return "unknown";
+    const s = CP.state();
+    if (!s.dueouts) return "unknown";
+    const row = CP.rowByRoom(record.room, s);
+    if (!row) return "unknown";
+    const st = CP.roomStatus(row, s);
+    return (st === "co" || st === "left") ? "ready" : "not-ready";
+  }
+
   let libLoadPromise = {};
   function loadLibOnce(key, src) {
     if (!libLoadPromise[key]) {
@@ -202,16 +234,28 @@
   let openIdx = null;
   const compareState = {}; // idx -> { input: string, result: {checks,verdict,reason} | null }
 
+  // Dashboard and Arrivals both need to read the current analysis before
+  // (or without ever) mounting this module's own UI — e.g. a shift that
+  // opens on Dashboard first. Exposed read-only-by-convention: nothing
+  // outside this file writes `analysis`, this just lets other screens see
+  // the same object module.js already holds.
+  const analysisListeners = [];
+  function notifyAnalysisChange() { analysisListeners.forEach(fn => { try { fn(analysis); } catch (e) { console.error(e); } }); }
+
   function runAnalysis() {
+    analysis = computeAnalysis();
+    openIdx = null;
+    notifyAnalysisChange();
+  }
+
+  function computeAnalysis() {
     const confResult = slots.confirmation.result;
     if (!confResult || confResult === "loading" || confResult.error || confResult.kind !== "rows") {
-      analysis = null;
-      return;
+      return null;
     }
     const normalized = window.CPAllocParse.normalizeArrivals(confResult.rows);
     if (!normalized.length) {
-      analysis = { items: [], warnings: ["No arrival rows were found in the Confirmation export — check it's the right file."], totalArrivals: 0, groups: [], ctx: null };
-      return;
+      return { items: [], warnings: ["No arrival rows were found in the Confirmation export — check it's the right file."], totalArrivals: 0, groups: [], ctx: null };
     }
     const { valid, warnings } = window.CPAllocParse.validateArrivals(normalized);
 
@@ -235,8 +279,7 @@
       return Object.assign({}, g, { connectivity });
     });
 
-    analysis = { items, warnings, totalArrivals: valid.length, groups, ctx };
-    openIdx = null;
+    return { items, warnings, totalArrivals: valid.length, groups, ctx };
   }
 
   const STATUS_LABEL = { free: "Free now", check: "Checking out", later: "Departs later", ext: "Extension", unknown: "Not in due-outs" };
@@ -277,11 +320,18 @@
   // ---------- Allocation Brief + Candidate Room Comparison ----------
   const TIER_LABEL = { high: "High priority", medium: "Medium priority" };
   const VERDICT_LABEL = { MATCH: "Match", COMPROMISE: "Compromise", CONFLICT: "Conflict", UNKNOWN: "Unknown" };
-  const CHECK_ICON = { pass: "✅", warn: "⚠️", fail: "❌" };
+  // A drawn icon per check status, not emoji — same stroke weight and size
+  // as every other icon in the app, so the comparison reads as part of the
+  // product rather than a different rendering layer bolted on top of it.
+  const CHECK_ICON_SVG = {
+    pass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    fail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+  };
 
   function renderCompareResult(result) {
     return `<div class="alloc-compare-result">
-      ${result.checks.length ? `<ul class="alloc-compare-checks">${result.checks.map(c => `<li>${CHECK_ICON[c.status]} ${esc(c.label)}</li>`).join("")}</ul>` : ""}
+      ${result.checks.length ? `<ul class="alloc-compare-checks">${result.checks.map(c => `<li class="check-${c.status}"><span class="check-icon">${CHECK_ICON_SVG[c.status]}</span>${esc(c.label)}</li>`).join("")}</ul>` : ""}
       <div class="alloc-verdict verdict-${result.verdict.toLowerCase()}">${VERDICT_LABEL[result.verdict]}</div>
       <p class="alloc-verdict-reason">${esc(result.reason)}</p>
     </div>`;
@@ -350,38 +400,49 @@
     </div>`;
   }
 
-  function renderArrivalCard(item, opts) {
-    opts = opts || {};
-    const { idx, record, tier } = item;
-    const isOpen = opts.alwaysOpen || openIdx === idx;
-    const roomLabel = record.room ? `Room ${esc(record.room)}` : "No room assigned yet";
-    const headTag = opts.alwaysOpen ? "div" : "button";
-    const headAttrs = opts.alwaysOpen ? "" : `type="button" data-brief-toggle="${idx}" aria-expanded="${isOpen}"`;
-    const enterClass = Number.isInteger(opts.enterDelay) ? ` cp-enter cp-enter-${Math.min(opts.enterDelay, 4) + 1}` : "";
-    return `<div class="alloc-arrival tier-${tier || "normal"}${enterClass}">
-      <${headTag} class="alloc-arrival-head" ${headAttrs}>
-        <div>
-          <div class="alloc-arrival-name">${esc(record.name || "Unnamed guest")}</div>
-          <div class="alloc-arrival-meta">${roomLabel}${record.roomType ? " · " + esc(record.roomType) : ""}${record.arrival ? " · Arriving " + esc(record.arrival) : ""}${record.conf ? " · Conf " + esc(record.conf) : ""}</div>
-        </div>
-        <span class="alloc-tier-pill tier-${tier || "normal"}">${TIER_LABEL[tier] || "Normal"}</span>
-      </${headTag}>
-      ${isOpen ? renderBrief(item) : ""}
-    </div>`;
+  // ---------- Arrivals: scannable list row ----------
+  const ROOM_STATE_LABEL = { unassigned: "No room", unknown: "Not checked", ready: "Room ready", "not-ready": "Not ready" };
+
+  function matchesArrFilters(item) {
+    for (const key of arrFilters) {
+      const def = ARR_FILTER_DEFS.find(d => d.key === key);
+      if (def && !def.test(item)) return false;
+    }
+    if (arrSearch) {
+      const q = arrSearch.toLowerCase();
+      const hay = [item.record.name, item.record.room, item.record.conf, item.record.roomType].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   }
 
-  function renderTierGroup(label, tier, items) {
-    return `<div class="alloc-tier-group">
-      <h3 class="alloc-tier-heading tier-${tier}">${label}<span>${items.length}</span></h3>
-      ${items.map((item, i) => renderArrivalCard(item, { alwaysOpen: true, enterDelay: i })).join("")}
-    </div>`;
+  function renderArrRow(item, i) {
+    const { idx, record, tier, reasons } = item;
+    const roomState = arrivalRoomState(record);
+    const important = reasons.slice(0, 2);
+    const isSelected = openIdx === idx;
+    const enterClass = Number.isInteger(i) ? ` cp-enter cp-enter-${Math.min(i, 4) + 1}` : "";
+    const when = record.eta || record.arrival || "No time given";
+    const what = record.roomType || "No room type";
+    return `<button class="arr-row${isSelected ? " is-selected" : ""}${enterClass}" type="button" data-arr-open="${idx}">
+      <span class="arr-row-tier tier-${tier || "normal"}" aria-hidden="true"></span>
+      <span class="arr-row-who">
+        <span class="arr-row-name">${esc(record.name || "Unnamed guest")}</span>
+        <span class="arr-row-sub">${record.conf ? "Conf " + esc(record.conf) : (record.room ? "Room " + esc(record.room) : "No confirmation number")}</span>
+      </span>
+      <span class="arr-status-pill st-${roomState}">${ROOM_STATE_LABEL[roomState]}</span>
+      <span class="arr-row-meta"><span class="arr-row-when">${esc(when)}</span><span class="arr-row-dot">·</span><span class="arr-row-what">${esc(what)}</span></span>
+      <span class="arr-row-important">${important.length ? important.map(r => `<span class="arr-tag${r.hard ? " hard" : ""}">${esc(r.text)}</span>`).join("") : ""}</span>
+    </button>`;
   }
 
-  function renderAllArrivals(items) {
-    return `<details class="alloc-all-arrivals">
-      <summary>All ${plural(items.length, "arrival")} in this import</summary>
-      <div class="alloc-all-list">${items.map(item => renderArrivalCard(item, {})).join("")}</div>
-    </details>`;
+  function renderArrFilterBar(items) {
+    const counts = {};
+    ARR_FILTER_DEFS.forEach(d => { counts[d.key] = items.filter(d.test).length; });
+    return `<div class="arr-filters" role="group" aria-label="Filter arrivals">
+      <button class="arr-filter-chip ${arrFilters.size ? "" : "on"}" type="button" data-arr-filter-all>All<b>${items.length}</b></button>
+      ${ARR_FILTER_DEFS.map(d => `<button class="arr-filter-chip ${arrFilters.has(d.key) ? "on" : ""}" type="button" data-arr-filter="${d.key}">${d.label}<b>${counts[d.key]}</b></button>`).join("")}
+    </div>`;
   }
 
   // ---------- Group / linked reservation intelligence ----------
@@ -425,14 +486,20 @@
     ${groups.map((g, i) => renderGroup(g, i)).join("")}`;
   }
 
+  // Context + details + action together: the list and the selected
+  // arrival's brief sit side by side (stacked on narrow screens), never a
+  // navigate-away-and-back round trip to compare two arrivals.
   function renderAnalysis() {
     const el = $("#alloc-results", container);
     if (!el) return;
     if (!analysis) { el.innerHTML = ""; return; }
     const { items, warnings, totalArrivals, groups } = analysis;
-    const high = items.filter(i => i.tier === "high");
-    const medium = items.filter(i => i.tier === "medium");
-    const flaggedCount = high.length + medium.length;
+    const sorted = items.slice().sort((a, b) => {
+      const rank = { high: 0, medium: 1 };
+      return (rank[a.tier] ?? 2) - (rank[b.tier] ?? 2) || String(a.record.name).localeCompare(String(b.record.name));
+    });
+    const filtered = sorted.filter(matchesArrFilters);
+    const selected = items.find(i => i.idx === openIdx) || null;
 
     el.innerHTML = `
       ${warnings.length ? `<div class="alloc-warnings cp-card">
@@ -441,14 +508,24 @@
       </div>` : ""}
       ${totalArrivals ? `
       ${renderGroups(groups)}
-      <div class="alloc-section-head">
-        <h2>Arrivals needing attention</h2>
-        <span class="alloc-section-meta">${flaggedCount} of ${plural(totalArrivals, "arrival")} flagged</span>
+      <div class="arr-split">
+        <div class="arr-list-col">
+          <div class="arr-list-head">
+            <h2>Arrivals</h2>
+            <span class="alloc-section-meta">${plural(totalArrivals, "arrival")}</span>
+          </div>
+          ${renderArrFilterBar(items)}
+          <input class="arr-search" type="search" placeholder="Search guest, room, confirmation" value="${esc(arrSearch)}" data-arr-search>
+          <div class="arr-list" role="list">
+            ${filtered.length ? filtered.map(renderArrRow).join("") : `<p class="alloc-empty">No arrivals match these filters.</p>`}
+          </div>
+        </div>
+        <div class="arr-detail-col">
+          ${selected ? renderBrief(selected) : `<div class="cp-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <div class="cp-state-title">Select an arrival</div>
+            <div class="cp-state-sub">Its full brief — requirements, priority, candidate rooms and comparison — opens here.</div></div>`}
+        </div>
       </div>
-      ${flaggedCount ? "" : `<p class="alloc-empty">No arrivals matched a priority rule in this import — nothing here needs special attention beyond the normal check-in flow.</p>`}
-      ${high.length ? renderTierGroup("High priority", "high", high) : ""}
-      ${medium.length ? renderTierGroup("Medium priority", "medium", medium) : ""}
-      ${items.length > flaggedCount ? renderAllArrivals(items) : ""}
       ` : ""}
     `;
   }
@@ -499,10 +576,19 @@
     // discarded and recreated on every render.
     const results = $("#alloc-results", container);
     results.addEventListener("click", e => {
-      const toggle = e.target.closest("[data-brief-toggle]");
-      if (toggle) {
-        const idx = +toggle.dataset.briefToggle;
+      const row = e.target.closest("[data-arr-open]");
+      if (row) {
+        const idx = +row.dataset.arrOpen;
         openIdx = openIdx === idx ? null : idx;
+        renderAnalysis();
+        return;
+      }
+      const allBtn = e.target.closest("[data-arr-filter-all]");
+      if (allBtn) { arrFilters.clear(); renderAnalysis(); return; }
+      const filterBtn = e.target.closest("[data-arr-filter]");
+      if (filterBtn) {
+        const key = filterBtn.dataset.arrFilter;
+        if (arrFilters.has(key)) arrFilters.delete(key); else arrFilters.add(key);
         renderAnalysis();
         return;
       }
@@ -510,6 +596,15 @@
       if (compareBtn) { runCompare(+compareBtn.dataset.compareBtn); return; }
     });
     results.addEventListener("input", e => {
+      const search = e.target.closest("[data-arr-search]");
+      if (search) {
+        arrSearch = search.value;
+        const cursor = search.selectionStart;
+        renderAnalysis();
+        const fresh = $("[data-arr-search]", results);
+        if (fresh) { fresh.focus(); fresh.setSelectionRange(cursor, cursor); }
+        return;
+      }
       const input = e.target.closest("[data-compare-input]");
       if (!input) return;
       const idx = +input.dataset.compareInput;
@@ -520,5 +615,13 @@
       const input = e.target.closest("[data-compare-input]");
       if (input && e.key === "Enter") { e.preventDefault(); runCompare(+input.dataset.compareInput); }
     });
+  };
+
+  // Read-only view onto this module's analysis, for Dashboard and any other
+  // screen that needs to know what's flagged without mounting the full
+  // upload-and-review UI itself.
+  window.CPAlloc = {
+    getAnalysis: () => analysis,
+    onChange: (fn) => { analysisListeners.push(fn); }
   };
 })();

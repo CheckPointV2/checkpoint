@@ -1,0 +1,15 @@
+#view-settings .set-wrap { padding: 32px 40px 56px; max-width: 680px; margin: 0 auto; }
+#view-settings .set-head h1 { font-size: 28px; font-weight: 600; margin: 0; }
+#view-settings .set-head-sub { margin: 4px 0 28px; color: var(--ink-soft); font-size: 14px; }
+#view-settings .set-section { padding: 20px 22px; margin-bottom: 16px; }
+#view-settings .set-section h2 { font: 600 15px/1 var(--font-display); margin: 0 0 14px; }
+#view-settings .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#view-settings .set-row-label { font-size: 14px; font-weight: 600; }
+#view-settings .set-row-sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; max-width: 40ch; }
+#view-settings .set-fine { font-size: 12px; color: var(--ink-faint); margin: 14px 0 0; line-height: 1.6; }
+#view-settings .set-section:last-child .set-fine { margin: 0; }
+
+@media (max-width: 560px) {
+  #view-settings .set-wrap { padding: 22px 18px 40px; }
+  #view-settings .set-row { flex-direction: column; align-items: flex-start; }
+}

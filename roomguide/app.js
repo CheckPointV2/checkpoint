@@ -888,7 +888,7 @@ function setupSearch() {
 /* ================= Keyboard shortcuts ================= */
 function setupShortcuts() {
   document.addEventListener("keydown", (e) => {
-    if (window.CPActiveTool && window.CPActiveTool !== "roomguide") return;
+    if (window.CPActiveMount && window.CPActiveMount !== "roomguide") return;
     const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
 
     if (e.key === "Escape") {

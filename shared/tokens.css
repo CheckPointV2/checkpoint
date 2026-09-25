@@ -202,84 +202,148 @@ html[data-theme="dark"] body {
 }
 
 /* ============================================================
-   Shell chrome — floating top dock + content mount
+   Shell chrome — persistent rail + content canvas
+   A full-height rail replaces the old floating top dock: the single
+   biggest structural change in the redesign. It carries real section
+   grouping (Overview / Guest flow / Reference) instead of a flat icon
+   row, which is what lets it scale past four destinations to seven
+   without losing scannability, and it gives the product a fixed,
+   professional-tool silhouette (dark rail, light canvas) instead of a
+   chrome floating over whatever page happens to be underneath it.
    ============================================================ */
-.cp-app { display: block; min-height: 100vh; }
-.cp-content { display: flex; flex-direction: column; }
+.cp-app { display: grid; grid-template-columns: var(--rail-w, 256px) 1fr; min-height: 100vh; }
+.cp-content { min-width: 0; min-height: 100vh; }
 .cp-view { display: none; }
 .cp-view.active { display: block; }
 
-.cp-dock-wrap {
-  position: fixed; top: 16px; left: 0; right: 0;
-  display: flex; justify-content: center;
-  z-index: 400; pointer-events: none;
-  padding: 0 16px;
+.cp-rail {
+  --rail-bg: var(--slab);
+  --rail-ink: var(--slab-ink);
+  --rail-muted: var(--slab-muted);
+  --rail-line: var(--slab-line);
+  --rail-accent: var(--slab-accent);
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--rail-bg); color: var(--rail-ink);
+  border-right: 1px solid var(--rail-line);
+  z-index: 400;
 }
-.cp-dock {
-  pointer-events: auto;
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--panel) 72%, transparent);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  box-shadow: var(--shadow-lg);
-  max-width: 100%;
+.cp-rail-brand {
+  display: flex; align-items: center; gap: 11px;
+  padding: 22px 20px 18px;
+  flex-shrink: 0;
 }
-.cp-dock-brand { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 4px; }
-.cp-dock-mark { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
-.cp-dock-word { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; letter-spacing: .01em; white-space: nowrap; }
-.cp-dock-sep { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--line); flex-shrink: 0; }
-.cp-dock-nav, .cp-dock-utils { display: flex; align-items: center; gap: 3px; }
+.cp-rail-mark { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.cp-rail-word { min-width: 0; }
+.cp-rail-name { display: block; font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: .005em; color: var(--rail-ink); }
+.cp-rail-tagline { display: block; font-size: 11px; color: var(--rail-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.cp-dock-btn {
+.cp-rail-nav { flex: 1; overflow-y: auto; padding: 4px 12px 12px; }
+.cp-rail-group + .cp-rail-group { margin-top: 18px; }
+.cp-rail-group-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--rail-muted); opacity: .8; padding: 0 10px; margin-bottom: 6px;
+}
+
+.cp-rail-btn {
   position: relative;
-  width: 40px; height: 40px; flex-shrink: 0;
-  border-radius: 50%;
-  border: none; background: transparent; color: var(--ink-soft);
-  display: flex; align-items: center; justify-content: center;
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  padding: 9px 10px; margin-bottom: 2px;
+  border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--rail-muted);
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500; text-align: left;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease, transform .15s ease;
+  transition: background .13s ease, color .13s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.cp-dock-btn svg { width: 17px; height: 17px; }
-.cp-dock-btn:hover { background: var(--bronze-soft); color: var(--bronze-deep); transform: translateY(-1px); }
-.cp-dock-btn[aria-current="page"] { background: var(--bronze); color: #fff; }
-html[data-theme="dark"] .cp-dock-btn[aria-current="page"] { color: #201810; }
-
-/* tooltip */
-.cp-dock-btn[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(-4px);
-  background: var(--slab); color: var(--slab-ink);
-  font-family: var(--font-body); font-size: 11.5px; font-weight: 600; white-space: nowrap;
-  padding: 6px 10px; border-radius: 8px; box-shadow: var(--shadow);
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease;
-  z-index: 10;
+.cp-rail-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.cp-rail-icon svg { width: 18px; height: 18px; }
+.cp-rail-btn-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-rail-count {
+  flex-shrink: 0; min-width: 20px; text-align: center;
+  font: 700 11px/20px var(--font-body); font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,.08); color: var(--rail-ink);
+  border-radius: 999px; padding: 0 6px;
 }
-.cp-dock-btn[data-tip]:hover::after, .cp-dock-btn[data-tip]:focus-visible::after, .cp-dock-btn[data-tip]:active::after {
-  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
-}
-
-.cp-content { padding-top: 78px; min-height: 100vh; }
-
-@media (max-width: 900px) {
-  .cp-dock-word { display: none; }
+.cp-rail-count:empty { display: none; }
+.cp-rail-count.hot { background: var(--rail-accent); color: #201810; }
+.cp-rail-btn:hover { background: rgba(255,255,255,.05); color: var(--rail-ink); }
+.cp-rail-btn[aria-current="page"] { background: rgba(255,255,255,.09); color: var(--rail-ink); }
+.cp-rail-btn[aria-current="page"] .cp-rail-icon { color: var(--rail-accent); }
+.cp-rail-btn[aria-current="page"]::before {
+  content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--rail-accent);
 }
 
-@media (max-width: 480px) {
-  /* the dock's icon count (brand + 4 nav + 4 utils) doesn't fit 40px
-     circles in a 390px viewport — shrink them, and let the dock itself
-     scroll horizontally (scrollbar hidden) as a safety net rather than
-     ever clipping a button off the edge unreachably. */
-  .cp-dock-wrap { padding: 0 10px; }
-  .cp-dock { max-width: 100%; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .cp-dock::-webkit-scrollbar { display: none; }
-  .cp-dock-btn { width: 36px; height: 36px; flex-shrink: 0; }
-  .cp-dock-btn svg { width: 16px; height: 16px; }
-  .cp-dock-brand { padding: 0 6px 0 2px; }
+.cp-rail-foot {
+  flex-shrink: 0; padding: 10px 12px 16px; border-top: 1px solid var(--rail-line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+@media (min-width: 861px) {
+  /* Laptop widths keep the rail, but the label column is the first thing
+     that should give way — icons + tooltip, same trade the old dock made,
+     kept only in this one band instead of everywhere below it. */
+  @media (max-width: 1180px) {
+    .cp-app { --rail-w: 76px; }
+    .cp-rail-brand { padding: 20px 0 16px; justify-content: center; }
+    .cp-rail-word, .cp-rail-group-label, .cp-rail-btn-label, .cp-rail-tagline { display: none; }
+    .cp-rail-btn { justify-content: center; padding: 11px; }
+    .cp-rail-btn[aria-current="page"]::before { left: -12px; }
+    .cp-rail-count { position: absolute; top: 2px; right: 2px; min-width: 16px; font-size: 9.5px; line-height: 16px; }
+    .cp-rail-btn[data-tip] { position: relative; }
+    .cp-rail-btn[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) translateX(-4px);
+      background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+      font-size: 12px; font-weight: 600; white-space: nowrap;
+      padding: 6px 10px; border-radius: 8px; box-shadow: var(--shadow);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .13s ease, transform .13s ease;
+      z-index: 20;
+    }
+    .cp-rail-btn[data-tip]:hover::after, .cp-rail-btn[data-tip]:focus-visible::after {
+      opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  /* Below tablet width a side rail eats too much of the canvas and sits
+     too far from a thumb — it becomes a bottom bar instead, the same
+     reachability trade most touch-first apps make. Horizontal scroll with
+     the scrollbar hidden is the safety net if it doesn't all fit, never a
+     clipped, unreachable button. */
+  .cp-app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .cp-rail {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: auto;
+    flex-direction: row; align-items: stretch;
+    border-right: 0; border-top: 1px solid var(--rail-line);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .cp-rail-brand { display: none; }
+  .cp-rail-nav {
+    flex: 1; display: flex; align-items: stretch; padding: 6px 6px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  }
+  .cp-rail-nav::-webkit-scrollbar { display: none; }
+  .cp-rail-group { display: flex; flex-shrink: 0; }
+  .cp-rail-group + .cp-rail-group { margin-top: 0; margin-left: 2px; }
+  .cp-rail-group-label { display: none; }
+  .cp-rail-btn {
+    flex-direction: column; justify-content: center; gap: 3px;
+    width: 64px; flex-shrink: 0; padding: 7px 4px; text-align: center;
+  }
+  .cp-rail-btn-label { font-size: 10px; white-space: normal; line-height: 1.15; }
+  .cp-rail-btn[aria-current="page"]::before { left: 10px; right: 10px; top: -1px; bottom: auto; height: 3px; width: auto; border-radius: 0 0 3px 3px; }
+  .cp-rail-count { position: absolute; top: 2px; right: 8px; }
+  .cp-rail-foot { flex-direction: row; border-top: 0; border-left: 1px solid var(--rail-line); padding: 6px; flex-shrink: 0; }
+  .cp-rail-foot .cp-rail-btn { width: 56px; }
+}
+
+.cp-content { min-height: 100vh; }
+@media (max-width: 860px) {
+  .cp-content { padding-bottom: 76px; }
 }
 
 /* ============================================================
