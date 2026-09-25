@@ -165,7 +165,7 @@
         <div class="alloc-file">
           <div class="alloc-file-name">${esc(slot.file.name)} <span class="alloc-file-size">${sizeKB} KB</span></div>
           ${statusLine}
-          <button class="eml-icon-btn alloc-remove" data-key="${key}" title="Remove">✕</button>
+          <button class="alloc-remove" data-key="${key}" title="Remove" aria-label="Remove file" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         ${slot.result && !slot.result.error ? `<details class="alloc-raw"><summary>Raw extracted text</summary><div class="alloc-preview"><pre>${esc(previewText(slot.result))}</pre></div><button class="cp-btn" data-copy="${key}" type="button">Copy extracted text</button></details>` : ""}`;
       const removeBtn = $(".alloc-remove", el);

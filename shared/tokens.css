@@ -464,7 +464,7 @@ html[data-theme="dark"] body {
    Print
    ============================================================ */
 @media print {
-  .cp-dock-wrap, .no-print { display: none !important; }
+  .cp-rail, .no-print { display: none !important; }
   .cp-app { display: block; }
   .cp-content { padding-top: 0; }
   .cp-view { display: none !important; }
