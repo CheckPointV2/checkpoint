@@ -11,20 +11,28 @@
    the @import, THEN fetch the font CSS) before anything can paint. */
 
 :root {
-  --paper: #F7F5F1;
-  --panel: #FFFFFF;
-  --panel-2: #FBF9F5;
-  --ink: #2B2118;
-  --ink-soft: #6B5D4F;
-  --ink-faint: #796F62;
-  --line: #E6DFD3;
-  --bronze: #6B4E33;
-  --bronze-deep: #4F3A26;
-  --bronze-soft: #EFE4D2;
-  --gold-accent: #C9A24B;
-  --shadow: 0 10px 28px rgba(43, 33, 24, 0.09);
-  --shadow-sm: 0 3px 10px rgba(43, 33, 24, 0.08);
-  --shadow-lg: 0 20px 50px rgba(43, 33, 24, 0.16);
+  /* Craft palette — botanical conservatory on warm parchment, adapted to
+     Rixos: the cream/oat two-tone canvas, a near-black plum-brown for
+     text, and a single vivid accent kept to actions and links. Status
+     colors (danger/ok/warn/info/ext), the building-identity colors and
+     Room Guide's feature-tag palette are functional signals, not brand
+     identity, so they're untouched by this pass. */
+  --paper: #F7F5F2;       /* Bone Linen */
+  --panel: #EAE6DF;       /* Oat Milk — card surface, a half-step down from canvas */
+  --panel-2: #F1EDE6;
+  --ink: #2A1A1D;         /* Obsidian Plum */
+  --ink-soft: #645757;    /* Ash Mauve */
+  --ink-faint: #8C7F7D;
+  --line: #D7D2CC;        /* Driftwood */
+  --bronze: #0E634F;      /* Peacock Teal — the everyday accent: links, focus, icons */
+  --bronze-deep: #094A3B;
+  --bronze-soft: #D7ECE3;
+  --gold-accent: #26D862; /* Lime Pulse — reserved for the one loud action per view */
+  --on-accent: #1C2A20;   /* fixed dark text for anything sitting on Lime Pulse */
+  --on-bronze: #fff;      /* text for anything filled with --bronze — white here (a dark teal), flips to dark in the dark theme (a bright lime) */
+  --shadow: 0 8px 20px rgba(29, 48, 35, 0.14);
+  --shadow-sm: 0 1px 3px rgba(42, 26, 29, 0.06);
+  --shadow-lg: 0 20px 46px rgba(42, 26, 29, 0.14);
   --danger-soft: #F6E4DD;
   --danger: #B0532E;
   --ok: #2E7D5B;
@@ -42,19 +50,21 @@
   --bld-amwaj: #2A78AE;
   --bld-marmar: #9A8C74;
 
-  /* dark "slab" block — the Aurora-style stat strip */
-  --slab: #201810;
-  --slab-ink: #F3EDE3;
-  --slab-muted: #B4A38D;
-  --slab-line: #3A2E20;
-  --slab-accent: #D2AC76;
+  /* dark "slab" block — the rail, stat strips and toasts stay the Forest
+     Depths room regardless of the light/dark toggle, so it's defined once
+     here rather than per theme. */
+  --slab: #1D3023;
+  --slab-ink: #F7F5F2;
+  --slab-muted: #9DB39F;
+  --slab-line: #2C4433;
+  --slab-accent: #26D862;
 
-  --font-display: "Source Serif 4", Georgia, serif;
+  --font-display: "Playfair Display", "Source Serif 4", Georgia, serif;
   --font-body: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 8px;
 
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --dur-fast: .12s;
@@ -66,17 +76,21 @@
 }
 
 html[data-theme="dark"] {
-  --paper: #17130E;
-  --panel: #201A13;
-  --panel-2: #241D15;
-  --ink: #EEE7DC;
-  --ink-soft: #AB9C8B;
-  --ink-faint: #8C8173;
-  --line: #34291B;
-  --bronze: #D2AC76;
-  --bronze-deep: #E7C98F;
-  --bronze-soft: #2E2519;
-  --gold-accent: #E3B23C;
+  /* The content canvas recedes a shade darker than Forest Depths itself,
+     so cards — set to the literal Forest Depths hex — read as lit rooms
+     against it, rather than the whole screen flattening into one green. */
+  --paper: #15221A;
+  --panel: #1D3023;
+  --panel-2: #192920;
+  --ink: #F5F1E8;
+  --ink-soft: #B9C2B7;
+  --ink-faint: #8A968C;
+  --line: #2C4433;
+  --bronze: #26D862;      /* Lime Pulse reads fine directly on the dark canvas */
+  --on-bronze: var(--on-accent);
+  --bronze-deep: #4FE888;
+  --bronze-soft: rgba(38, 216, 98, 0.16);
+  --gold-accent: #26D862;
   --shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
   --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
@@ -95,12 +109,6 @@ html[data-theme="dark"] {
   --bld-amwaj: #5AA9DC;
   --bld-marmar: #C9BCA3;
 
-  --slab: #0E0B07;
-  --slab-ink: #F3EDE3;
-  --slab-muted: #90816C;
-  --slab-line: #241C13;
-  --slab-accent: #E7C98F;
-
   color-scheme: dark;
 }
 
@@ -117,7 +125,7 @@ html[data-theme="dark"] {
 html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 
-::selection { background: var(--gold-accent); color: #201810; }
+::selection { background: var(--gold-accent); color: var(--on-accent); }
 
 /* Scrollbars are the cheapest tell that a page was assembled rather than
    built — theme them from the palette instead of leaving the OS default. */
@@ -133,7 +141,7 @@ a { color: inherit; }
 button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 
-.cp-serif { font-family: var(--font-display); }
+.cp-serif { font-family: var(--font-display); letter-spacing: -0.02em; }
 
 /* ---------- cards & surfaces ---------- */
 .cp-card {
@@ -168,11 +176,10 @@ button { cursor: pointer; }
 }
 .cp-btn:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 .cp-btn-primary {
-  background: var(--bronze);
-  border-color: var(--bronze);
-  color: #fff;
+  background: var(--gold-accent);
+  border-color: var(--gold-accent);
+  color: var(--on-accent);
 }
-html[data-theme="dark"] .cp-btn-primary { color: #201810; }
 .cp-btn-primary:hover { background: var(--bronze-deep); border-color: var(--bronze-deep); }
 
 /* ---------- inputs ---------- */
@@ -188,18 +195,10 @@ html[data-theme="dark"] .cp-btn-primary { color: #201810; }
 }
 .cp-input:focus { outline: none; border-color: var(--bronze); }
 
-body {
-  background:
-    radial-gradient(1200px 500px at 15% -10%, rgba(201, 162, 75, 0.10), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(107, 78, 51, 0.07), transparent 55%),
-    var(--paper);
-}
-html[data-theme="dark"] body {
-  background:
-    radial-gradient(1200px 500px at 15% -10%, rgba(210, 172, 118, 0.07), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(0, 0, 0, 0.3), transparent 55%),
-    var(--paper);
-}
+/* Flat by design — Craft's surfaces carry depth through the two-tone
+   cream/oat (or forest/deeper-forest) stack alone, never a decorative
+   glow behind the page. */
+body { background: var(--paper); }
 
 /* ============================================================
    Shell chrome — persistent rail + content canvas
@@ -266,7 +265,7 @@ html[data-theme="dark"] body {
   border-radius: 999px; padding: 0 6px;
 }
 .cp-rail-count:empty { display: none; }
-.cp-rail-count.hot { background: var(--rail-accent); color: #201810; }
+.cp-rail-count.hot { background: var(--rail-accent); color: var(--on-accent); }
 .cp-rail-btn:hover { background: rgba(255,255,255,.05); color: var(--rail-ink); }
 .cp-rail-btn[aria-current="page"] { background: rgba(255,255,255,.09); color: var(--rail-ink); }
 .cp-rail-btn[aria-current="page"] .cp-rail-icon { color: var(--rail-accent); }

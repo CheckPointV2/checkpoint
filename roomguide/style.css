@@ -133,7 +133,7 @@ html, body  {
  #view-roomguide #authForm button {
   border: none;
   background: var(--bronze);
-  color: #fff;
+  color: var(--on-bronze);
   padding: 11px;
   border-radius: 10px;
   font-size: 13.5px;
@@ -338,7 +338,7 @@ html, body  {
   font-family: inherit;
 }
  #view-roomguide .floor-tabs button:hover { border-color: var(--bronze); color: var(--bronze-deep); }
- #view-roomguide .floor-tabs button.active { background: var(--bronze); border-color: var(--bronze); color: #fff; }
+ #view-roomguide .floor-tabs button.active { background: var(--bronze); border-color: var(--bronze); color: var(--on-bronze); }
 
 /* ================= Filter bar ================= */
  #view-roomguide .filter-bar {
@@ -396,7 +396,7 @@ html, body  {
  #view-roomguide .fdrop.open .fdrop-btn svg { transform: rotate(180deg); }
  #view-roomguide .fdrop-count {
   background: var(--bronze);
-  color: #fff;
+  color: var(--on-bronze);
   font-size: 10px;
   font-weight: 700;
   border-radius: 8px;
@@ -929,7 +929,7 @@ html, body  {
  #view-roomguide .up-select-row select:disabled { opacity: 0.5; }
  #view-roomguide .up-result {
   background: var(--bronze);
-  color: #fff;
+  color: var(--on-bronze);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
@@ -1190,7 +1190,7 @@ html, body  {
  #view-roomguide .tour-card .tour-next {
   border: none;
   background: var(--bronze);
-  color: #fff;
+  color: var(--on-bronze);
   padding: 7px 16px;
   border-radius: 16px;
   font-size: 12.5px;
