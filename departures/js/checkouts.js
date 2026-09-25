@@ -214,7 +214,7 @@
     $('ex-drop-inner').classList.remove('compact');
     $('ex-text').value = '';
     CP.update(s => { s.co = { reported: {}, processed: {} }; });
-    CP.toast('Checkouts reset');
+    CP.toast('Formatting reset');
   };
 
   CP.renderCheckouts = render;

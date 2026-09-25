@@ -49,7 +49,7 @@
       $('fd-controls').innerHTML = '';
       box.innerHTML = `<div class="panel fd-empty">
         <h2>Import today's due-out export first</h2>
-        <p class="meta">The finder works from the same Opera export as Departures. Once it's in, pick the room type a waiting guest needs and every matching departing room is ranked by how soon it frees up.</p>
+        <p class="meta">The finder works from the same Opera export as Physical check. Once it's in, pick the room type a waiting guest needs and every matching departing room is ranked by how soon it frees up.</p>
         <button class="btn primary" data-fd="import" type="button">Import export</button>
       </div>`;
       return;

@@ -7,11 +7,11 @@
   const ACTIONS = {
     departures: [
       { id: 'import', label: 'Import export', primary: true },
-      { id: 'reset-dep', label: 'Reset departures' },
+      { id: 'reset-dep', label: 'Reset physical check' },
       { id: 'newshift', label: 'Start new shift' }
     ],
     checkouts: [
-      { id: 'reset-co', label: 'Reset checkouts' },
+      { id: 'reset-co', label: 'Reset formatting' },
       { id: 'newshift', label: 'Start new shift' }
     ],
     finder: [],
@@ -60,12 +60,12 @@
 
   function runAction(id) {
     if (id === 'import') return importNow();
-    if (id === 'reset-dep') return confirm('Reset departures?',
+    if (id === 'reset-dep') return confirm('Reset physical check?',
       'Clears the imported due-out list, the check history, the comparison and the balance tags. Your cutoff time stays. The checkout log is not touched.',
-      'Reset departures', CP.resetDepartures);
-    if (id === 'reset-co') return confirm('Reset checkouts?',
+      'Reset physical check', CP.resetDepartures);
+    if (id === 'reset-co') return confirm('Reset formatting?',
       'Clears the screenshot result and today\'s checkout log. Rooms Concierge reported go back onto the physical check list.',
-      'Reset checkouts', CP.resetCheckouts);
+      'Reset formatting', CP.resetCheckouts);
     if (id === 'import-dl') { go('daylist'); $('dl-file').click(); return; }
     if (id === 'reset-dl') return confirm('Reset the day list?',
       'Clears today\'s full departures PDF. Checkout validation falls back to the live due-out export only.',
@@ -95,18 +95,18 @@
   function commands() {
     const s = CP.state();
     return [
-      { label: 'Import due-out export', hint: 'Departures', run: importNow },
+      { label: 'Import due-out export', hint: 'Physical check', run: importNow },
       { label: 'Copy list for Concierge', hint: `${CP.dep.checkRooms(s).length} rooms`, run: () => { go('departures'); CP.copy(CP.dep.conciergeText(s), 'Concierge list copied'); } },
-      { label: 'Copy rooms to check as Opera list', hint: 'Departures', run: () => { const r = CP.sortRooms(CP.dep.checkRooms(s)); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
+      { label: 'Copy rooms to check as Opera list', hint: 'Physical check', run: () => { const r = CP.sortRooms(CP.dep.checkRooms(s)); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
       { label: 'Read a checkout screenshot', hint: 'Or just paste it', run: () => { go('checkouts'); $('ex-drop').focus(); } },
       { label: 'Copy checkouts to process in Opera', hint: `${CP.unprocessedCheckouts().length} rooms`, run: () => { const r = CP.unprocessedCheckouts(); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
-      { label: 'Reset departures', hint: '', run: () => runAction('reset-dep') },
-      { label: 'Reset checkouts', hint: '', run: () => runAction('reset-co') },
+      { label: 'Reset physical check', hint: '', run: () => runAction('reset-dep') },
+      { label: 'Reset formatting', hint: '', run: () => runAction('reset-co') },
       { label: 'Upload full-day departures PDF', hint: 'Day list', run: () => runAction('import-dl') },
       { label: 'Find a room for an early arrival', hint: 'Room finder', run: () => go('finder') },
       { label: 'Turn any text into an Opera list', hint: 'Room lists', run: () => { go('tools'); setTimeout(() => $('tl-input').focus(), 30); } },
-      { label: 'Go to Departures', hint: '1', run: () => go('departures') },
-      { label: 'Go to Checkouts', hint: '2', run: () => go('checkouts') },
+      { label: 'Go to Physical check', hint: '1', run: () => go('departures') },
+      { label: 'Go to Formatting', hint: '2', run: () => go('checkouts') },
       { label: 'Go to Room finder', hint: '3', run: () => go('finder') },
       { label: 'Go to Room lists', hint: '4', run: () => go('tools') },
       { label: 'Go to Day list', hint: '5', run: () => go('daylist') },

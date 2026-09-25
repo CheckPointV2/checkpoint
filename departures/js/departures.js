@@ -475,7 +475,7 @@
     rackFilter = 'check';
     $('dep-search').value = '';
     CP.update(s => { s.dueouts = null; s.diff = null; s.tags = {}; s.checks = []; s.rounds = []; });
-    CP.toast('Departures reset');
+    CP.toast('Physical check reset');
   };
 
   CP.renderDepartures = render;

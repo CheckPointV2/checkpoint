@@ -78,7 +78,7 @@
      ============================================================ */
   // Room Guide is the landing tool — there is no separate dashboard "home"
   // view anymore. "#/" and "#/roomguide" are the same destination.
-  const TOOL_TITLES = { roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Copilot" };
+  const TOOL_TITLES = { roomguide: "Room Guide", departures: "Physical Check", allocation: "Allocation Copilot" };
   window.CPActiveTool = "roomguide";
   window.CPActiveSub = null;
   let pendingSub = null;

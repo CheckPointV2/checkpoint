@@ -113,7 +113,7 @@
     if (!s.dayList) {
       box.innerHTML = `<div class="panel dl-empty">
         <h2>No full-day list yet</h2>
-        <p class="meta">Upload today's full departures report — the one that lists every room checking out today, not just what's still outstanding. Every checkout you read on the Checkouts tab is then checked against it, so a room that isn't actually departing today gets flagged instead of silently logged.</p>
+        <p class="meta">Upload today's full departures report — the one that lists every room checking out today, not just what's still outstanding. Every checkout you read on the Formatting tab is then checked against it, so a room that isn't actually departing today gets flagged instead of silently logged.</p>
       </div>`;
     } else {
       const hhmm = (ts) => { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
