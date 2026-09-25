@@ -233,7 +233,7 @@
 
     // diff
     if (s.diff) {
-      html += `<div class="panel diff">
+      html += `<div class="panel panel-quiet diff">
         <div class="panel-head"><h2>Since the last import</h2><span class="meta">compared with ${CP.ago(s.diff.vsAt)}</span></div>
         <div class="diff-grid">
           <div class="diff-cell good"><strong>${s.diff.resolved.length}</strong><span>resolved</span><p>${s.diff.resolved.join(', ') || 'None'}</p></div>
@@ -303,7 +303,7 @@
     const linked = linkedGroups(s);
 
     html += `<div class="split">
-      <div class="panel">
+      <div class="panel panel-quiet">
         <div class="panel-head"><h2>Balances on departure</h2><span class="meta">${bal.length ? CP.plural(bal.filter(x => !s.tags[tagKey(x.r)]).length, 'to review', 'to review') : ''}</span></div>
         ${bal.length ? `<ul class="list">${bal.map(({ r, v }) => {
           const tag = s.tags[tagKey(r)];
@@ -315,7 +315,7 @@
           </li>`;
         }).join('')}</ul>` : `<p class="empty">Every due-out is at zero.</p>`}
       </div>
-      <div class="panel">
+      <div class="panel panel-quiet">
         <div class="panel-head"><h2>VIPs and members leaving</h2><span class="meta">${vips.length || ''}</span></div>
         ${vips.length ? `<ul class="list">${vips.map(r => {
           const st = CP.roomStatus(r, s);

@@ -132,11 +132,19 @@ html  { -webkit-text-size-adjust: 100%; }
   box-shadow: var(--shadow);
   min-width: 0;
 }
+/* Reference panels (balances, VIPs, the raw due-outs table, the last-import
+   diff) support the shift's one active task — Key rack — rather than being
+   another thing to act on. Recede them a shade so the page reads as one
+   priority with supporting detail, not a stack of interchangeable cards. */
+ #view-departures .panel-quiet {
+  background: var(--surface-2);
+  box-shadow: none;
+}
  #view-departures .panel-head {
   display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px 16px;
   margin-bottom: 14px;
 }
- #view-departures .panel-head h2 { font: 600 17px/1.2 var(--body); }
+ #view-departures .panel-head h2 { font: 600 19px/1.2 var(--display); letter-spacing: .003em; }
  #view-departures .panel-head .actions { margin: 0; }
  #view-departures .sub-head { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
  #view-departures .meta { color: var(--muted); font-size: 13px; }
