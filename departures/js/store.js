@@ -103,8 +103,14 @@ window.CP = window.CP || {};
     if (s.co.reported[r.room]) return 'co';
     if (etd === '12:05') return 'left';
     if (etd === '12:06') return 'ext';
+    // 12:01/12:02/12:04 are Opera status codes (Preparing/Luggage help/
+    // Unreachable), not real departure times — they never get compared
+    // against the cutoff, same as a blank ETD. Otherwise, when the cutoff
+    // itself is left at its default of 12:04, an "Unreachable" room would
+    // compare 12:04 < 12:04 (false) and be wrongly dropped from the list.
+    if (etd === '' || etd === '12:01' || etd === '12:02' || etd === '12:04') return 'check';
     const cut = CP.toMinutes(s.cutoff), m = CP.toMinutes(etd);
-    if (etd === '' || m === null || cut === null || m < cut) return 'check';
+    if (m === null || cut === null || m < cut) return 'check';
     return 'later';
   };
   CP.rowByRoom = (room, s) => {
