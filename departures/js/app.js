@@ -1,6 +1,6 @@
 (function (CP) {
   const $ = (id) => document.getElementById(id);
-  const VIEWS = ['departures', 'checkouts', 'finder', 'tools', 'daylist'];
+  const VIEWS = ['departures', 'checkouts', 'tools', 'daylist'];
   let current = 'departures';
 
   // ---------- header actions per tab ----------
@@ -14,7 +14,6 @@
       { id: 'reset-co', label: 'Reset formatting' },
       { id: 'newshift', label: 'Start new shift' }
     ],
-    finder: [],
     tools: [],
     daylist: [
       { id: 'import-dl', label: 'Upload PDF', primary: true },
@@ -105,13 +104,11 @@
       { label: 'Reset physical check', hint: '', run: () => runAction('reset-dep') },
       { label: 'Reset formatting', hint: '', run: () => runAction('reset-co') },
       { label: 'Upload full-day departures PDF', hint: 'Day list', run: () => runAction('import-dl') },
-      { label: 'Find a room for an early arrival', hint: 'Room finder', run: () => go('finder') },
       { label: 'Turn any text into an Opera list', hint: 'Room lists', run: () => { go('tools'); setTimeout(() => $('tl-input').focus(), 30); } },
       { label: 'Go to Physical check', hint: '1', run: () => go('departures') },
       { label: 'Go to Formatting', hint: '2', run: () => go('checkouts') },
-      { label: 'Go to Room finder', hint: '3', run: () => go('finder') },
-      { label: 'Go to Room lists', hint: '4', run: () => go('tools') },
-      { label: 'Go to Day list', hint: '5', run: () => go('daylist') },
+      { label: 'Go to Room lists', hint: '3', run: () => go('tools') },
+      { label: 'Go to Day list', hint: '4', run: () => go('daylist') },
       { label: document.documentElement.getAttribute('data-theme') === 'dark' ? 'Switch to day mode' : 'Switch to night mode', hint: '', run: toggleTheme },
       { label: 'Start new shift', hint: 'Clears today', run: confirmNewShift }
     ];
@@ -165,7 +162,7 @@
   }
 
   function renderAll() {
-    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock, renderSubtabCounts]
+    [CP.renderDepartures, CP.renderCheckouts, CP.renderTools, CP.renderDayList, renderClock, renderSubtabCounts]
       .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
   }
 
@@ -193,7 +190,7 @@
     // can read CP.dep's business logic for its dashboard. Isolated like
     // renderAll() below, so one sub-view's bind failing can't take the
     // clock, keyboard shortcuts, or the rest of Departures down with it.
-    [CP.bindDepartures, CP.bindCheckouts, CP.bindFinder, CP.bindTools, CP.bindDayList]
+    [CP.bindDepartures, CP.bindCheckouts, CP.bindTools, CP.bindDayList]
       .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
 
     document.addEventListener('click', e => {

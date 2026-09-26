@@ -1,0 +1,74 @@
+/* CheckPoint — Home. Scoped to #view-home; a full-bleed greeting only. */
+#view-home { padding: 0; }
+#view-home .home-wrap {
+  position: relative;
+  min-height: calc(100vh - 53px);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: background 2s linear;
+}
+#view-home .home-particles {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none;
+}
+#view-home .home-center {
+  position: relative; z-index: 1;
+  text-align: center; padding: 40px 24px;
+}
+#view-home .home-greeting {
+  margin: 0 0 10px;
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0,0,0,.25);
+}
+#view-home .home-word {
+  display: inline-block;
+  opacity: 0;
+  font-weight: 300;
+  filter: blur(4px);
+  animation: home-word-in .6s ease forwards;
+}
+@keyframes home-word-in {
+  from { opacity: 0; transform: translateY(10px); font-weight: 300; filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); font-weight: 700; filter: blur(0); }
+}
+#view-home .home-sub {
+  margin: 0 0 34px;
+  font-size: 15px;
+  color: rgba(255,255,255,.78);
+  opacity: 0;
+  animation: home-fade-in .7s ease .5s forwards;
+}
+#view-home .home-clock {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(48px, 10vw, 96px);
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  opacity: 0;
+  animation: home-fade-in .8s ease .6s forwards;
+}
+#view-home .home-date {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255,255,255,.7);
+  opacity: 0;
+  animation: home-fade-in .8s ease .75s forwards;
+}
+@keyframes home-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reduced-motion / animation-level "off": no word stagger, no particle
+   canvas (already skipped in JS), everything just appears. */
+@media (prefers-reduced-motion: reduce) {
+  #view-home .home-word, #view-home .home-sub, #view-home .home-clock, #view-home .home-date {
+    animation: none !important; opacity: 1 !important; filter: none !important; transform: none !important; font-weight: 700;
+  }
+  #view-home .home-wrap { transition: none; }
+}
+
+@media (max-width: 640px) {
+  #view-home .home-wrap { min-height: calc(100vh - 45px); }
+}

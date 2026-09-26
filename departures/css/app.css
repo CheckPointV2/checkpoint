@@ -383,81 +383,6 @@ html  { -webkit-text-size-adjust: 100%; }
  #view-departures .bld-progress i { display: block; height: 100%; background: var(--bld); border-radius: 999px; transition: width .4s ease; }
  #view-departures .bld-meta { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
 
-/* ============ waiting: named guests, from Arrivals ============ */
- #view-departures .fd-waiting { margin-bottom: 22px; }
- #view-departures .fd-waiting h2 { display: flex; align-items: center; gap: 10px; font: 600 19px/1 var(--display); margin: 0 0 12px; }
- #view-departures .fd-waiting-count { font: 700 12px/1 var(--body); background: var(--brass-soft); color: var(--brass); border-radius: 999px; padding: 3px 9px; }
- #view-departures .fd-waiting-empty { color: var(--muted); font-size: 13.5px; }
- #view-departures .fd-waiting-list { display: flex; flex-direction: column; gap: 10px; }
- #view-departures .fd-waiting-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--shadow); }
- #view-departures .fd-waiting-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
- #view-departures .fd-waiting-name { font-weight: 700; font-size: 14.5px; }
- #view-departures .fd-waiting-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
- #view-departures .fd-waiting-candidates { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
- #view-departures .fd-waiting-room {
-  display: flex; align-items: center; gap: 8px;
-  border: 1px solid var(--line); background: var(--surface-2); border-radius: var(--r-md);
-  padding: 6px 10px 6px 12px; transition: border-color .12s ease;
-}
- #view-departures .fd-waiting-room:hover { border-color: var(--brass); }
- #view-departures .fd-waiting-room .fd-num { font: 700 16px/1 var(--display); }
- #view-departures .fd-waiting-nomatch { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
- #view-departures .fd-section-title { font: 600 15px/1 var(--display); color: var(--muted); margin: 0 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
-
-/* ============ room finder ============ */
- #view-departures .fd-controls { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }
- #view-departures .fd-controls:empty { display: none; }
- #view-departures .fd-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
- #view-departures .fd-row .chips { margin: 0; }
- #view-departures .fd-label { width: 88px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--muted); }
- #view-departures .chip.sea { border-style: dashed; }
- #view-departures .fd-exact { margin: 0 0 0 auto; }
- #view-departures #fd-body { display: flex; flex-direction: column; gap: 18px; }
- #view-departures .fd-empty { max-width: 640px; }
- #view-departures .fd-empty h2 { font: 700 26px/1.1 var(--display); margin-bottom: 8px; }
- #view-departures .fd-empty .btn { margin-top: 14px; }
-
- #view-departures .fd-summary { display: flex; align-items: flex-end; gap: 34px; padding: 0 4px; }
- #view-departures .fd-big strong { display: block; font: 700 58px/.9 var(--display); }
- #view-departures .fd-big span { font-size: 13px; color: var(--muted); font-weight: 500; }
- #view-departures .fd-big:nth-child(1) strong { color: var(--ok); }
- #view-departures .fd-big:nth-child(2) strong { color: var(--brass); }
- #view-departures .fd-summary .meta { margin: 0 0 4px auto; max-width: 360px; text-align: right; }
-
- #view-departures .fd-lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
- #view-departures .fd-lane {
-  --lane: var(--muted);
-  background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--lane);
-  border-radius: var(--r-lg); padding: 16px 16px 12px; box-shadow: var(--shadow);
-}
- #view-departures .lane-free { --lane: var(--ok); }
- #view-departures .lane-going { --lane: var(--brass); }
- #view-departures .fd-lane header { display: flex; justify-content: space-between; align-items: baseline; }
- #view-departures .fd-lane h2 { font-size: 16px; font-weight: 600; }
- #view-departures .fd-lane header b { font: 700 26px/1 var(--display); color: var(--lane); }
- #view-departures .fd-note { margin: 4px 0 12px; font-size: 12.5px; color: var(--muted); }
- #view-departures .fd-list { list-style: none; margin: 0; padding: 0; }
- #view-departures .fd-list li + li { margin-top: 6px; }
- #view-departures .fd-room {
-  width: 100%;
-  display: grid; grid-template-columns: 22px 62px 1fr auto; grid-template-areas: "rank num type when" "rank num bld when";
-  column-gap: 10px; align-items: center; text-align: left;
-  padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2);
-  transition: border-color .12s, transform .08s;
-}
- #view-departures .fd-room:hover { border-color: var(--lane); transform: translateX(2px); }
- #view-departures .fd-rank { grid-area: rank; font: 700 14px/1 var(--display); color: var(--muted); }
- #view-departures .fd-num { grid-area: num; font: 700 28px/1 var(--display); color: var(--lane); font-variant-numeric: tabular-nums; }
- #view-departures .lane-later .fd-num { color: var(--ink); }
- #view-departures .fd-type { grid-area: type; font-size: 12.5px; font-weight: 600; }
- #view-departures .fd-bld { grid-area: bld; font-size: 12px; color: var(--muted); }
- #view-departures .fd-bld::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: var(--muted); }
- #view-departures .fd-bld.b-zumroud::before { background: var(--zumroud); }
- #view-departures .fd-bld.b-amwaj::before { background: var(--amwaj); }
- #view-departures .fd-bld.b-marmar::before { background: var(--marmar); }
- #view-departures .fd-when { grid-area: when; font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
- #view-departures .lane-free .fd-when { color: var(--ok); }
-
 /* ============ day list ============ */
  #view-departures .dl-empty { max-width: 640px; }
  #view-departures .dl-empty h2 { font: 700 24px/1.15 var(--display); margin-bottom: 8px; }
@@ -526,7 +451,7 @@ html  { -webkit-text-size-adjust: 100%; }
    single row collapses to zero width and vanishes entirely, and the
    3-column import panel's fixed 230px first column has no room left for
    the other two on a phone, so they overlap. Both get stacked instead. The
-   panels below with 2-3 equal columns (split/log-grid/diff-grid/fd-lanes)
+   panels below with 2-3 equal columns (split/log-grid/diff-grid)
    aren't broken, just cramped enough at this width to hurt readability, so
    they stack too. The key rack's 3 building columns are left alone — they
    already hold up fine down to phone width since they're built from
@@ -546,7 +471,7 @@ html  { -webkit-text-size-adjust: 100%; }
    #view-departures .clock-time { font-size: 22px; }
 
    #view-departures .import-panel { grid-template-columns: minmax(0, 1fr); padding: 14px; }
-   #view-departures .split, #view-departures .log-grid, #view-departures .diff-grid, #view-departures .fd-lanes { grid-template-columns: minmax(0, 1fr); }
+   #view-departures .split, #view-departures .log-grid, #view-departures .diff-grid { grid-template-columns: minmax(0, 1fr); }
    #view-departures .diff-grid .diff-cell { padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--line); }
    #view-departures .diff-grid .diff-cell:first-child { padding-top: 0; border-top: 0; }
 }

@@ -112,6 +112,19 @@ html[data-theme="dark"] {
     scroll-behavior: auto !important;
   }
 }
+/* The in-app "Animations: Off" setting (shared/prefs.js's animationLevel,
+   applied as this class by shared/app.js) does the same thing, independent
+   of the OS-level media query above — a user can want motion off in this
+   app specifically without changing their system setting. "Subtle" is
+   handled per-component (see e.g. shared/home.css's particle gate) rather
+   than blanket-disabled here, since a flat duration:0 would also kill
+   transitions that should stay (like the theme-color cross-fade). */
+html.cp-motion-off *, html.cp-motion-off *::before, html.cp-motion-off *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
@@ -149,6 +162,20 @@ button { cursor: pointer; }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
+
+/* ---------- ripple, copy-morph, logo shimmer (shared/motion.js) ---------- */
+.cp-ripple-host { position: relative; overflow: hidden; }
+.cp-ripple {
+  position: absolute; border-radius: 50%; background: currentColor; opacity: .16;
+  pointer-events: none; transform: scale(0); animation: cp-ripple-out .5s var(--ease-out) forwards;
+}
+@keyframes cp-ripple-out { to { transform: scale(1); opacity: 0; } }
+.cp-morph-check { width: 15px; height: 15px; animation: cp-check-in .28s var(--ease-out); }
+@keyframes cp-check-in { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.cp-copied { color: var(--ok) !important; border-color: var(--ok) !important; }
+
+.cp-rail-name.cp-shimmer { position: relative; background: linear-gradient(100deg, var(--rail-ink) 40%, var(--rail-accent) 50%, var(--rail-ink) 60%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: cp-shimmer-sweep 1.8s ease; }
+@keyframes cp-shimmer-sweep { from { background-position: 140% 0; } to { background-position: -40% 0; } }
 
 /* ---------- buttons ---------- */
 .cp-btn {
@@ -280,6 +307,79 @@ html[data-theme="dark"] body {
   display: flex; flex-direction: column; gap: 2px;
 }
 
+.cp-rail-collapse {
+  flex-shrink: 0; width: 26px; height: 26px; margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 999px; background: transparent; color: var(--rail-muted);
+  cursor: pointer; transition: background .13s ease, color .13s ease, transform .18s var(--ease-out);
+}
+.cp-rail-collapse svg { width: 15px; height: 15px; }
+.cp-rail-collapse:hover { background: rgba(255,255,255,.08); color: var(--rail-ink); }
+
+/* ---------- collapsed (icon-only) sidebar, toggled manually ---------- */
+.cp-app.cp-rail-collapsed { --rail-w: 76px; }
+.cp-app.cp-rail-collapsed .cp-rail-brand { padding: 20px 0 16px; justify-content: center; }
+.cp-app.cp-rail-collapsed .cp-rail-word,
+.cp-app.cp-rail-collapsed .cp-rail-group-label,
+.cp-app.cp-rail-collapsed .cp-rail-btn-label,
+.cp-app.cp-rail-collapsed .cp-rail-tagline { display: none; }
+.cp-app.cp-rail-collapsed .cp-rail-collapse { transform: rotate(180deg); margin: 0; }
+.cp-app.cp-rail-collapsed .cp-rail-btn { justify-content: center; padding: 11px; }
+.cp-app.cp-rail-collapsed .cp-rail-count { position: absolute; top: 2px; right: 2px; min-width: 16px; font-size: 9.5px; line-height: 16px; }
+.cp-app.cp-rail-collapsed .cp-rail-btn[data-tip] { position: relative; }
+.cp-app.cp-rail-collapsed .cp-rail-btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) translateX(-4px);
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  padding: 6px 10px; border-radius: 8px; box-shadow: var(--shadow);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .13s ease, transform .13s ease;
+  z-index: 20;
+}
+.cp-app.cp-rail-collapsed .cp-rail-btn[data-tip]:hover::after,
+.cp-app.cp-rail-collapsed .cp-rail-btn[data-tip]:focus-visible::after {
+  opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
+}
+
+/* ============================================================
+   Persistent top bar — date/time, next-reminder ticker, Settings.
+   Visible above every mounted tool, part of the shell chrome.
+   ============================================================ */
+.cp-topbar {
+  position: sticky; top: 0; z-index: 300;
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 24px; background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.cp-topbar-when { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
+.cp-topbar-time { font-family: var(--font-display); font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+.cp-topbar-date { font-size: 12px; color: var(--ink-soft); }
+.cp-ticker[hidden] { display: none; }
+.cp-ticker {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;
+  border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px;
+  padding: 5px 14px; cursor: pointer; font-size: 12.5px; color: var(--ink);
+  transition: border-color .13s ease, transform .13s ease;
+}
+.cp-ticker:hover { border-color: var(--bronze); }
+.cp-ticker-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bronze); flex-shrink: 0; }
+.cp-ticker-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.cp-ticker-time { margin-left: auto; flex-shrink: 0; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.cp-topbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cp-icon-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--ink-soft); cursor: pointer; transition: color .13s ease, border-color .13s ease;
+}
+.cp-icon-btn svg { width: 16px; height: 16px; }
+.cp-icon-btn:hover { color: var(--bronze); border-color: var(--bronze); }
+
+@media (max-width: 640px) {
+  .cp-topbar { padding: 8px 14px; gap: 10px; }
+  .cp-topbar-date { display: none; }
+}
+
 @media (min-width: 861px) {
   /* Laptop widths keep the rail, but the label column is the first thing
      that should give way — icons + tooltip, same trade the old dock made,
@@ -389,6 +489,95 @@ html[data-theme="dark"] body {
 @keyframes cp-pulse {
   0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
   70% { box-shadow: 0 0 0 5px transparent; opacity: .55; }
+}
+
+/* ---------- small shared utility bits (Templates/Reminders/Notes) ---------- */
+.cp-count-badge { font-size: 11px; font-weight: 700; color: var(--ink-soft); background: var(--panel-2); border-radius: 999px; padding: 2px 8px; }
+.cp-empty-sm { font-size: 13px; color: var(--ink-soft); }
+.cp-form-label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+.cp-icon-btn.sm { width: 26px; height: 26px; }
+.cp-icon-btn.sm svg { width: 13px; height: 13px; }
+
+/* ---------- chips (filter pills, reused by Templates/Reminders/Notes) ---------- */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink-soft); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .13s ease;
+  font-family: var(--font-body);
+}
+.chip:hover { border-color: var(--bronze); }
+.chip.on { background: var(--bronze); border-color: var(--bronze); color: #fff; }
+html[data-theme="dark"] .chip.on { color: #201810; }
+
+/* ---------- scratchpad drawer + floating trigger (shared/scratchpad.js) ---------- */
+.scratchpad-fab {
+  position: fixed; right: 24px; bottom: 24px; z-index: 350;
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: var(--bronze); color: #fff; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform .15s var(--ease-out);
+}
+.scratchpad-fab svg { width: 20px; height: 20px; }
+.scratchpad-fab:hover { transform: scale(1.06); }
+.scratchpad {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(380px, 100vw); z-index: 700;
+  background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column; padding: 18px;
+  transform: translateX(100%); transition: transform .28s var(--ease-out);
+}
+.scratchpad.open { transform: translateX(0); }
+.scratchpad-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-family: var(--font-display); font-size: 16px; margin-bottom: 12px; }
+.scratchpad textarea {
+  flex: 1; resize: none; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px;
+  font: inherit; font-size: 14px; background: var(--panel-2); color: var(--ink);
+}
+.scratchpad textarea:focus { outline: none; border-color: var(--bronze); }
+.scratchpad-hint { font-size: 11.5px; color: var(--ink-soft); margin: 8px 0 0; }
+
+/* ---------- command palette + shortcuts overlay (shared/palette.js) ---------- */
+.palette { margin: -6px; }
+.pal-input { font-size: 17px !important; padding: 13px 14px !important; }
+.pal-list { list-style: none; margin: 10px 0 0; padding: 0; max-height: 50vh; overflow-y: auto; }
+.pal-list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; }
+.pal-list li em { font-style: normal; color: var(--ink-soft); font-size: 12.5px; }
+.pal-list li[aria-selected="true"] { background: var(--bronze-soft); }
+.pal-list li[aria-selected="true"] span { color: var(--ink); font-weight: 600; }
+.pal-none { color: var(--ink-soft); cursor: default !important; }
+.shortcuts-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+.shortcuts-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.shortcuts-table td:first-child { width: 40%; }
+kbd { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; font-size: 12px; font-family: inherit; }
+
+/* ---------- focus mode ---------- */
+.cp-app.cp-focus-mode .cp-rail,
+.cp-app.cp-focus-mode .cp-topbar { display: none; }
+.cp-app.cp-focus-mode { grid-template-columns: 1fr; }
+
+/* ---------- idle screensaver / PIN re-lock (shared/lock.js) ---------- */
+.screensaver {
+  position: fixed; inset: 0; z-index: 950;
+  background: var(--slab); color: var(--slab-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  opacity: 0; visibility: hidden; transition: opacity .6s ease;
+  cursor: pointer;
+}
+.screensaver.show { opacity: 1; visibility: visible; }
+.screensaver-clock { font-family: var(--font-display); font-weight: 600; font-size: clamp(56px, 12vw, 120px); font-variant-numeric: tabular-nums; color: var(--slab-accent); }
+.screensaver-date { font-size: 15px; color: var(--slab-muted); }
+.screensaver-pin { margin-top: 24px; text-align: center; cursor: auto; }
+.screensaver-pin input { max-width: 160px; text-align: center; letter-spacing: .3em; }
+.screensaver-pin-error { color: var(--danger); font-size: 12.5px; margin-top: 8px; display: none; }
+.screensaver-pin-error.show { display: block; }
+.screensaver-hint { margin-top: 20px; font-size: 12.5px; color: var(--slab-muted); }
+
+/* ---------- rixos confetti easter egg ---------- */
+.cp-confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 900; overflow: hidden; }
+.cp-confetti-piece {
+  position: absolute; top: -20px; width: 8px; height: 14px; opacity: .9;
+  animation: cp-confetti-fall linear forwards;
+}
+@keyframes cp-confetti-fall {
+  to { transform: translateY(105vh) rotate(360deg); opacity: 0; }
 }
 
 /* ---------- toast ---------- */

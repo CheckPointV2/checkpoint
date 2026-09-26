@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#6B4E33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CheckPoint">
 <title>CheckPoint — Rixos Bab Al Bahr</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="shared/assets/favicon-32.png">
@@ -11,8 +14,8 @@
 <link rel="apple-touch-icon" href="shared/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="shared/tokens.css">
 <style>
   .cp-topbar-actions { display:flex; align-items:center; gap:8px; }
@@ -39,49 +42,58 @@
     <div class="cp-rail-brand">
       <img class="cp-rail-mark" src="shared/assets/favicon-32.png" alt="Rixos">
       <div class="cp-rail-word">
-        <span class="cp-rail-name cp-serif">CheckPoint</span>
+        <span class="cp-rail-name cp-serif" id="cpRailName">CheckPoint</span>
         <span class="cp-rail-tagline">Rixos Bab Al Bahr</span>
       </div>
+      <button class="cp-rail-collapse" id="railCollapseBtn" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
     </div>
 
     <nav class="cp-rail-nav" aria-label="Main">
       <div class="cp-rail-group">
-        <button class="cp-rail-btn" data-route="#/dashboard" data-tip="Dashboard" aria-label="Dashboard">
-          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
-          <span class="cp-rail-btn-label">Dashboard</span>
-          <em class="cp-rail-count" data-count="urgent"></em>
+        <button class="cp-rail-btn" data-route="#/home" data-tip="Home" aria-label="Home">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>
+          <span class="cp-rail-btn-label">Home</span>
         </button>
       </div>
 
       <div class="cp-rail-group">
-        <div class="cp-rail-group-label">Guest flow</div>
-        <button class="cp-rail-btn" data-route="#/arrivals" data-tip="Arrivals" aria-label="Arrivals">
-          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>
-          <span class="cp-rail-btn-label">Arrivals</span>
-          <em class="cp-rail-count" data-count="arrivals"></em>
-        </button>
-        <button class="cp-rail-btn" data-route="#/waiting" data-tip="Waiting" aria-label="Waiting">
-          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 3.5"/></svg></span>
-          <span class="cp-rail-btn-label">Waiting</span>
-          <em class="cp-rail-count" data-count="waiting"></em>
+        <div class="cp-rail-group-label">Operations</div>
+        <button class="cp-rail-btn" data-route="#/roomguide" data-tip="Room Guide" aria-label="Room Guide">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>
+          <span class="cp-rail-btn-label">Room Guide</span>
         </button>
         <button class="cp-rail-btn" data-route="#/departures" data-sub="departures" data-tip="Departures" aria-label="Departures">
           <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l-4 4m4-4l4 4"/><path d="M4 5h16"/></svg></span>
           <span class="cp-rail-btn-label">Departures</span>
           <em class="cp-rail-count" data-count="departures"></em>
         </button>
-      </div>
-
-      <div class="cp-rail-group">
-        <div class="cp-rail-group-label">Reference</div>
-        <button class="cp-rail-btn" data-route="#/roomguide" data-tip="Room Guide" aria-label="Room Guide">
-          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>
-          <span class="cp-rail-btn-label">Room Guide</span>
-        </button>
         <button class="cp-rail-btn" data-route="#/reports" data-tip="Reports" aria-label="Reports">
           <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10l4 4v14H7z"/><path d="M10 12h7M10 16h7M10 8h3"/></svg></span>
           <span class="cp-rail-btn-label">Reports</span>
           <em class="cp-rail-count" data-count="reports"></em>
+        </button>
+      </div>
+
+      <div class="cp-rail-group">
+        <div class="cp-rail-group-label">Communication</div>
+        <button class="cp-rail-btn" data-route="#/comms" data-tip="Templates" aria-label="Templates">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <span class="cp-rail-btn-label">Templates</span>
+        </button>
+      </div>
+
+      <div class="cp-rail-group">
+        <div class="cp-rail-group-label">Personal</div>
+        <button class="cp-rail-btn" data-route="#/reminders" data-tip="Reminders" aria-label="Reminders">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 3.5"/></svg></span>
+          <span class="cp-rail-btn-label">Reminders</span>
+          <em class="cp-rail-count" data-count="reminders"></em>
+        </button>
+        <button class="cp-rail-btn" data-route="#/notes" data-tip="Notes" aria-label="Notes">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg></span>
+          <span class="cp-rail-btn-label">Notes</span>
         </button>
       </div>
     </nav>
@@ -91,10 +103,6 @@
         <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
         <span class="cp-rail-btn-label">Dark mode</span>
       </button>
-      <button class="cp-rail-btn" data-route="#/settings" data-tip="Settings" aria-label="Settings">
-        <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-        <span class="cp-rail-btn-label">Settings</span>
-      </button>
       <button class="cp-rail-btn" id="lockBtn" data-tip="Lock" aria-label="Lock">
         <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <span class="cp-rail-btn-label">Lock</span>
@@ -103,13 +111,34 @@
   </aside>
 
   <div class="cp-content">
+    <header class="cp-topbar no-print" id="cpTopbar">
+      <div class="cp-topbar-when">
+        <span class="cp-topbar-time" id="cpTopClock"></span>
+        <span class="cp-topbar-date" id="cpTopDate"></span>
+      </div>
+      <button class="cp-ticker" id="cpTicker" type="button" hidden aria-label="Next reminder"></button>
+      <div class="cp-topbar-actions">
+        <button class="cp-icon-btn" id="cpTopSettings" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
     <div id="viewRoot" style="position:relative;">
-      <!-- tool views are mounted here on demand, Dashboard first on boot -->
+      <!-- tool views are mounted here on demand, Home first on boot -->
     </div>
   </div>
 
+  <button class="scratchpad-fab no-print" id="scratchpadFab" aria-label="Open scratchpad" title="Scratchpad (Ctrl+Shift+N)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg>
+  </button>
+
 </div>
 
+<script src="shared/prefs.js"></script>
 <script src="shared/app.js"></script>
+<script src="shared/motion.js"></script>
+<script src="shared/scratchpad.js"></script>
+<script src="shared/palette.js"></script>
+<script src="shared/lock.js"></script>
 </body>
 </html>

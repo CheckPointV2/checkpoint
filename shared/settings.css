@@ -3,11 +3,14 @@
 #view-settings .set-head-sub { margin: 4px 0 28px; color: var(--ink-soft); font-size: 14px; }
 #view-settings .set-section { padding: 20px 22px; margin-bottom: 16px; }
 #view-settings .set-section h2 { font: 600 15px/1 var(--font-display); margin: 0 0 14px; }
-#view-settings .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#view-settings .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+#view-settings .set-row + .set-row { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 #view-settings .set-row-label { font-size: 14px; font-weight: 600; }
 #view-settings .set-row-sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; max-width: 40ch; }
 #view-settings .set-fine { font-size: 12px; color: var(--ink-faint); margin: 14px 0 0; line-height: 1.6; }
-#view-settings .set-section:last-child .set-fine { margin: 0; }
+#view-settings .set-section:last-child .set-fine { margin: 0 0 14px; }
+#view-settings .set-nudge { font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 14px; }
+#view-settings .whatsnew-list { margin: 12px 0 0; padding-left: 20px; font-size: 13.5px; line-height: 1.7; }
 
 @media (max-width: 560px) {
   #view-settings .set-wrap { padding: 22px 18px 40px; }

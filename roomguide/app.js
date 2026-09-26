@@ -185,12 +185,22 @@ function renderFloor(key) {
   requestAnimationFrame(() => requestAnimationFrame(() => grid.classList.remove("transitioning")));
 }
 
+function renderBreadcrumb(roomLabel) {
+  const el = $("#rgBreadcrumb");
+  if (!el) return;
+  const b = buildingData(currentBuilding);
+  const f = b && b.floors[currentFloor];
+  const parts = [b && b.label, f && f.label, roomLabel].filter(Boolean);
+  el.innerHTML = parts.map((p, i) => `<span class="rg-crumb${i === parts.length - 1 ? ' current' : ''}">${p}</span>`).join('<span class="rg-crumb-sep">›</span>');
+}
+
 function renderFloorContent(key) {
   const b = buildingData(currentBuilding);
   const f = b.floors[key];
   const rooms = roomsForFloor(currentBuilding, key);
 
   $("#floorTitle").textContent = f.label;
+  renderBreadcrumb();
   $("#roomCount").textContent = rooms.length;
   const withConnect = rooms.filter((r) => r.connecting != null).length;
   $("#connectCount").textContent = withConnect;
@@ -549,6 +559,7 @@ function clearDetail() {
   $("#detailRoom").classList.remove("show");
   $$(".tile.room-tile").forEach((t) => t.classList.remove("active", "linked", "dim"));
   renderRecent();
+  renderBreadcrumb();
 }
 
 function showDetail(bkey, roomNum) {
@@ -572,6 +583,7 @@ function showDetail(bkey, roomNum) {
 
   $("#detailEmpty").style.display = "none";
   $("#detailRoom").classList.add("show");
+  renderBreadcrumb(`Room ${room.room}`);
 
   const label = titleCase(room.description) || room.type;
   $("#dRoomNum").textContent = room.room;

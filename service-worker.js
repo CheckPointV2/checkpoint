@@ -2,18 +2,21 @@
 // network-first: always try the live version first, fall back to cache only
 // when offline. Only large static assets (room photos, fonts) are cache-first,
 // since those don't change and are worth saving data on.
-const CACHE = "checkpoint-v7";
+const CACHE = "checkpoint-v8";
 const APP_SHELL = [
   "./", "index.html", "manifest.webmanifest",
-  "shared/tokens.css", "shared/app.js",
+  "shared/tokens.css", "shared/prefs.js", "shared/app.js", "shared/motion.js", "shared/scratchpad.js",
+  "shared/palette.js", "shared/lock.js", "shared/home.js", "shared/home.css",
+  "shared/settings.js", "shared/settings.css",
   "shared/assets/favicon-16.png", "shared/assets/favicon-32.png", "shared/assets/apple-touch-icon.png",
   "shared/assets/rixos-logo.png", "shared/assets/icon-192.png", "shared/assets/icon-512.png",
   "roomguide/index.html", "roomguide/style.css", "roomguide/app.js",
   "departures/index.html", "departures/css/app.css",
   "departures/js/store.js", "departures/js/departures.js", "departures/js/checkouts.js",
-  "departures/js/finder.js", "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js",
-  "allocation/module.js", "allocation/style.css", "allocation/parse.js", "allocation/rules.js", "allocation/match.js",
-  "allocation/compare.js", "allocation/group.js"
+  "departures/js/tools.js", "departures/js/daylist.js", "departures/js/app.js",
+  "comms/app.js", "comms/style.css",
+  "reminders/app.js", "reminders/style.css",
+  "notes/app.js", "notes/style.css"
 ];
 const CODE_EXTENSIONS = [".html", ".css", ".js", ".json", ".webmanifest"];
 
