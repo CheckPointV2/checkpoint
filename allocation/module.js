@@ -1,7 +1,7 @@
 (function () {
   const PDFJS_SRC = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
   const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-  const XLSX_SRC = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const XLSX_SRC = "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
   const STATE_KEY = "checkpoint_alloc_v1";
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -56,7 +56,7 @@
   async function extractPdfText(file) {
     await ensurePdfJs();
     const buf = await file.arrayBuffer();
-    const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    const pdf = await window.pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
     let text = "";
     const lines = [];
     for (let i = 1; i <= pdf.numPages; i++) {

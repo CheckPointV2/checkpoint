@@ -10,9 +10,8 @@
        crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourNewPassword'))
          .then(b => console.log(Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')))
      then paste the printed hash below as PASS_HASH.
-     Default password is: rixosCP2026
      ============================================================ */
-  const PASS_HASH = "036111d7bd4ff17f618a9012782f299c2ff19554f1fb57a88edbba4bf3e9cc88"; // default password: rixosCP2026 — change via the note above
+  const PASS_HASH = "036111d7bd4ff17f618a9012782f299c2ff19554f1fb57a88edbba4bf3e9cc88";
   const AUTH_KEY = "cp_auth_ok";
 
   async function sha256(text) {
