@@ -1,40 +1,37 @@
 /* ============================================================
    Resort Map — 3D map of Rixos Bab Al Bahr built from Room Guide data.
    Reads window.RBAB_DATA (roomguide/data.js) and never writes to it.
-   Every tower is generated from the floor grids: one block per room,
-   floors aligned on their lift core, so the model always matches the
-   data. Layout guesses live in config.mjs.
+   Towers: towers.mjs (generated from the floor grids).
+   Grounds: site.mjs. Layout guesses: config.mjs.
    ============================================================ */
 import * as THREE from "./vendor/three.module.min.js";
 import { OrbitControls } from "./vendor/OrbitControls.js";
-import {
-  BUILDINGS, FLOOR_H, ROOM_SIZE, ROOM_H, SITE, VIEW_ORDER, VIEWS, CATEGORIES, FEATURES,
-} from "./config.mjs";
+import { RoomEnvironment } from "./vendor/jsm/environments/RoomEnvironment.js";
+import { BUILDINGS, VIEW_ORDER, VIEWS, CATEGORIES, FEATURES, SITE } from "./config.mjs";
+import { createTowerKit, buildTower, FLOOR_H, SLAB_T, BODY_H, BODY_D, ROOF_TINT } from "./towers.mjs";
+import { buildSite } from "./site.mjs";
+import { PALETTE } from "./textures.mjs";
 
-const SLAB_T = 0.08;
-const LIFT_AWAY = 16;          // how far floors above the chosen one slide up
+const LIFT_AWAY = 18;
 const esc = (s) => (s ?? "").toString().replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 const THEMES = {
   light: {
-    sky: 0xedf0ea, ground: 0xa9be8c, plaza: 0xe7dcc6, sand: 0xf2e4c6, sea: 0x2f9fc0, seaFar: 0x1d7aa3,
-    pool: 0x4cc3d4, coping: 0xf7f1e6, road: 0xb7ad9e, trunk: 0x8b6b48, palm: 0x5d8a43,
-    wall: 0xf3ead9, top: 0xe4d4b8, slab: 0xd8c7a8, podium: 0xcdb898, core: 0x8f7c66, glass: 0xa9cfd6,
-    service: 0xd2c2a5, main: 0xece0ca, mainRoof: 0xd9c6a4,
-    hemiSky: 0xfff8ee, hemiGround: 0xa48e6c, hemi: 1.15, sun: 2.4, sunColor: 0xfff1dc,
-    glow: 0.0, labelInk: "#2B2118", labelHalo: "rgba(255,255,255,.85)", dim: 0x9a9286,
+    skyTop: "#7fb2d6", skyHorizon: "#e6eee9", fog: 0xdfe8e4,
+    hemiSky: 0xf4f7ff, hemiGround: 0x8f7a58, hemi: 0.42, env: 0.32,
+    sun: 3.6, sunColor: 0xffe9cc, exposure: 0.8, glow: 0, pool: 0.08, seaFar: 0x16679a,
+    labelInk: "#2B2118", labelHalo: "rgba(255,255,255,.9)",
   },
   dark: {
-    sky: 0x10141b, ground: 0x263524, plaza: 0x40382e, sand: 0x524838, sea: 0x0f3550, seaFar: 0x0a2236,
-    pool: 0x1f6f86, coping: 0x3d362c, road: 0x2a2724, trunk: 0x3d3022, palm: 0x22361c,
-    wall: 0x8a7d6b, top: 0x6a5f50, slab: 0x5a5043, podium: 0x544a3e, core: 0x3a3229, glass: 0x3b6470,
-    service: 0x544a3e, main: 0x8a7d6b, mainRoof: 0x5f5546,
-    hemiSky: 0x8ea2c8, hemiGround: 0x3a2e22, hemi: 2.1, sun: 1.5, sunColor: 0xc3d0ec,
-    glow: 0.75, labelInk: "#F3EDE3", labelHalo: "rgba(14,11,7,.85)", dim: 0x3b352d,
+    skyTop: "#050913", skyHorizon: "#1a2437", fog: 0x161f30,
+    hemiSky: 0x6d86c0, hemiGround: 0x1a1510, hemi: 0.2, env: 0.06,
+    sun: 0.38, sunColor: 0xa9bde8, exposure: 1.0, glow: 1.6, pool: 0.75, seaFar: 0x0b2c47,
+    labelInk: "#F3EDE3", labelHalo: "rgba(14,11,7,.85)",
   },
 };
 
-const MODE_LABELS = { plain: "Plain", view: "Views", category: "Category" };
+const MODE_LABELS = { plain: "Natural", view: "Views", category: "Category" };
 const VIEW_CHIPS = [
   { key: "COS", label: "Sea" }, { key: "BEA", label: "Beach" }, { key: "POO", label: "Pool" },
   { key: "GAR", label: "Garden" }, { key: "ROAD", label: "Road / entrance" },
@@ -43,7 +40,6 @@ const FLAG_CHIPS = [
   { key: "INT", label: "Interconnecting" }, { key: "HCA", label: "Accessible" }, { key: "SUITE", label: "Suites" },
 ];
 
-/* ---------------------------------------------------------------- helpers */
 function primaryView(room) {
   const codes = room.codes || [];
   for (const v of VIEW_ORDER) if (codes.includes(v)) return v;
@@ -57,81 +53,13 @@ function typeLabel(room) {
   const d = (room.description || room.type || "").toLowerCase();
   return d.replace(/\b\w/g, (m) => m.toUpperCase()).replace(/\s+/g, " ").trim();
 }
-const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
-function makeWindowTextures() {
-  const S = 128;
-  const wall = document.createElement("canvas"); wall.width = wall.height = S;
-  const g = wall.getContext("2d");
-  g.fillStyle = "#ffffff"; g.fillRect(0, 0, S, S);
-  // balcony slab + soft shadow line
-  g.fillStyle = "#e9e1d4"; g.fillRect(0, S * 0.82, S, S * 0.18);
-  g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(0, S * 0.80, S, 3);
-  // window
-  const wx = S * 0.18, wy = S * 0.16, ww = S * 0.64, wh = S * 0.6;
-  const grad = g.createLinearGradient(0, wy, 0, wy + wh);
-  grad.addColorStop(0, "#5f7880"); grad.addColorStop(1, "#33434a");
-  g.fillStyle = grad; g.fillRect(wx, wy, ww, wh);
-  g.fillStyle = "rgba(255,255,255,.18)"; g.fillRect(wx + 4, wy + 4, ww * 0.35, wh - 8);
-  g.strokeStyle = "#cdbfa8"; g.lineWidth = 4; g.strokeRect(wx, wy, ww, wh);
-  g.beginPath(); g.moveTo(S / 2, wy); g.lineTo(S / 2, wy + wh); g.stroke();
-  // railing
-  g.strokeStyle = "rgba(60,48,36,.55)"; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(wx - 6, wy + wh * 0.62); g.lineTo(wx + ww + 6, wy + wh * 0.62); g.stroke();
-
-  const glow = document.createElement("canvas"); glow.width = glow.height = S;
-  const h = glow.getContext("2d");
-  h.fillStyle = "#000"; h.fillRect(0, 0, S, S);
-  const gg = h.createLinearGradient(0, wy, 0, wy + wh);
-  gg.addColorStop(0, "#ffd9a0"); gg.addColorStop(1, "#ffb766");
-  h.fillStyle = gg; h.fillRect(wx + 3, wy + 3, ww - 6, wh - 6);
-
-  const tw = new THREE.CanvasTexture(wall); tw.colorSpace = THREE.SRGBColorSpace; tw.anisotropy = 4;
-  const tg = new THREE.CanvasTexture(glow); tg.colorSpace = THREE.SRGBColorSpace;
-  tw.wrapS = tw.wrapT = tg.wrapS = tg.wrapT = THREE.RepeatWrapping;
-  return { wall: tw, glow: tg };
+function skyTexture(top, horizon) {
+  const c = document.createElement("canvas"); c.width = 2; c.height = 256;
+  const g = c.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, top); gr.addColorStop(0.75, horizon); gr.addColorStop(1, horizon);
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-
-// Window glow per room: an instanced attribute scales the emissive term.
-function withRoomGlow(mat) {
-  mat.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute float aGlow;\nvarying float vGlow;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvGlow = aGlow;");
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying float vGlow;")
-      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance *= vGlow;");
-  };
-  mat.customProgramCacheKey = () => "rm-room-glow";
-  return mat;
-}
-
-// Box whose UVs are in world units / tile, so a window texture repeats instead of stretching.
-function tiledBox(w, h, d, tile) {
-  const g = new THREE.BoxGeometry(w, h, d);
-  const uv = g.attributes.uv;
-  const dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];   // +x -x +y -y +z -z
-  for (let f = 0; f < 6; f++) for (let v = 0; v < 4; v++) {
-    const i = f * 4 + v;
-    uv.setXY(i, uv.getX(i) * Math.max(1, Math.round(dims[f][0] / tile)), uv.getY(i) * Math.max(1, Math.round(dims[f][1] / tile)));
-  }
-  return g;
-}
-
-function roundedRect(w, d, r) {
-  const s = new THREE.Shape(); const x = -w / 2, y = -d / 2; r = Math.min(r, w / 2, d / 2);
-  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
-  s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r);
-  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-}
-function flatShape(shape, mat, y) {
-  const m = new THREE.Mesh(new THREE.ShapeGeometry(shape, 12), mat);
-  m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true;
-  return m;
-}
-function seeded(seed) { return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646; }
 
 /* ================================================================ mount */
 export async function mount(container) {
@@ -142,348 +70,145 @@ export async function mount(container) {
   const root = container.querySelector(".rm-root");
   const $ = (s) => root.querySelector(s);
   const canvas = $(".rm-canvas");
+  const small = () => root.clientWidth < 760;
 
-  /* ---------- state ---------- */
   const state = {
     level: "resort", bkey: null, fk: null, sel: null,
-    mode: "view", views: new Set(), flags: new Set(),
+    mode: "plain", views: new Set(), flags: new Set(),
     theme: document.documentElement.dataset.theme === "dark" ? "dark" : "light",
   };
   let T = THEMES[state.theme];
 
-  /* ---------- renderer / scene ---------- */
+  /* ---------- renderer ---------- */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const mobileGPU = matchMedia("(pointer: coarse)").matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileGPU ? 2 : 1.75));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = T.exposure;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(T.sky);
-  scene.fog = new THREE.Fog(T.sky, 170, 380);
+  scene.fog = new THREE.Fog(T.fog, 260, 620);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = T.env;
 
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 900);
-  const HOME = { pos: new THREE.Vector3(64, 60, 96), target: new THREE.Vector3(8, 0, 6) };
-  camera.position.copy(HOME.pos);
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.5, 1200);
+  const HOME_T = new THREE.Vector3(8, 0, 2);
+  const HOME_DIR = new THREE.Vector3(0.22, 0.78, 1).normalize();
+  // phones look along the coast, so the towers stack down the tall screen
+  const HOME_DIR_PHONE = new THREE.Vector3(1, 1.05, 0.3).normalize();
+  const HOME_T_PHONE = new THREE.Vector3(-6, 0, 0);
+  const homeTarget = () => (small() ? HOME_T_PHONE : HOME_T);
+  const homePos = () => homeTarget().clone().addScaledVector(small() ? HOME_DIR_PHONE : HOME_DIR, small() ? 235 : 178);
+  camera.position.copy(homePos());
 
   const controls = new OrbitControls(camera, canvas);
-  controls.target.copy(HOME.target);
-  controls.enableDamping = true; controls.dampingFactor = 0.09;
-  controls.maxPolarAngle = 1.38; controls.minDistance = 6; controls.maxDistance = 260;
+  controls.target.copy(homeTarget());
+  controls.enableDamping = true; controls.dampingFactor = 0.085;
+  controls.maxPolarAngle = 1.3; controls.minDistance = 5; controls.maxDistance = 330;
   controls.screenSpacePanning = false; controls.zoomToCursor = true;
   controls.update();
 
-  const hemi = new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemi);
-  scene.add(hemi);
+  const hemi = new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemi); scene.add(hemi);
   const sun = new THREE.DirectionalLight(T.sunColor, T.sun);
-  sun.position.set(70, 110, 55); sun.target.position.set(6, 0, 6);
+  sun.position.set(-70, 120, 85); sun.target.position.set(8, 0, 4);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -85, right: 85, top: 85, bottom: -85, near: 10, far: 300 });
-  sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+  sun.shadow.mapSize.set(mobileGPU ? 2048 : 4096, mobileGPU ? 2048 : 4096);
+  Object.assign(sun.shadow.camera, { left: -95, right: 95, top: 95, bottom: -95, near: 20, far: 340 });
+  sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.025;
   scene.add(sun, sun.target);
 
-  const tex = makeWindowTextures();
-
-  /* ---------- site (ground, beach, sea, pools, palms) ---------- */
-  const siteMats = {
-    ground: new THREE.MeshStandardMaterial({ color: T.ground, roughness: 1 }),
-    plaza: new THREE.MeshStandardMaterial({ color: T.plaza, roughness: 0.95 }),
-    sand: new THREE.MeshStandardMaterial({ color: T.sand, roughness: 1 }),
-    sea: new THREE.MeshStandardMaterial({ color: T.sea, roughness: 0.25, metalness: 0.05 }),
-    seaFar: new THREE.MeshStandardMaterial({ color: T.seaFar, roughness: 0.3 }),
-    pool: new THREE.MeshStandardMaterial({ color: T.pool, roughness: 0.12, emissive: T.pool, emissiveIntensity: 0.12 }),
-    coping: new THREE.MeshStandardMaterial({ color: T.coping, roughness: 0.9 }),
-    road: new THREE.MeshStandardMaterial({ color: T.road, roughness: 1 }),
-    trunk: new THREE.MeshStandardMaterial({ color: T.trunk, roughness: 1 }),
-    palm: new THREE.MeshStandardMaterial({ color: T.palm, roughness: 0.9, flatShading: true, side: THREE.DoubleSide }),
-    main: new THREE.MeshStandardMaterial({ color: T.main, roughness: 0.85, map: tex.wall, emissiveMap: tex.glow, emissive: 0xffc27a, emissiveIntensity: T.glow }),
-    mainRoof: new THREE.MeshStandardMaterial({ color: T.mainRoof, roughness: 0.9 }),
-  };
-  const site = new THREE.Group(); scene.add(site);
-  {
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), siteMats.ground);
-    ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.02, 0); ground.receiveShadow = true; site.add(ground);
-
-    const sand = new THREE.Mesh(new THREE.PlaneGeometry(700, SITE.seaStart - SITE.beachStart + 6), siteMats.sand);
-    sand.rotation.x = -Math.PI / 2; sand.position.set(0, -0.005, (SITE.beachStart + SITE.seaStart) / 2); sand.receiveShadow = true; site.add(sand);
-
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(700, 60), siteMats.sea);
-    sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.0, SITE.seaStart + 30); site.add(sea);
-    const seaFar = new THREE.Mesh(new THREE.PlaneGeometry(700, 400), siteMats.seaFar);
-    seaFar.rotation.x = -Math.PI / 2; seaFar.position.set(0, -0.01, SITE.seaStart + 60 + 200); site.add(seaFar);
-
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(700, 6), siteMats.road);
-    road.rotation.x = -Math.PI / 2; road.position.set(0, 0.0, SITE.road); road.receiveShadow = true; site.add(road);
-
-    // paved plaza linking main building, pools and the towers
-    const plazaA = flatShape(roundedRect(46, 30, 6), siteMats.plaza, 0.004);
-    plazaA.position.set(34, 0.004, -4); site.add(plazaA);
-    const plazaB = flatShape(roundedRect(30, 34, 6), siteMats.plaza, 0.004);
-    plazaB.position.set(15, 0.004, 19); site.add(plazaB);
-
-    for (const p of SITE.pools) {
-      const cope = flatShape(roundedRect(p.w + 1.2, p.d + 1.2, 1.6), siteMats.coping, 0.02);
-      cope.position.x = p.x; cope.position.z = p.z; site.add(cope);
-      const water = flatShape(roundedRect(p.w, p.d, 1.2), siteMats.pool, 0.04);
-      water.position.x = p.x; water.position.z = p.z; site.add(water);
-    }
-    for (const c of SITE.courts) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(c.w, c.d), new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.9 }));
-      m.rotation.x = -Math.PI / 2; m.position.set(c.x, 0.03, c.z); m.receiveShadow = true; site.add(m);
-      const lines = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.PlaneGeometry(c.w - 0.6, c.d - 0.6)),
-        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 }),
-      );
-      lines.rotation.x = -Math.PI / 2; lines.position.set(c.x, 0.04, c.z); site.add(lines);
-      const mid = new THREE.Mesh(new THREE.PlaneGeometry(c.w - 0.6, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      mid.rotation.x = -Math.PI / 2; mid.position.set(c.x, 0.04, c.z); site.add(mid);
-    }
-
-    // main building: low wings around a courtyard
-    const mb = SITE.mainBuilding;
-    const mainGroup = new THREE.Group(); mainGroup.position.set(mb.x, 0, mb.z); site.add(mainGroup);
-    const wings = [
-      [0, -mb.d / 2 + 2.5, mb.w, 5], [0, mb.d / 2 - 2.5, mb.w * 0.8, 5],
-      [-mb.w / 2 + 2.5, 0, 5, mb.d], [mb.w / 2 - 2.5, 0, 5, mb.d * 0.7],
-    ];
-    for (const [x, z, w, d] of wings) {
-      const geo = tiledBox(w, mb.h, d, 1.4);
-      const mats = [siteMats.main, siteMats.main, siteMats.mainRoof, siteMats.mainRoof, siteMats.main, siteMats.main];
-      const m = new THREE.Mesh(geo, mats); m.position.set(x, mb.h / 2, z);
-      m.castShadow = true; m.receiveShadow = true; mainGroup.add(m);
-    }
-    const lobby = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 1.4, 40), siteMats.mainRoof);
-    lobby.position.set(-mb.w / 2 + 2.5, mb.h + 0.7, -mb.d / 2 + 2.5); lobby.castShadow = true; mainGroup.add(lobby);
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.6, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), siteMats.mainRoof);
-    dome.position.set(-mb.w / 2 + 2.5, mb.h + 1.4, -mb.d / 2 + 2.5); dome.castShadow = true; mainGroup.add(dome);
-  }
-
   /* ---------- towers ---------- */
-  const bData = {};            // bkey -> { group, floors: {fk: floorRec}, order:[fk], bounds, center, roomCount }
-  const roomIndex = {};        // "bkey:num" -> rec
+  const kit = createTowerKit();
+  const bData = {};
+  const roomIndex = {};
   const pickables = [];
-
-  const roomGeo = new THREE.BoxGeometry(ROOM_SIZE, ROOM_H, ROOM_SIZE);
-  const slabGeo = new THREE.BoxGeometry(1.0, SLAB_T, 1.0);
-  const cellGeo = new THREE.BoxGeometry(1.0, FLOOR_H, 1.0);
-  const tmpM = new THREE.Matrix4();
-  const white = new THREE.Color(1, 1, 1);
-
-  function newFloorMats() {
-    const side = withRoomGlow(new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex.wall, roughness: 0.82, emissiveMap: tex.glow, emissive: 0xffc27a, emissiveIntensity: T.glow }));
-    const top = new THREE.MeshStandardMaterial({ color: T.top, roughness: 0.9 });
-    const slab = new THREE.MeshStandardMaterial({ color: T.slab, roughness: 0.95 });
-    const core = new THREE.MeshStandardMaterial({ color: T.core, roughness: 0.8 });
-    const glass = new THREE.MeshStandardMaterial({ color: T.glass, roughness: 0.15, transparent: true, opacity: 0.55 });
-    const service = new THREE.MeshStandardMaterial({ color: T.service, roughness: 0.95 });
-    const podium = new THREE.MeshStandardMaterial({ color: T.podium, roughness: 0.95 });
-    return { side, top, slab, core, glass, service, podium };
-  }
-
-  function instanced(geo, mat, cells, y, store) {
-    if (!cells.length) return null;
-    const m = new THREE.InstancedMesh(geo, mat, cells.length);
-    cells.forEach((c, i) => { tmpM.makeTranslation(c.x, y, c.z); m.setMatrixAt(i, tmpM); });
-    m.castShadow = true; m.receiveShadow = true;
-    store.add(m);
-    return m;
-  }
-
+  const footprints = [];
   for (const bkey of D.buildingOrder) {
-    const B = D.buildings[bkey];
-    const cfg = BUILDINGS[bkey] || { x: 0, z: 0, rotation: 0 };
-    const group = new THREE.Group();
-    group.position.set(cfg.x, 0, cfg.z);
-    group.rotation.y = THREE.MathUtils.degToRad(cfg.rotation || 0);
-    scene.add(group);
-
-    const order = Object.keys(B.floors).sort((a, b) => B.floors[a].order - B.floors[b].order);
-    const recs = {};
-    const occupied = {};
-    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-
-    for (const fk of order) {
-      const F = B.floors[fk];
-      const fac = F.facilities || [];
-      const anchor = fac.find((f) => f.label === "Lift 2") || fac.find((f) => /lift/i.test(f.label)) || { row: Math.floor(F.rows / 2), col: Math.floor(F.cols / 2) };
-      const rooms = Object.values(B.rooms).filter((r) => r.floor === fk && r.type !== "PI");
-      const cells = [];
-      const set = new Set();
-      for (const r of rooms) {
-        const x = r.col - anchor.col, z = r.row - anchor.row;
-        cells.push({ x, z, room: r }); set.add(x + "," + z);
+    const tw = buildTower(kit, bkey, D.buildings[bkey], BUILDINGS[bkey] || { x: 0, z: 0, rotation: 0 });
+    scene.add(tw.group);
+    tw.group.updateMatrixWorld(true);
+    const wb = tw.bounds.clone().applyMatrix4(tw.group.matrixWorld);
+    footprints.push({ x0: wb.min.x - 1.5, x1: wb.max.x + 1.5, z0: wb.min.z - 1.5, z1: wb.max.z + 1.5 });
+    tw.opacity = 1; tw.opacityTarget = 1; tw.crownLift = 0;
+    tw.roomCount = 0;
+    for (const fk of tw.order) {
+      const f = tw.floors[fk];
+      if (f.roomMesh) pickables.push(f.roomMesh);
+      for (const r of f.rooms) {
+        tw.roomCount++;
+        const key = bkey + ":" + r.room.room;
+        roomIndex[key] = {
+          key, bkey, fk, num: String(r.room.room), room: r.room, r, mesh: f.roomMesh, idx: r.idx,
+          floorGroup: f.group, view: primaryView(r.room), cat: categoryOf(r.room),
+          base: new THREE.Color(r.cream ? PALETTE.cream : PALETTE.apricot),
+        };
       }
-      const facCells = { core: [], glass: [], service: [] };
-      for (const f of fac) {
-        const x = f.col - anchor.col, z = f.row - anchor.row; set.add(x + "," + z);
-        const kind = /lift/i.test(f.label) ? "core" : /atrium/i.test(f.label) ? "glass" : "service";
-        facCells[kind].push({ x, z, label: f.label });
-      }
-      occupied[fk] = set;
-      for (const k of set) { const [x, z] = k.split(",").map(Number); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
-      recs[fk] = { fk, label: F.label, order: F.order, y: F.order * FLOOR_H, cells, facCells, rooms };
     }
-
-    // podium: fill any cell that a higher floor covers but this floor doesn't, so nothing floats
-    const above = new Set();
-    for (let i = order.length - 1; i >= 0; i--) {
-      const fk = order[i];
-      recs[fk].podium = [...above].filter((k) => !occupied[fk].has(k)).map((k) => { const [x, z] = k.split(",").map(Number); return { x, z }; });
-      for (const k of occupied[fk]) above.add(k);
-    }
-
-    for (const fk of order) {
-      const r = recs[fk];
-      const fg = new THREE.Group(); fg.position.y = r.y; group.add(fg);
-      const mats = newFloorMats();
-      const slabCells = [...occupied[fk]].map((k) => { const [x, z] = k.split(",").map(Number); return { x, z }; });
-      instanced(slabGeo, mats.slab, slabCells, SLAB_T / 2, fg);
-      instanced(cellGeo, mats.podium, r.podium, FLOOR_H / 2, fg);
-      instanced(cellGeo, mats.core, r.facCells.core, FLOOR_H / 2, fg);
-      const g = instanced(cellGeo, mats.glass, r.facCells.glass, FLOOR_H / 2, fg);
-      if (g) g.castShadow = false;
-      const svc = r.facCells.service.length ? instanced(new THREE.BoxGeometry(1, ROOM_H * 0.6, 1), mats.service, r.facCells.service, SLAB_T + ROOM_H * 0.3, fg) : null;
-      const roomMats = [mats.side, mats.side, mats.top, mats.top, mats.side, mats.side];
-      const geo = roomGeo.clone();
-      geo.setAttribute("aGlow", new THREE.InstancedBufferAttribute(new Float32Array(r.cells.length).fill(1), 1));
-      const rm = instanced(geo, roomMats, r.cells, SLAB_T + ROOM_H / 2, fg);
-      if (rm) {
-        rm.userData = { bkey, fk, nums: r.cells.map((c) => String(c.room.room)) };
-        r.cells.forEach((c, i) => {
-          rm.setColorAt(i, white);
-          const key = bkey + ":" + c.room.room;
-          roomIndex[key] = {
-            key, bkey, fk, num: String(c.room.room), room: c.room, mesh: rm, idx: i,
-            local: new THREE.Vector3(c.x, SLAB_T + ROOM_H / 2, c.z), floorGroup: fg,
-            view: primaryView(c.room), cat: categoryOf(c.room),
-          };
-        });
-        rm.instanceColor.needsUpdate = true;
-        pickables.push(rm);
-      }
-      Object.assign(r, { group: fg, mats, roomMesh: rm, serviceMesh: svc, lift: 0, liftTarget: 0, opacity: 1, opacityTarget: 1 });
-    }
-
-    // crown on the lift core above the top floor
-    const top = recs[order[order.length - 1]];
-    const crownMats = newFloorMats();
-    const crown = new THREE.Group(); crown.position.y = top.y + FLOOR_H; group.add(crown);
-    const cx = top.facCells.core.reduce((s, c) => s + c.x, 0) / Math.max(1, top.facCells.core.length);
-    const cz = top.facCells.core.reduce((s, c) => s + c.z, 0) / Math.max(1, top.facCells.core.length);
-    const crownGeo = tiledBox(3.4, 1.1, 2.4, 1.1);
-    crownGeo.setAttribute("aGlow", new THREE.Float32BufferAttribute(new Float32Array(crownGeo.attributes.position.count).fill(1), 1));
-    const base = new THREE.Mesh(crownGeo, [crownMats.side, crownMats.side, crownMats.top, crownMats.top, crownMats.side, crownMats.side]);
-    base.position.set(cx, 0.55, cz); base.castShadow = true; crown.add(base);
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.18, 3.0), crownMats.slab);
-    cap.position.set(cx, 1.2, cz); cap.castShadow = true; crown.add(cap);
-
-    const bounds = new THREE.Box3(
-      new THREE.Vector3(minX - 0.5, 0, minZ - 0.5),
-      new THREE.Vector3(maxX + 0.5, order.length * FLOOR_H + 1.3, maxZ + 0.5),
-    );
-    bData[bkey] = {
-      bkey, label: B.label, group, floors: recs, order, bounds, crown, crownMats,
-      roomCount: Object.values(recs).reduce((s, r) => s + r.cells.length, 0), opacity: 1, opacityTarget: 1,
-    };
+    bData[bkey] = tw;
   }
 
-  /* ---------- palms (instanced) ---------- */
-  {
-    const rand = seeded(7);
-    const spots = [];
-    const blocked = (x, z) => {
-      for (const b of Object.values(bData)) {
-        const c = b.group.position; const bx = b.bounds;
-        if (x > c.x + bx.min.x - 2 && x < c.x + bx.max.x + 2 && z > c.z + bx.min.z - 2 && z < c.z + bx.max.z + 2) return true;
-      }
-      const mb = SITE.mainBuilding;
-      if (Math.abs(x - mb.x) < mb.w / 2 + 2 && Math.abs(z - mb.z) < mb.d / 2 + 2) return true;
-      for (const p of SITE.pools) if (Math.abs(x - p.x) < p.w / 2 + 1.2 && Math.abs(z - p.z) < p.d / 2 + 1.2) return true;
-      return false;
-    };
-    for (let x = -70; x <= 90; x += 6) { spots.push([x + rand() * 1.5, SITE.road + 4.5]); spots.push([x + rand() * 1.5, SITE.road - 4.5]); }
-    for (let x = -70; x <= 90; x += 9) spots.push([x + rand() * 3, SITE.beachStart - 1.5 + rand() * 2]);
-    for (let i = 0; i < 70; i++) {
-      const x = -60 + rand() * 140, z = -34 + rand() * 72;
-      if (!blocked(x, z)) spots.push([x, z]);
-    }
-    const trunkGeo = new THREE.CylinderGeometry(0.07, 0.11, 3.0, 6); trunkGeo.translate(0, 1.5, 0);
-    const crownGeo = new THREE.ConeGeometry(0.95, 0.55, 7, 1, true); crownGeo.rotateX(Math.PI); crownGeo.translate(0, 3.05, 0);
-    const trunks = new THREE.InstancedMesh(trunkGeo, siteMats.trunk, spots.length);
-    const crowns = new THREE.InstancedMesh(crownGeo, siteMats.palm, spots.length);
-    const q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
-    spots.forEach(([x, z], i) => {
-      const k = 0.8 + rand() * 0.5;
-      e.set((rand() - 0.5) * 0.15, rand() * Math.PI, (rand() - 0.5) * 0.15); q.setFromEuler(e);
-      s.set(k, k, k); p.set(x, 0, z);
-      tmpM.compose(p, q, s); trunks.setMatrixAt(i, tmpM); crowns.setMatrixAt(i, tmpM);
-    });
-    trunks.castShadow = crowns.castShadow = true;
-    site.add(trunks, crowns);
-  }
+  /* ---------- grounds ---------- */
+  const site = buildSite(scene, { towerFootprints: footprints });
 
   /* ---------- selection markers ---------- */
   const selBox = new THREE.Group();
   {
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(ROOM_SIZE + 0.1, ROOM_H + 0.1, ROOM_SIZE + 0.1)),
-      new THREE.LineBasicMaterial({ color: 0x6b4e33, linewidth: 2 }),
-    );
-    const glowBox = new THREE.Mesh(
-      new THREE.BoxGeometry(ROOM_SIZE + 0.16, ROOM_H + 0.16, ROOM_SIZE + 0.16),
-      new THREE.MeshBasicMaterial({ color: 0xe3b04f, transparent: true, opacity: 0.42, depthWrite: false }),
-    );
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 6, 8),
-      new THREE.MeshBasicMaterial({ color: 0xc9a24b, transparent: true, opacity: 0.55, depthWrite: false }),
-    );
-    beam.position.y = 3.4;
-    selBox.add(edges, glowBox, beam); selBox.visible = false;
+    const geo = new THREE.BoxGeometry(1.06, BODY_H + 0.06, BODY_D + 0.06);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffd27a }));
+    const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffc04d, transparent: true, opacity: 0.38, depthWrite: false }));
+    const cap = new THREE.Mesh(new THREE.PlaneGeometry(1.0, BODY_D), new THREE.MeshBasicMaterial({ color: 0xffbf3f, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false }));
+    cap.rotation.x = -Math.PI / 2; cap.position.y = BODY_H / 2 + 0.03; cap.renderOrder = 4;
+    selBox.add(edges, fill, cap); selBox.visible = false;
   }
   const connBox = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(ROOM_SIZE + 0.08, ROOM_H + 0.08, ROOM_SIZE + 0.08)),
-    new THREE.LineDashedMaterial({ color: 0xc9a24b, dashSize: 0.12, gapSize: 0.08 }),
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, BODY_H + 0.04, BODY_D + 0.04)),
+    new THREE.LineDashedMaterial({ color: 0xffc04d, dashSize: 0.12, gapSize: 0.08 }),
   );
   connBox.computeLineDistances(); connBox.visible = false;
+  const bodyCenter = (r) => new THREE.Vector3(
+    r.x + Math.sin(r.rot) * (-0.5 + BODY_D / 2), SLAB_T + BODY_H / 2, r.z + Math.cos(r.rot) * (-0.5 + BODY_D / 2));
+  function placeMarker(obj, rec) {
+    rec.floorGroup.add(obj);
+    obj.position.copy(bodyCenter(rec.r)); obj.rotation.y = rec.r.rot; obj.visible = true;
+  }
 
-  /* ---------- floor number labels (one canvas per floor, made on demand) ---------- */
+  /* ---------- floor number labels ---------- */
   const numberPlanes = {};
   function numberPlane(bkey, fk) {
     const key = bkey + ":" + fk;
     if (numberPlanes[key]) return numberPlanes[key];
-    const r = bData[bkey].floors[fk];
-    if (!r.cells.length) return null;
+    const f = bData[bkey].floors[fk];
+    if (!f.rooms.length) return null;
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    for (const c of r.cells) { minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x); minZ = Math.min(minZ, c.z); maxZ = Math.max(maxZ, c.z); }
-    const PX = 96;
-    const w = maxX - minX + 1, d = maxZ - minZ + 1;
+    for (const r of f.rooms) { minX = Math.min(minX, r.x); maxX = Math.max(maxX, r.x); minZ = Math.min(minZ, r.z); maxZ = Math.max(maxZ, r.z); }
+    const PX = 112, w = maxX - minX + 1, d = maxZ - minZ + 1;
     const cv = document.createElement("canvas"); cv.width = w * PX; cv.height = d * PX;
-    const plane = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, d),
-      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }),
-    );
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false }));
     plane.rotation.x = -Math.PI / 2;
-    plane.position.set(minX + w / 2 - 0.5, SLAB_T + ROOM_H + 0.012, minZ + d / 2 - 0.5);
+    plane.position.set(minX + w / 2 - 0.5, FLOOR_H + 0.015, minZ + d / 2 - 0.5);
     plane.renderOrder = 5;
-    const rec = { plane, cv, minX, minZ, PX, r };
+    const rec = { plane, cv, minX, minZ, PX, f, rot: bData[bkey].group.rotation.y };
     paintNumbers(rec);
-    r.group.add(plane);
+    f.group.add(plane);
     numberPlanes[key] = rec;
     return rec;
   }
   function paintNumbers(rec) {
     const g = rec.cv.getContext("2d");
     g.clearRect(0, 0, rec.cv.width, rec.cv.height);
-    g.font = `700 ${Math.round(rec.PX * 0.3)}px "Plus Jakarta Sans", system-ui, sans-serif`;
-    g.textAlign = "center"; g.textBaseline = "middle";
-    g.lineJoin = "round"; g.lineWidth = rec.PX * 0.07;
-    for (const c of rec.r.cells) {
+    g.font = `800 ${Math.round(rec.PX * 0.27)}px "Plus Jakarta Sans", system-ui, sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round"; g.lineWidth = rec.PX * 0.08;
+    for (const r of rec.f.rooms) {
+      const c = bodyCenter(r);
       const x = (c.x - rec.minX + 0.5) * rec.PX, y = (c.z - rec.minZ + 0.5) * rec.PX;
-      const t = String(c.room.room);
-      g.strokeStyle = T.labelHalo; g.strokeText(t, x, y);
-      g.fillStyle = T.labelInk; g.fillText(t, x, y);
+      g.save(); g.translate(x, y); g.rotate(rec.rot);
+      const t = String(r.room.room);
+      g.strokeStyle = T.labelHalo; g.strokeText(t, 0, 0);
+      g.fillStyle = T.labelInk; g.fillText(t, 0, 0);
+      g.restore();
     }
     if (rec.plane.material.map) rec.plane.material.map.dispose();
     const t = new THREE.CanvasTexture(rec.cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
@@ -491,8 +216,7 @@ export async function mount(container) {
   }
 
   /* ---------- colouring & filters ---------- */
-  const cTmp = new THREE.Color();
-  const cDim = new THREE.Color();
+  const cTmp = new THREE.Color(), cMix = new THREE.Color(), cGrey = new THREE.Color(0x8f8a84), cStone = new THREE.Color(0xf1ebe1);
   function matches(rec) {
     const v = state.views, f = state.flags;
     if (v.size) {
@@ -506,24 +230,23 @@ export async function mount(container) {
     return true;
   }
   const filtering = () => state.views.size > 0 || state.flags.size > 0;
-
-  function baseColor(rec, out) {
-    if (state.mode === "view") return out.setHex(VIEWS[rec.view].color);
-    if (state.mode === "category") return out.setHex(rec.cat ? CATEGORIES[rec.cat].color : VIEWS.NONE.color);
-    return out.copy(white);
+  function updateRoofTint() {
+    ROOF_TINT.value = state.mode !== "plain" || filtering() ? 1 : state.level === "floor" ? 0.45 : 0;
+    requestRender();
   }
   function recolor() {
+    updateRoofTint();
     const on = filtering();
-    cDim.setHex(T.dim);
     let count = 0; const perB = {};
     for (const rec of Object.values(roomIndex)) {
       const m = on ? matches(rec) : true;
       if (m && on) { count++; perB[rec.bkey] = (perB[rec.bkey] || 0) + 1; }
-      baseColor(rec, cTmp);
-      if (on && !m) cTmp.copy(cDim);
-      else if (on && m && state.mode === "plain") cTmp.setHex(0xe0a94e);
+      if (state.mode === "plain") cTmp.copy(rec.base); else cTmp.copy(cStone);
+      if (state.mode === "view") cTmp.lerp(cMix.setHex(VIEWS[rec.view].color), 0.78);
+      else if (state.mode === "category") cTmp.lerp(cMix.setHex(rec.cat ? CATEGORIES[rec.cat].color : VIEWS.NONE.color), 0.78);
+      if (on && !m) cTmp.lerp(cGrey, 0.82);
       rec.mesh.setColorAt(rec.idx, cTmp);
-      rec.mesh.geometry.attributes.aGlow.setX(rec.idx, on && !m ? 0.06 : 1);
+      rec.mesh.geometry.attributes.aGlow.setX(rec.idx, on && !m ? 0.04 : 1);
     }
     for (const m of pickables) { m.instanceColor.needsUpdate = true; m.geometry.attributes.aGlow.needsUpdate = true; }
     const cnt = $(".rm-count");
@@ -540,17 +263,17 @@ export async function mount(container) {
   function applyTheme(name) {
     state.theme = name === "dark" ? "dark" : "light";
     T = THEMES[state.theme];
-    scene.background.setHex(T.sky); scene.fog.color.setHex(T.sky);
+    if (scene.background) scene.background.dispose();
+    scene.background = skyTexture(T.skyTop, T.skyHorizon);
+    scene.fog.color.setHex(T.fog);
+    scene.environmentIntensity = T.env;
     hemi.color.setHex(T.hemiSky); hemi.groundColor.setHex(T.hemiGround); hemi.intensity = T.hemi;
     sun.color.setHex(T.sunColor); sun.intensity = T.sun;
-    for (const k of ["ground", "plaza", "sand", "sea", "seaFar", "coping", "road", "trunk", "palm", "mainRoof"]) siteMats[k].color.setHex(T[k]);
-    siteMats.pool.color.setHex(T.pool); siteMats.pool.emissive.setHex(T.pool);
-    siteMats.main.color.setHex(T.main); siteMats.main.emissiveIntensity = T.glow;
-    const setMats = (m) => {
-      m.side.emissiveIntensity = T.glow; m.top.color.setHex(T.top); m.slab.color.setHex(T.slab);
-      m.core.color.setHex(T.core); m.glass.color.setHex(T.glass); m.service.color.setHex(T.service); m.podium.color.setHex(T.podium);
-    };
-    for (const b of Object.values(bData)) { for (const r of Object.values(b.floors)) setMats(r.mats); setMats(b.crownMats); }
+    renderer.toneMappingExposure = T.exposure;
+    site.mats.pool.emissiveIntensity = T.pool;
+    site.mats.seaFar.color.setHex(T.seaFar);
+    site.mats.mainA.emissiveIntensity = site.mats.mainC.emissiveIntensity = T.glow * 0.9;
+    for (const b of Object.values(bData)) for (const f of Object.values(b.floors)) for (const m of f.mats.glowMats) m.emissiveIntensity = T.glow;
     for (const rec of Object.values(numberPlanes)) paintNumbers(rec);
     recolor();
   }
@@ -566,8 +289,8 @@ export async function mount(container) {
     el.innerHTML = `<span class="rm-tag-name">${esc(b.label)}</span><span class="rm-tag-sub">${b.roomCount} rooms · ${b.order.length} floors</span>`;
     el.addEventListener("click", () => goBuilding(bkey));
     labelLayer.appendChild(el);
-    const top = new THREE.Vector3(0, b.bounds.max.y + 1.6, 0);
-    tags.push({ el, world: () => b.group.localToWorld(top.clone()), show: () => state.level === "resort" });
+    const c = new THREE.Vector3(); b.bounds.getCenter(c); c.y = b.bounds.max.y + 1.2;
+    tags.push({ el, world: () => b.group.localToWorld(c.clone()), show: () => state.level === "resort" });
   }
   for (const l of SITE.labels) {
     const el = document.createElement("div");
@@ -582,52 +305,52 @@ export async function mount(container) {
     for (const t of tags) {
       if (!t.show()) { t.el.hidden = true; continue; }
       projV.copy(t.world()).project(camera);
-      const off = projV.z > 1 || Math.abs(projV.x) > 1.1 || Math.abs(projV.y) > 1.1;
-      t.el.hidden = off;
-      if (!off) t.el.style.transform = `translate(${(projV.x * 0.5 + 0.5) * w}px, ${(-projV.y * 0.5 + 0.5) * h}px) translate(-50%, -100%)`;
+      const out = projV.z > 1 || Math.abs(projV.x) > 1.1 || Math.abs(projV.y) > 1.1;
+      t.el.hidden = out;
+      if (!out) t.el.style.transform = `translate(${(projV.x * 0.5 + 0.5) * w}px, ${(-projV.y * 0.5 + 0.5) * h}px) translate(-50%, -100%)`;
     }
   }
 
   /* ---------- camera flights ---------- */
   let flight = null;
-  function flyTo(pos, target, dur = 950) {
-    flight = { t0: performance.now(), dur, p0: camera.position.clone(), t0v: controls.target.clone(), p1: pos.clone(), t1: target.clone() };
+  function flyTo(pos, target, dur = 1000) {
+    flight = { t0: performance.now(), dur, p0: camera.position.clone(), q0: controls.target.clone(), p1: pos.clone(), q1: target.clone() };
     requestRender();
   }
-  function worldCenter(b) {
-    const c = new THREE.Vector3(); b.bounds.getCenter(c); return b.group.localToWorld(c);
+  function towerCenter(b, y) {
+    const c = new THREE.Vector3(); b.bounds.getCenter(c); c.y = y; return b.group.localToWorld(c);
   }
-  const VIEW_DIR = new THREE.Vector3(0.62, 0.72, 1).normalize();
   function frameBuilding(b) {
     const size = new THREE.Vector3(); b.bounds.getSize(size);
-    const c = worldCenter(b); c.y = size.y * 0.35;
-    const dist = Math.max(size.x, size.z, size.y * 1.6) * 2.3;
-    flyTo(c.clone().addScaledVector(VIEW_DIR, dist), c);
+    const c = towerCenter(b, size.y * 0.32);
+    const dist = Math.max(size.x, size.z) * (small() ? 3.3 : 2.35);
+    flyTo(c.clone().addScaledVector(new THREE.Vector3(0.42, 0.82, 1).normalize(), dist), c);
   }
-  function frameFloor(b, fk) {
-    const r = b.floors[fk];
+  function floorBox(b, fk) {
+    const f = b.floors[fk];
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    const all = r.cells.length ? r.cells : r.facCells.core;
-    for (const c of all) { minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x); minZ = Math.min(minZ, c.z); maxZ = Math.max(maxZ, c.z); }
-    const c = b.group.localToWorld(new THREE.Vector3((minX + maxX) / 2, r.y + ROOM_H, (minZ + maxZ) / 2));
-    const span = Math.max(maxX - minX, maxZ - minZ) + 2;
-    const dir = new THREE.Vector3(0.45, 1.25, 0.8).normalize();
-    flyTo(c.clone().addScaledVector(dir, span * 2.15), c);
+    for (const r of f.rooms.length ? f.rooms : f.core) { minX = Math.min(minX, r.x); maxX = Math.max(maxX, r.x); minZ = Math.min(minZ, r.z); maxZ = Math.max(maxZ, r.z); }
+    return { c: b.group.localToWorld(new THREE.Vector3((minX + maxX) / 2, f.y + FLOOR_H, (minZ + maxZ) / 2)), span: Math.max(maxX - minX, maxZ - minZ) + 2 };
+  }
+  const FLOOR_DIR = new THREE.Vector3(0.28, 1.45, 0.82).normalize();
+  function frameFloor(b, fk) {
+    const { c, span } = floorBox(b, fk);
+    flyTo(c.clone().addScaledVector(FLOOR_DIR, span * (small() ? 3.0 : 2.15)), c);
   }
 
   /* ---------- level transitions ---------- */
   function setBuildingFocus(bkey) {
-    for (const b of Object.values(bData)) b.opacityTarget = !bkey || b.bkey === bkey ? 1 : 0.13;
+    for (const b of Object.values(bData)) b.opacityTarget = !bkey || b.bkey === bkey ? 1 : 0.12;
   }
   function setFloorFocus(bkey, fk) {
     for (const b of Object.values(bData)) {
       const selOrder = b.bkey === bkey && fk ? b.floors[fk].order : Infinity;
-      for (const r of Object.values(b.floors)) {
-        const up = r.order > selOrder;
-        r.liftTarget = up ? LIFT_AWAY + (r.order - selOrder) * 1.2 : 0;
-        r.opacityTarget = up ? 0 : 1;
+      for (const f of Object.values(b.floors)) {
+        const up = f.order > selOrder;
+        f.liftTarget = up ? LIFT_AWAY + (f.order - selOrder) * 1.3 : 0;
+        f.opacityTarget = up ? 0 : 1;
       }
-      b.crownLift = b.bkey === bkey && fk ? LIFT_AWAY + 4 : 0;
+      b.crownLift = b.bkey === bkey && fk ? 1 : 0;
     }
     for (const [key, rec] of Object.entries(numberPlanes)) rec.plane.visible = key === bkey + ":" + fk;
     if (bkey && fk) { const np = numberPlane(bkey, fk); if (np) np.plane.visible = true; }
@@ -635,20 +358,20 @@ export async function mount(container) {
 
   function goResort() {
     state.level = "resort"; state.bkey = null; state.fk = null; clearSelection();
-    setBuildingFocus(null); setFloorFocus(null, null);
-    flyTo(HOME.pos, HOME.target, 1100);
+    setBuildingFocus(null); setFloorFocus(null, null); updateRoofTint();
+    flyTo(homePos(), homeTarget(), 1150);
     renderPanel(); syncHash();
   }
   function goBuilding(bkey) {
     state.level = "building"; state.bkey = bkey; state.fk = null; clearSelection();
-    setBuildingFocus(bkey); setFloorFocus(bkey, null);
+    setBuildingFocus(bkey); setFloorFocus(bkey, null); updateRoofTint();
     frameBuilding(bData[bkey]);
     renderPanel(); syncHash();
   }
   function goFloor(bkey, fk, { keepSelection = false, fly = true } = {}) {
     state.level = "floor"; state.bkey = bkey; state.fk = fk;
     if (!keepSelection) clearSelection();
-    setBuildingFocus(bkey); setFloorFocus(bkey, fk);
+    setBuildingFocus(bkey); setFloorFocus(bkey, fk); updateRoofTint();
     if (fly) frameFloor(bData[bkey], fk);
     renderPanel(); syncHash();
   }
@@ -657,16 +380,13 @@ export async function mount(container) {
     if (!rec) return false;
     if (state.level !== "floor" || state.bkey !== rec.bkey || state.fk !== rec.fk) goFloor(rec.bkey, rec.fk, { keepSelection: true, fly: false });
     state.sel = key;
-    rec.floorGroup.add(selBox); selBox.position.copy(rec.local); selBox.visible = true;
+    placeMarker(selBox, rec);
     const conn = rec.room.connecting != null ? roomIndex[rec.bkey + ":" + rec.room.connecting] : null;
-    if (conn && conn.fk === rec.fk) { conn.floorGroup.add(connBox); connBox.position.copy(conn.local); connBox.visible = true; }
-    else connBox.visible = false;
+    if (conn && conn.fk === rec.fk) placeMarker(connBox, conn); else connBox.visible = false;
     if (fly) {
-      const b = bData[rec.bkey];
-      const r = b.floors[rec.fk];
-      const w = b.group.localToWorld(new THREE.Vector3(rec.local.x, r.y + ROOM_H, rec.local.z));
-      const dir = new THREE.Vector3(0.45, 1.25, 0.8).normalize();
-      flyTo(w.clone().addScaledVector(dir, 26), w, 900);
+      const b = bData[rec.bkey], f = b.floors[rec.fk];
+      const w = b.group.localToWorld(new THREE.Vector3(rec.r.x, f.y + FLOOR_H, rec.r.z));
+      flyTo(w.clone().addScaledVector(FLOOR_DIR, small() ? 34 : 24), w, 950);
     }
     renderCard(rec); renderPanel(); syncHash();
     requestRender();
@@ -703,16 +423,15 @@ export async function mount(container) {
   window.addEventListener("hashchange", readHash);
   window.CPResortMapGoTo = (num) => { const k = findRoom(num); if (k) selectRoom(k); return !!k; };
 
-  /* ---------- panel (left) ---------- */
+  /* ---------- panel ---------- */
+  const hex = (n) => "#" + n.toString(16).padStart(6, "0");
   function viewBreakdown(recs) {
     const counts = {};
     for (const r of recs) counts[r.view] = (counts[r.view] || 0) + 1;
     return VIEW_ORDER.concat("NONE").filter((v) => counts[v]).map((v) =>
-      `<span class="rm-mini"><i style="background:#${VIEWS[v].color.toString(16).padStart(6, "0")}"></i>${esc(VIEWS[v].short)} <b>${counts[v]}</b></span>`).join("");
+      `<span class="rm-mini"><i style="background:${hex(VIEWS[v].color)}"></i>${esc(VIEWS[v].short)} <b>${counts[v]}</b></span>`).join("");
   }
-  function recsFor(bkey, fk) {
-    return Object.values(roomIndex).filter((r) => r.bkey === bkey && (!fk || r.fk === fk));
-  }
+  const recsFor = (bkey, fk) => Object.values(roomIndex).filter((r) => r.bkey === bkey && (!fk || r.fk === fk));
   function renderPanel() {
     const p = $(".rm-panel");
     const crumbs = [`<button data-go="resort">Resort</button>`];
@@ -725,7 +444,7 @@ export async function mount(container) {
       p.innerHTML = `
         <div class="rm-eyebrow">Rixos Bab Al Bahr</div>
         <h2 class="rm-title">Resort Map</h2>
-        <div class="rm-sub">${total} rooms across ${D.buildingOrder.length} buildings. Pick a building, or search a room number.</div>
+        <div class="rm-sub">${total} rooms across ${D.buildingOrder.length} towers. Pick a tower or search a room number.</div>
         <div class="rm-list">${D.buildingOrder.map((b) => `
           <button class="rm-row" data-b="${b}">
             <span class="rm-row-main"><b>${esc(bData[b].label)}</b><span>${bData[b].roomCount} rooms · ${bData[b].order.length} floors</span></span>
@@ -741,15 +460,15 @@ export async function mount(container) {
         <div class="rm-minis">${viewBreakdown(recs)}</div>
         <div class="rm-list-title">Floors</div>
         <div class="rm-list rm-floors">${b.order.slice().reverse().map((fk) => {
-          const r = b.floors[fk];
-          return `<button class="rm-row" data-f="${fk}"><span class="rm-row-main"><b>${esc(r.label)}</b><span>${r.cells.length} rooms</span></span><span class="rm-row-go">›</span></button>`;
+          const f = b.floors[fk];
+          return `<button class="rm-row" data-f="${fk}"><span class="rm-row-main"><b>${esc(f.label)}</b><span>${f.rooms.length} rooms</span></span><span class="rm-row-go">›</span></button>`;
         }).join("")}</div>`;
     } else {
-      const b = bData[state.bkey]; const r = b.floors[state.fk];
+      const b = bData[state.bkey]; const f = b.floors[state.fk];
       const recs = recsFor(b.bkey, state.fk).sort((a, c) => a.room.room - c.room.room);
       p.innerHTML = `
         <button class="rm-back" data-up>‹ ${esc(b.label)}</button>
-        <h2 class="rm-title">${esc(r.label)}</h2>
+        <h2 class="rm-title">${esc(f.label)}</h2>
         <div class="rm-sub">${esc(b.label)} · ${recs.length} rooms</div>
         <div class="rm-minis">${viewBreakdown(recs)}</div>
         <div class="rm-floor-step">
@@ -775,7 +494,7 @@ export async function mount(container) {
     if (t.dataset.go === "resort") goResort(); else if (t.dataset.go === "building") goBuilding(state.bkey);
   });
 
-  /* ---------- room card (right) ---------- */
+  /* ---------- room card ---------- */
   function renderCard(rec) {
     const r = rec.room; const b = bData[rec.bkey];
     const codes = r.codes || [];
@@ -817,7 +536,7 @@ export async function mount(container) {
     })();
   }
 
-  /* ---------- filters & legend (bottom) ---------- */
+  /* ---------- filters & legend ---------- */
   function renderFilters() {
     $(".rm-modes").innerHTML = Object.entries(MODE_LABELS).map(([k, l]) =>
       `<button class="rm-mode${state.mode === k ? " on" : ""}" data-mode="${k}">${l}</button>`).join("");
@@ -838,16 +557,21 @@ export async function mount(container) {
   });
   function renderLegend() {
     const L = $(".rm-legend");
-    const sw = (hex, label) => `<span class="rm-mini"><i style="background:#${hex.toString(16).padStart(6, "0")}"></i>${esc(label)}</span>`;
+    const sw = (c, label) => `<span class="rm-mini"><i style="background:${hex(c)}"></i>${esc(label)}</span>`;
     let html = "";
     if (state.mode === "view") html = ["BEA", "COS", "POO", "GAR", "ROA", "NONE"].map((v) => sw(VIEWS[v].color, VIEWS[v].short)).join("");
     else if (state.mode === "category") html = Object.values(CATEGORIES).map((c) => sw(c.color, c.label)).join("");
-    if (filtering()) html += sw(T.dim, "Not matching");
+    if (filtering()) html += sw(0x8f8a84, "Not matching");
     L.innerHTML = html; L.hidden = !html;
   }
 
   /* ---------- search ---------- */
   const search = $(".rm-search input");
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $(".rm-toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+  }
   $(".rm-search").addEventListener("submit", (e) => {
     e.preventDefault();
     const q = search.value.replace(/\D/g, "");
@@ -859,12 +583,6 @@ export async function mount(container) {
     }
   });
 
-  let toastTimer = 0;
-  function toast(msg) {
-    const t = $(".rm-toast"); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
-  }
-
   /* ---------- picking ---------- */
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -874,13 +592,12 @@ export async function mount(container) {
     ndc.set(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     const visible = pickables.filter((m) => {
-      const r = bData[m.userData.bkey].floors[m.userData.fk];
-      return r.opacity > 0.5 && bData[m.userData.bkey].opacity > 0.5;
+      const b = bData[m.userData.bkey], f = b.floors[m.userData.fk];
+      return f.opacity > 0.5 && b.opacity > 0.5;
     });
     const hit = ray.intersectObjects(visible, false)[0];
     if (!hit) return null;
-    const key = hit.object.userData.bkey + ":" + hit.object.userData.nums[hit.instanceId];
-    return roomIndex[key];
+    return roomIndex[hit.object.userData.bkey + ":" + hit.object.userData.nums[hit.instanceId]];
   }
   let down = null;
   canvas.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
@@ -901,16 +618,13 @@ export async function mount(container) {
       if (!rec) { tip.hidden = true; canvas.style.cursor = ""; return; }
       canvas.style.cursor = "pointer";
       const rect = root.getBoundingClientRect();
-      tip.innerHTML = state.level === "resort"
-        ? `<b>${esc(bData[rec.bkey].label)}</b>`
-        : `<b>${esc(rec.num)}</b> ${esc(typeLabel(rec.room))}`;
+      tip.innerHTML = state.level === "resort" ? `<b>${esc(bData[rec.bkey].label)}</b>` : `<b>${esc(rec.num)}</b> ${esc(typeLabel(rec.room))}`;
       tip.style.transform = `translate(${e.clientX - rect.left + 14}px, ${e.clientY - rect.top + 14}px)`;
       tip.hidden = false;
     });
   });
   canvas.addEventListener("pointerleave", () => { tip.hidden = true; });
   root.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.activeElement !== search) goUp(); });
-
   $(".rm-home").addEventListener("click", goResort);
 
   /* ---------- render loop ---------- */
@@ -918,70 +632,73 @@ export async function mount(container) {
   function requestRender() { dirty = true; }
   controls.addEventListener("change", requestRender);
 
-  // On phones the panel/card are bottom sheets: shift the picture up so the
-  // focused building or room stays visible above them.
+  // On phones the panel/card are bottom sheets: lift the picture so the subject stays visible.
   function updateViewOffset() {
     const w = root.clientWidth, h = root.clientHeight;
     if (!w || !h) return;
-    if (w < 760) {
+    if (small()) {
       const card = !$(".rm-card").hidden;
       camera.setViewOffset(w, h, 0, Math.round(h * (card ? 0.27 : 0.17)), w, h);
     } else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     requestRender();
   }
+  let placed = false, wasSmall = null;
   function resize() {
     const w = root.clientWidth, h = root.clientHeight;
     if (!w || !h) return;
+    // first real size, or a phone/desktop switch while on the overview: re-frame
+    if (!placed || (wasSmall !== small() && state.level === "resort" && !flight)) {
+      camera.position.copy(homePos()); controls.target.copy(homeTarget()); controls.update();
+      placed = true;
+    }
+    wasSmall = small();
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w < 640 ? 40 : 30;
+    camera.fov = w < 640 ? 40 : 28;
     updateViewOffset();
   }
   new ResizeObserver(resize).observe(root);
 
+  function setOpacity(mats, o) {
+    for (const mat of mats) {
+      const tr = o < 0.999;
+      if (mat.transparent !== tr) { mat.transparent = tr; mat.needsUpdate = true; }
+      mat.opacity = o; mat.depthWrite = o > 0.6;
+    }
+  }
   function stepAnimations(dt) {
     let busy = false;
-    const k = 1 - Math.pow(0.0009, dt);           // frame-rate independent smoothing
+    const k = 1 - Math.pow(0.0008, dt);
+    const approach = (obj, key, target, eps) => {
+      if (Math.abs(obj[key] - target) > eps) { obj[key] += (target - obj[key]) * k; busy = true; } else obj[key] = target;
+    };
     for (const b of Object.values(bData)) {
-      if (Math.abs(b.opacity - b.opacityTarget) > 0.004) { b.opacity += (b.opacityTarget - b.opacity) * k; busy = true; }
-      else b.opacity = b.opacityTarget;
-      const cl = b.crownLift || 0;
-      const cur = b.crown.userData.lift || 0;
-      if (Math.abs(cur - cl) > 0.01) { b.crown.userData.lift = cur + (cl - cur) * k; busy = true; }
-      else b.crown.userData.lift = cl;
-      const cf = b.crown.userData.fade ?? 1, cft = cl ? 0 : 1;
-      if (Math.abs(cf - cft) > 0.004) { b.crown.userData.fade = cf + (cft - cf) * k; busy = true; }
-      else b.crown.userData.fade = cft;
+      approach(b, "opacity", b.opacityTarget, 0.004);
+      const cr = b.crown;
+      approach(cr, "lift", b.crownLift ? LIFT_AWAY + 6 : 0, 0.01);
+      approach(cr, "fade", b.crownLift ? 0 : 1, 0.004);
       const top = b.floors[b.order[b.order.length - 1]];
-      b.crown.position.y = top.y + FLOOR_H + b.crown.userData.lift;
-      const crownO = b.opacity * b.crown.userData.fade;
-      setOpacity(b.crownMats, crownO); b.crown.visible = crownO > 0.01;
-      for (const r of Object.values(b.floors)) {
-        if (Math.abs(r.lift - r.liftTarget) > 0.01) { r.lift += (r.liftTarget - r.lift) * k; busy = true; } else r.lift = r.liftTarget;
-        if (Math.abs(r.opacity - r.opacityTarget) > 0.004) { r.opacity += (r.opacityTarget - r.opacity) * k; busy = true; } else r.opacity = r.opacityTarget;
-        r.group.position.y = r.y + r.lift;
-        const o = r.opacity * b.opacity;
-        setOpacity(r.mats, o);
-        r.group.visible = o > 0.01;
+      cr.group.position.y = top.y + FLOOR_H + cr.lift;
+      const co = b.opacity * cr.fade;
+      setOpacity(cr.mats, co); cr.group.visible = co > 0.01;
+      for (const f of Object.values(b.floors)) {
+        approach(f, "lift", f.liftTarget, 0.01);
+        approach(f, "opacity", f.opacityTarget, 0.004);
+        f.group.position.y = f.y + f.lift;
+        const o = f.opacity * b.opacity;
+        setOpacity(f.mats.all, o);
+        f.group.visible = o > 0.01;
       }
     }
     if (flight) {
       const t = Math.min(1, (performance.now() - flight.t0) / flight.dur), e = ease(t);
       camera.position.lerpVectors(flight.p0, flight.p1, e);
-      controls.target.lerpVectors(flight.t0v, flight.t1, e);
+      controls.target.lerpVectors(flight.q0, flight.q1, e);
       if (t >= 1) flight = null;
       busy = true;
     }
     return busy;
-  }
-  function setOpacity(m, o) {
-    for (const key of ["side", "top", "slab", "core", "service", "podium"]) {
-      const mat = m[key]; const tr = o < 0.999;
-      if (mat.transparent !== tr) { mat.transparent = tr; mat.needsUpdate = true; }
-      mat.opacity = o; mat.depthWrite = o > 0.6;
-    }
-    m.glass.opacity = 0.55 * o;
   }
 
   let last = performance.now();
