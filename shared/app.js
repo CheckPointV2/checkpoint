@@ -75,7 +75,7 @@
   /* ============================================================
      Router
      ============================================================ */
-  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", departures: "Departures", allocation: "Allocation Intelligence" };
+  const TOOL_TITLES = { home: "Home", roomguide: "Room Guide", resortmap: "Resort Map", departures: "Departures", allocation: "Allocation Intelligence" };
   window.CPActiveTool = "home";
   window.CPActiveSub = null;
   let pendingSub = null;
@@ -168,6 +168,7 @@
       if (tool === "roomguide") await mountRoomGuide(container);
       else if (tool === "departures") await mountDepartures(container);
       else if (tool === "allocation") await mountAllocation(container);
+      else if (tool === "resortmap") await mountResortMap(container);
     } catch (err) {
       container.innerHTML = '<div class="cp-loading">Could not load this tool. ' + (err && err.message ? err.message : "") + '</div>';
       console.error(err);
@@ -219,6 +220,13 @@
     loadCSSOnce("allocation/style.css");
     await Promise.all([ensureRoomDataLoaded(), ensureDeparturesDataLoaded(), loadScriptsSequential(["allocation/module.js"])]);
     window.CPMountAllocation(container);
+  }
+
+  async function mountResortMap(container) {
+    loadCSSOnce("resortmap/style.css");
+    await ensureRoomDataLoaded();
+    await loadScriptsSequential(["resortmap/module.js"]);
+    await window.CPMountResortMap(container);
   }
 
   /* ============================================================
@@ -278,6 +286,7 @@
     paletteIndex = [
       { label: "Home", tag: "page", route: "#/" },
       { label: "Room Guide", tag: "page", route: "#/roomguide" },
+      { label: "Resort Map", tag: "page", route: "#/resortmap" },
       { label: "Departures", tag: "page", route: "#/departures", sub: "departures" },
       { label: "Checkouts", tag: "page", route: "#/departures", sub: "checkouts" },
       { label: "Allocation Intelligence", tag: "page", route: "#/allocation" }
