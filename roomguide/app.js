@@ -33,11 +33,10 @@ let showChanges = false;
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-/* ================= Matrix version: "Until 31/10" (old) vs "From 1/11" (new) =================
+/* ================= Matrix version: Old vs New (October matrix), switched by hand =================
    Every room carries both versions (data.js keeps the pre-October code/name as
    prevType/prevDescription). r.type and r.description always hold the version
    being shown, so the rest of the guide reads them exactly as before. */
-const NEW_MATRIX_FROM = "2026-11-01"; // Dubai date the October matrix takes effect
 const VERSION_KEY = "rbab-matrix-version";
 const TYPE_DESC_BY_VERSION = { old: RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc, new: RBAB_DATA.typeDesc };
 const TYPE_ORDER = ["DBA", "KGA", "TWA", "KGAOV", "TWAOV", "KGE", "KGEOV", "SKA", "SKB", "SKC", "SKD", "SKP", "SXA", "PI"];
@@ -48,19 +47,14 @@ const TYPE_SHORT = {
 };
 let rgVersion = "new";
 
-function dubaiToday() {
-  try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dubai" }); }
-  catch (e) { return new Date().toISOString().slice(0, 10); }
-}
-function versionForToday() { return dubaiToday() >= NEW_MATRIX_FROM ? "new" : "old"; }
+// Manual switch only: opens on the old categories until someone picks the new
+// ones, then remembers that choice on this device.
 function initialVersion() {
-  // A manual pick only sticks for the day it was made, so the guide still
-  // moves to the new matrix by itself on 1/11.
   try {
     const saved = JSON.parse(localStorage.getItem(VERSION_KEY) || "null");
-    if (saved && saved.day === dubaiToday() && (saved.v === "old" || saved.v === "new")) return saved.v;
+    if (saved && (saved.v === "old" || saved.v === "new")) return saved.v;
   } catch (e) {}
-  return versionForToday();
+  return "old";
 }
 function isNew() { return rgVersion === "new"; }
 function roomChanged(r) { return !!r._v && r._v.old.type !== r._v.new.type; }
@@ -92,24 +86,22 @@ function updateVersionSwitch() {
   const sw = $("#rgVersion");
   if (!sw) return;
   sw.dataset.v = rgVersion;
-  const today = versionForToday();
   $$("button", sw).forEach((btn) => {
     const on = btn.dataset.v === rgVersion;
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-checked", on ? "true" : "false");
-    btn.classList.toggle("is-today", btn.dataset.v === today);
   });
   const note = $("#rgVersionNote");
   if (note) {
     note.textContent = isNew()
-      ? "New room categories, effective 1 Nov 2026"
-      : "Room categories in use until 31 Oct 2026";
+      ? "Showing the new room categories (October matrix)"
+      : "Showing the current room categories";
   }
 }
 
 function setVersion(v) {
   if (v === rgVersion) return;
-  try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v, day: dubaiToday() })); } catch (e) {}
+  try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v })); } catch (e) {}
   applyVersionToData(v);
   updateVersionSwitch();
   filters = emptyFilters();
@@ -327,7 +319,7 @@ function renderFloorContent(key) {
     tile.style.setProperty("--tc", typeColor(r.type));
     if (isNew() && roomChanged(r)) {
       tile.classList.add("changed");
-      tile.title = `${r.room}: ${r._v.old.type} → ${r._v.new.type} from 1/11`;
+      tile.title = `${r.room}: ${r._v.old.type} (old) → ${r._v.new.type} (new)`;
     }
     tile.style.gridColumn = r.col + 1;
     tile.style.gridRow = r.row + 1;
@@ -498,7 +490,7 @@ function buildFilterBar(rooms) {
     const changedHere = rooms.filter(roomChanged).length;
     const sw = document.createElement("label");
     sw.className = "rg-switch";
-    sw.title = "Highlight rooms whose category changes on 1/11";
+    sw.title = "Highlight rooms whose category differs from the old categories";
     sw.innerHTML = `<input type="checkbox" ${showChanges ? "checked" : ""}><span class="rg-switch-track"></span>Show changes <b class="rg-switch-count">${changedHere}</b>`;
     $("input", sw).addEventListener("change", (e) => {
       showChanges = e.target.checked;
@@ -872,7 +864,7 @@ function typeLabel(v, code) {
 }
 
 // Version-aware facts under the room name: size, late-checkout tier and what
-// changes for this room on 1/11.
+// differs for this room between the old and new categories.
 function renderDetailFacts(room) {
   const wrap = $("#dFacts");
   if (!wrap) return;
@@ -884,11 +876,11 @@ function renderDetailFacts(room) {
   if (!isNew()) {
     wrap.innerHTML = changed
       ? `<div class="fact-change fact-change-ahead">
-          <div class="fc-text"><span class="fc-kicker">From 1/11 this room becomes</span>
+          <div class="fc-text"><span class="fc-kicker">In the new categories this room becomes</span>
           <span class="fc-line">${pill(newT)} ${typeLabel("new", newT)}</span></div>
           <button class="fc-go" type="button">See new view →</button>
         </div>`
-      : `<div class="fact-note">Category stays <b>${oldT}</b> from 1/11.</div>`;
+      : `<div class="fact-note">Category stays <b>${oldT}</b> in the new categories.</div>`;
     const go = $(".fc-go", wrap);
     if (go) go.addEventListener("click", () => setVersion("new"));
     return;
@@ -904,11 +896,11 @@ function renderDetailFacts(room) {
     </div>
     ${changed
       ? `<div class="fact-change">
-          <div class="fc-col"><span class="fc-kicker">Until 31/10</span><span class="fc-line">${pill(oldT)} ${typeLabel("old", oldT)}</span></div>
+          <div class="fc-col"><span class="fc-kicker">Old</span><span class="fc-line">${pill(oldT)} ${typeLabel("old", oldT)}</span></div>
           <span class="fc-arrow" aria-hidden="true">→</span>
-          <div class="fc-col"><span class="fc-kicker">From 1/11</span><span class="fc-line">${pill(newT)} ${typeLabel("new", newT)}</span></div>
+          <div class="fc-col"><span class="fc-kicker">New</span><span class="fc-line">${pill(newT)} ${typeLabel("new", newT)}</span></div>
         </div>`
-      : `<div class="fact-note">Category unchanged on 1/11.</div>`}`;
+      : `<div class="fact-note">Category unchanged from the old categories.</div>`}`;
 }
 
 function highlightConnections(room) {
@@ -1017,7 +1009,7 @@ function renderUpsellResults() {
 /* ================= Late Checkout ================= */
 // NOTE: DBA (Superior) -> "Deluxe" is a placeholder; the late-checkout tier for
 // Superior rooms has not been confirmed yet.
-// TWA/TWAOV only exist in the "Until 31/10" view; DBA only in "From 1/11".
+// TWA/TWAOV only exist in the Old view; DBA only in the New view.
 const LC_TYPE_TIER = {
   DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
@@ -1188,7 +1180,7 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
-  { sel: "#rgVersion", title: "Old or new room categories", text: "Switch between the categories in use until 31/10 and the new ones from 1/11. The guide picks the right one by today's date." },
+  { sel: "#rgVersion", title: "Old or new room categories", text: "Switch between the old room categories and the new October ones. Your choice is remembered on this device." },
   { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
   { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
   { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },

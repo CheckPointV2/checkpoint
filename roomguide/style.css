@@ -1254,7 +1254,7 @@ html, body  {
 }
 
 /* =====================================================================
-   Matrix versions: "Until 31/10" (old) / "From 1/11" (new)
+   Matrix versions: Old / New (switched by hand)
    html[data-rg-version] is set by app.js. The old view keeps the original
    bronze look; the new view swaps in its own accent and room palette by
    redefining the same variables, so every existing rule picks them up.
@@ -1327,16 +1327,6 @@ html[data-rg-version="new"] #view-roomguide .floor-tabs button.active { color: v
 }
 #view-roomguide .rg-version button:hover { color: var(--ink); }
 #view-roomguide .rg-version button.active { color: var(--rg-on-accent, #fff); }
-#view-roomguide .rg-version button.is-today::after {
-  content: "";
-  display: inline-block;
-  width: 6px; height: 6px;
-  margin-left: 6px;
-  vertical-align: middle;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.75;
-}
 #view-roomguide .rg-version-note { font-size: 11px; color: var(--ink-soft); padding-left: 10px; }
 
 /* ---- new view: plan + tiles ---- */
@@ -1368,7 +1358,7 @@ html[data-rg-version="new"] #view-roomguide .tile.room-tile.active {
   to   { opacity: 1; transform: none; }
 }
 
-/* "Show changes": rooms whose category changes on 1/11 pulse, the rest fade */
+/* "Show changes": rooms whose category differs from the old one pulse, the rest fade */
 #view-roomguide .grid.show-changes .tile.room-tile:not(.changed):not(.filtered-out):not(.dim):not(.active) {
   opacity: 0.22;
   filter: saturate(0.3);
