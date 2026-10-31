@@ -4,7 +4,7 @@
    glossary, dark mode, and recently-viewed rooms. */
 
 const TYPE_COLOR = {
-  KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
+  DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
   TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
@@ -15,7 +15,7 @@ const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 4
 
 
 const TYPE_DESC = {
-  KGA: "Deluxe King Garden", KGAOV: "Deluxe King View", KGE: "Premium King Garden", KGEOV: "Premium King View",
+  DBA: "Superior Room", KGA: "Deluxe King Garden", KGAOV: "Deluxe King View", KGE: "Premium King Garden", KGEOV: "Premium King View",
   PI: "Posting Interface", SKA: "Kids Escape Suite", SKB: "Family Room Garden", SKC: "Family Room View",
   SKD: "Junior Suite", SKP: "Senior Suite", SXA: "King Suite", TWA: "Deluxe Twin Garden", TWAOV: "Deluxe Twin View",
 };
@@ -752,7 +752,7 @@ function renderUpsellResults() {
 
 /* ================= Late Checkout ================= */
 const LC_TYPE_TIER = {
-  KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
+  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
   SKB: "Premium / Family Suite / Interconnecting", SKC: "Premium / Family Suite / Interconnecting",
   SKD: "All Suites", SKP: "All Suites", SXA: "All Suites", SKA: "All Suites",
