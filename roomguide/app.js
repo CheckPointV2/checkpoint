@@ -578,14 +578,18 @@ function showDetail(bkey, roomNum) {
   activeRoom = roomNum;
   addRecent(bkey, roomNum);
 
-  if (bkey !== currentBuilding) {
+  const buildingChanged = bkey !== currentBuilding;
+  if (buildingChanged) {
     currentBuilding = bkey;
     $$("#buildingTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.building === bkey));
     buildFloorTabs();
   }
-  if (room.floor !== currentFloor) {
+  // Re-render when the building changes too: the same floor key (e.g. "GF")
+  // exists in every building, so checking the floor alone left the previous
+  // building's plan on screen.
+  if (buildingChanged || room.floor !== currentFloor) {
+    if (room.floor !== currentFloor) filters = { types: new Set(), codes: new Set(), connectOnly: false };
     currentFloor = room.floor;
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
   }
