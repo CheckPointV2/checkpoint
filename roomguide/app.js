@@ -40,11 +40,7 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const VERSION_KEY = "rbab-matrix-version";
 const TYPE_DESC_BY_VERSION = { old: RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc, new: RBAB_DATA.typeDesc };
 const TYPE_ORDER = ["DBA", "KGA", "TWA", "KGAOV", "TWAOV", "KGE", "KGEOV", "SKA", "SKB", "SKC", "SKD", "SKP", "SXA", "PI"];
-const TYPE_SHORT = {
-  DBA: "Superior", KGA: "Deluxe Garden", KGAOV: "Deluxe Sea/Pool", KGE: "Premium Garden", KGEOV: "Premium Sea/Pool",
-  SKA: "Kids Escape", SKB: "Family Garden", SKC: "Family Sea/Pool", SKD: "Junior Suite", SKP: "Senior Suite",
-  SXA: "King Suite", PI: "Posting Interface",
-};
+const TYPE_SHORT = { DBA: "Superior" }; // chips otherwise use the category name from TYPE_DESC
 let rgVersion = "new";
 
 // Manual switch only: opens on the old categories until someone picks the new
@@ -94,7 +90,7 @@ function updateVersionSwitch() {
   const note = $("#rgVersionNote");
   if (note) {
     note.textContent = isNew()
-      ? "Showing the new room categories (October matrix)"
+      ? "Showing the new Superior rooms (66 rooms move to DBA)"
       : "Showing the current room categories";
   }
 }
@@ -599,7 +595,7 @@ function buildCategoryStrip(bar, allRooms) {
     chip.style.setProperty("--chip", typeColor(t));
     chip.title = `${t} — ${TYPE_DESC[t] || ""}`;
     chip.setAttribute("aria-pressed", filters.types.has(t) ? "true" : "false");
-    chip.innerHTML = `<span class="cat-dot"></span><span class="cat-name">${TYPE_SHORT[t] || t}</span><span class="cat-code">${t}</span><b class="cat-count">${counts[t]}</b>`;
+    chip.innerHTML = `<span class="cat-dot"></span><span class="cat-name">${TYPE_SHORT[t] || TYPE_DESC[t] || t}</span><span class="cat-code">${t}</span><b class="cat-count">${counts[t]}</b>`;
     chip.classList.toggle("active", filters.types.has(t));
     chip.addEventListener("click", () => {
       if (filters.types.has(t)) filters.types.delete(t); else filters.types.add(t);
@@ -1180,7 +1176,7 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
-  { sel: "#rgVersion", title: "Old or new room categories", text: "Switch between the old room categories and the new October ones. Your choice is remembered on this device." },
+  { sel: "#rgVersion", title: "Old or new room categories", text: "Switch between the old room categories and the new view, where 66 rooms move to Superior (DBA). Your choice is remembered on this device." },
   { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
   { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
   { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },
