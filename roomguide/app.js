@@ -5,7 +5,7 @@
 
 const TYPE_COLOR = {
   DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
-  TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
+  SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
 
@@ -764,8 +764,10 @@ function renderUpsellResults() {
 }
 
 /* ================= Late Checkout ================= */
+// NOTE: DBA (Superior) -> "Deluxe" is a placeholder; the late-checkout tier for
+// Superior rooms has not been confirmed yet.
 const LC_TYPE_TIER = {
-  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
+  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
   SKB: "Premium / Family Suite / Interconnecting", SKC: "Premium / Family Suite / Interconnecting",
   SKD: "All Suites", SKP: "All Suites", SXA: "All Suites", SKA: "All Suites",
