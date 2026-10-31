@@ -5,7 +5,7 @@
 
 const TYPE_COLOR = {
   DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
-  SKA: "var(--c-ska)", SKB: "var(--c-skb)",
+  TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
 
@@ -18,7 +18,7 @@ const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 4
 // (roomguide/data.js) now, not here, so any module that loads the data file
 // (Allocation Copilot, Room Finder) gets the same real, hotel-confirmed
 // definitions instead of a second hand-copied version.
-const TYPE_DESC = RBAB_DATA.typeDesc;
+let TYPE_DESC = RBAB_DATA.typeDesc;
 const GLOSSARY = RBAB_DATA.glossary;
 
 const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
@@ -26,10 +26,112 @@ const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 let currentBuilding = null;
 let currentFloor = null;
 let activeRoom = null;
-let filters = { types: new Set(), codes: new Set(), connectOnly: false };
+function emptyFilters() { return { types: new Set(), codes: new Set(), connectOnly: false, size: null }; }
+let filters = emptyFilters();
+let showChanges = false;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+/* ================= Matrix version: "Until 31/10" (old) vs "From 1/11" (new) =================
+   Every room carries both versions (data.js keeps the pre-October code/name as
+   prevType/prevDescription). r.type and r.description always hold the version
+   being shown, so the rest of the guide reads them exactly as before. */
+const NEW_MATRIX_FROM = "2026-11-01"; // Dubai date the October matrix takes effect
+const VERSION_KEY = "rbab-matrix-version";
+const TYPE_DESC_BY_VERSION = { old: RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc, new: RBAB_DATA.typeDesc };
+const TYPE_ORDER = ["DBA", "KGA", "TWA", "KGAOV", "TWAOV", "KGE", "KGEOV", "SKA", "SKB", "SKC", "SKD", "SKP", "SXA", "PI"];
+const TYPE_SHORT = {
+  DBA: "Superior", KGA: "Deluxe Garden", KGAOV: "Deluxe Sea/Pool", KGE: "Premium Garden", KGEOV: "Premium Sea/Pool",
+  SKA: "Kids Escape", SKB: "Family Garden", SKC: "Family Sea/Pool", SKD: "Junior Suite", SKP: "Senior Suite",
+  SXA: "King Suite", PI: "Posting Interface",
+};
+let rgVersion = "new";
+
+function dubaiToday() {
+  try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dubai" }); }
+  catch (e) { return new Date().toISOString().slice(0, 10); }
+}
+function versionForToday() { return dubaiToday() >= NEW_MATRIX_FROM ? "new" : "old"; }
+function initialVersion() {
+  // A manual pick only sticks for the day it was made, so the guide still
+  // moves to the new matrix by itself on 1/11.
+  try {
+    const saved = JSON.parse(localStorage.getItem(VERSION_KEY) || "null");
+    if (saved && saved.day === dubaiToday() && (saved.v === "old" || saved.v === "new")) return saved.v;
+  } catch (e) {}
+  return versionForToday();
+}
+function isNew() { return rgVersion === "new"; }
+function roomChanged(r) { return !!r._v && r._v.old.type !== r._v.new.type; }
+
+function snapshotRoomVersions() {
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(buildingData(bkey).rooms).forEach((r) => {
+      if (r._v) return;
+      r._v = {
+        new: { type: r.type, description: r.description },
+        old: { type: r.prevType || r.type, description: r.prevDescription || r.description },
+      };
+    });
+  });
+}
+function applyVersionToData(v) {
+  rgVersion = v;
+  TYPE_DESC = TYPE_DESC_BY_VERSION[v];
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(buildingData(bkey).rooms).forEach((r) => {
+      r.type = r._v[v].type;
+      r.description = r._v[v].description;
+    });
+  });
+  document.documentElement.dataset.rgVersion = v;
+}
+
+function updateVersionSwitch() {
+  const sw = $("#rgVersion");
+  if (!sw) return;
+  sw.dataset.v = rgVersion;
+  const today = versionForToday();
+  $$("button", sw).forEach((btn) => {
+    const on = btn.dataset.v === rgVersion;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+    btn.classList.toggle("is-today", btn.dataset.v === today);
+  });
+  const note = $("#rgVersionNote");
+  if (note) {
+    note.textContent = isNew()
+      ? "New room categories, effective 1 Nov 2026"
+      : "Room categories in use until 31 Oct 2026";
+  }
+}
+
+function setVersion(v) {
+  if (v === rgVersion) return;
+  try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v, day: dubaiToday() })); } catch (e) {}
+  applyVersionToData(v);
+  updateVersionSwitch();
+  filters = emptyFilters();
+  if (!isNew()) showChanges = false;
+  renderFloor(currentFloor);
+  if (activeRoom != null) showDetail(currentBuilding, activeRoom); else clearDetail();
+  if ($("#upsellModal").classList.contains("show")) renderUpsellResults();
+  if ($("#lateCheckoutModal").classList.contains("show")) { lcType = ""; renderLateCheckout(); }
+}
+
+function setupVersionSwitch() {
+  const sw = $("#rgVersion");
+  if (!sw) return;
+  $$("button", sw).forEach((btn) => btn.addEventListener("click", () => setVersion(btn.dataset.v)));
+  sw.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    e.stopPropagation(); // don't also change floor
+    setVersion(e.key === "ArrowLeft" ? "old" : "new");
+    $(`button[data-v="${rgVersion}"]`, sw).focus();
+  });
+}
 
 function typeColor(type) { return TYPE_COLOR[type] || "var(--c-pi)"; }
 
@@ -138,7 +240,7 @@ function buildFloorTabs() {
 
 function selectFloor(key) {
   currentFloor = key;
-  filters = { types: new Set(), codes: new Set(), connectOnly: false };
+  filters = emptyFilters();
   $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === key));
   renderFloor(key);
   clearDetail();
@@ -216,10 +318,17 @@ function renderFloorContent(key) {
   grid.style.gridTemplateColumns = `repeat(${f.cols}, ${tileSize}px)`;
   grid.style.gridTemplateRows = `repeat(${f.rows}, ${tileSize}px)`;
 
-  rooms.forEach((r) => {
+  grid.classList.toggle("show-changes", isNew() && showChanges);
+  rooms.forEach((r, i) => {
     const tile = document.createElement("div");
     tile.className = "tile room-tile";
     tile.dataset.room = r.room;
+    tile.style.setProperty("--i", i);
+    tile.style.setProperty("--tc", typeColor(r.type));
+    if (isNew() && roomChanged(r)) {
+      tile.classList.add("changed");
+      tile.title = `${r.room}: ${r._v.old.type} → ${r._v.new.type} from 1/11`;
+    }
     tile.style.gridColumn = r.col + 1;
     tile.style.gridRow = r.row + 1;
 
@@ -356,29 +465,23 @@ function buildFilterBar(rooms) {
 
   const allRooms = allRoomsFlat().map((x) => x.room);
 
-  const typeOptions = Array.from(new Set(allRooms.map((r) => r.type))).sort()
-    .map((t) => ({ value: t, desc: TYPE_DESC[t] || "" }));
-  buildDropdownFilter(bar, "Category", typeOptions, filters.types, () => applyFilters());
+  if (isNew()) {
+    buildCategoryStrip(bar, allRooms);
+  } else {
+    const typeOptions = Array.from(new Set(allRooms.map((r) => r.type))).sort()
+      .map((t) => ({ value: t, desc: TYPE_DESC[t] || "" }));
+    buildDropdownFilter(bar, "Category", typeOptions, filters.types, () => applyFilters());
+  }
 
   const codeOptions = Array.from(new Set(allRooms.flatMap((r) => r.codes))).sort()
     .map((c) => ({ value: c, desc: GLOSSARY[c] ? GLOSSARY[c].label : "Meaning not yet confirmed" }));
   buildDropdownFilter(bar, "Features", codeOptions, filters.codes, () => applyFilters());
 
+  if (isNew()) buildSizeFilter(bar, allRooms);
+
   const sep2 = document.createElement("div");
   sep2.className = "filter-sep";
   bar.appendChild(sep2);
-
-  const supChip = document.createElement("button");
-  supChip.className = "filter-chip";
-  supChip.textContent = "Superior";
-  supChip.title = "Show only Superior rooms (DBA)";
-  const supOn = filters.types.size === 1 && filters.types.has("DBA");
-  supChip.classList.toggle("active", supOn);
-  supChip.addEventListener("click", () => {
-    filters.types = supOn ? new Set() : new Set(["DBA"]);
-    buildFilterBar(rooms);
-  });
-  bar.appendChild(supChip);
 
   const connChip = document.createElement("button");
   connChip.className = "filter-chip";
@@ -391,12 +494,25 @@ function buildFilterBar(rooms) {
   });
   bar.appendChild(connChip);
 
+  if (isNew()) {
+    const changedHere = rooms.filter(roomChanged).length;
+    const sw = document.createElement("label");
+    sw.className = "rg-switch";
+    sw.title = "Highlight rooms whose category changes on 1/11";
+    sw.innerHTML = `<input type="checkbox" ${showChanges ? "checked" : ""}><span class="rg-switch-track"></span>Show changes <b class="rg-switch-count">${changedHere}</b>`;
+    $("input", sw).addEventListener("change", (e) => {
+      showChanges = e.target.checked;
+      $("#grid").classList.toggle("show-changes", showChanges);
+    });
+    bar.appendChild(sw);
+  }
+
   const clear = document.createElement("button");
   clear.className = "filter-clear";
   clear.textContent = "Clear filters";
   clear.style.display = "none";
   clear.addEventListener("click", () => {
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
+    filters = emptyFilters();
     buildFilterBar(rooms);
     applyFilters();
   });
@@ -473,11 +589,91 @@ function buildDropdownFilter(bar, label, options, selectedSet, onChange) {
   bar.appendChild(wrap);
 }
 
+/* ---- New version only: category chips with live counts ---- */
+function buildCategoryStrip(bar, allRooms) {
+  const counts = {};
+  allRooms.forEach((r) => { counts[r.type] = (counts[r.type] || 0) + 1; });
+  const types = TYPE_ORDER.filter((t) => counts[t])
+    .concat(Object.keys(counts).filter((t) => !TYPE_ORDER.includes(t)).sort());
+
+  const strip = document.createElement("div");
+  strip.className = "cat-strip";
+  strip.setAttribute("role", "group");
+  strip.setAttribute("aria-label", "Room categories");
+  types.forEach((t) => {
+    const chip = document.createElement("button");
+    chip.className = "cat-chip" + (t === "DBA" ? " cat-chip-feature" : "");
+    chip.dataset.type = t;
+    chip.style.setProperty("--chip", typeColor(t));
+    chip.title = `${t} — ${TYPE_DESC[t] || ""}`;
+    chip.setAttribute("aria-pressed", filters.types.has(t) ? "true" : "false");
+    chip.innerHTML = `<span class="cat-dot"></span><span class="cat-name">${TYPE_SHORT[t] || t}</span><span class="cat-code">${t}</span><b class="cat-count">${counts[t]}</b>`;
+    chip.classList.toggle("active", filters.types.has(t));
+    chip.addEventListener("click", () => {
+      if (filters.types.has(t)) filters.types.delete(t); else filters.types.add(t);
+      $$(".cat-chip", strip).forEach((c) => {
+        const on = filters.types.has(c.dataset.type);
+        c.classList.toggle("active", on);
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      strip.classList.toggle("has-selection", filters.types.size > 0);
+      applyFilters();
+    });
+    strip.appendChild(chip);
+  });
+  strip.classList.toggle("has-selection", filters.types.size > 0);
+  bar.appendChild(strip);
+}
+
+/* ---- New version only: room size range (m²) ---- */
+function buildSizeFilter(bar, allRooms) {
+  const sizes = allRooms.map((r) => r.size).filter((s) => typeof s === "number");
+  if (!sizes.length) return;
+  const min = Math.floor(Math.min(...sizes));
+  const max = Math.ceil(Math.max(...sizes));
+  const [lo, hi] = filters.size || [min, max];
+
+  const wrap = document.createElement("div");
+  wrap.className = "size-filter";
+  wrap.innerHTML = `
+    <span class="sf-label">Size</span>
+    <div class="sf-range">
+      <div class="sf-track"><div class="sf-fill"></div></div>
+      <input type="range" class="sf-lo" min="${min}" max="${max}" step="1" value="${lo}" aria-label="Minimum size in square metres">
+      <input type="range" class="sf-hi" min="${min}" max="${max}" step="1" value="${hi}" aria-label="Maximum size in square metres">
+    </div>
+    <span class="sf-val"></span>`;
+  const loIn = $(".sf-lo", wrap), hiIn = $(".sf-hi", wrap);
+
+  function sync(fromLo) {
+    let a = Number(loIn.value), b = Number(hiIn.value);
+    if (a > b) { if (fromLo) { a = b; loIn.value = a; } else { b = a; hiIn.value = b; } }
+    const pct = (v) => ((v - min) / (max - min)) * 100;
+    $(".sf-fill", wrap).style.left = pct(a) + "%";
+    $(".sf-fill", wrap).style.right = (100 - pct(b)) + "%";
+    $(".sf-val", wrap).textContent = `${a}–${b} m²`;
+    wrap.classList.toggle("active", a > min || b < max);
+    return [a, b];
+  }
+  function onInput(fromLo) {
+    const [a, b] = sync(fromLo);
+    filters.size = (a > min || b < max) ? [a, b] : null;
+    applyFilters();
+  }
+  loIn.addEventListener("input", () => onInput(true));
+  hiIn.addEventListener("input", () => onInput(false));
+  sync(true);
+  bar.appendChild(wrap);
+}
+
 function filtersActive() {
-  return filters.types.size || filters.codes.size || filters.connectOnly;
+  return filters.types.size || filters.codes.size || filters.connectOnly || filters.size;
 }
 
 function roomMatchesFilters(r) {
+  if (filters.size) {
+    if (typeof r.size !== "number" || r.size < filters.size[0] || r.size > filters.size[1]) return false;
+  }
   if (filters.types.size && !filters.types.has(r.type)) return false;
   if (filters.codes.size) {
     for (const c of filters.codes) { if (!r.codes.includes(c)) return false; }
@@ -591,7 +787,7 @@ function showDetail(bkey, roomNum) {
   // exists in every building, so checking the floor alone left the previous
   // building's plan on screen.
   if (buildingChanged || room.floor !== currentFloor) {
-    if (room.floor !== currentFloor) filters = { types: new Set(), codes: new Set(), connectOnly: false };
+    if (room.floor !== currentFloor) filters = emptyFilters();
     currentFloor = room.floor;
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
@@ -606,7 +802,8 @@ function showDetail(bkey, roomNum) {
   const pill = $("#dTypePill");
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
-  $("#dDesc").textContent = room.size ? `${label} · ${room.size} m²` : label;
+  $("#dDesc").textContent = (isNew() && room.size) ? `${label} · ${room.size} m²` : label;
+  renderDetailFacts(room);
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -669,6 +866,51 @@ function showDetail(bkey, roomNum) {
   renderRecent();
 }
 
+function typeLabel(v, code) {
+  const d = TYPE_DESC_BY_VERSION[v][code];
+  return d ? titleCase(d) : code;
+}
+
+// Version-aware facts under the room name: size, late-checkout tier and what
+// changes for this room on 1/11.
+function renderDetailFacts(room) {
+  const wrap = $("#dFacts");
+  if (!wrap) return;
+  if (room.type === "PI") { wrap.innerHTML = ""; return; }
+  const changed = roomChanged(room);
+  const oldT = room._v.old.type, newT = room._v.new.type;
+  const pill = (code) => `<span class="mini-pill" style="background:${typeColor(code)}">${code}</span>`;
+
+  if (!isNew()) {
+    wrap.innerHTML = changed
+      ? `<div class="fact-change fact-change-ahead">
+          <div class="fc-text"><span class="fc-kicker">From 1/11 this room becomes</span>
+          <span class="fc-line">${pill(newT)} ${typeLabel("new", newT)}</span></div>
+          <button class="fc-go" type="button">See new view →</button>
+        </div>`
+      : `<div class="fact-note">Category stays <b>${oldT}</b> from 1/11.</div>`;
+    const go = $(".fc-go", wrap);
+    if (go) go.addEventListener("click", () => setVersion("new"));
+    return;
+  }
+
+  const tier = LC_TYPE_TIER[room.type];
+  const tierShort = tier ? tier.split(" / ")[0] : "—";
+  const tierNote = room.type === "DBA" ? `<span class="fact-flag" title="Late-checkout tier for Superior rooms is not confirmed yet">not confirmed</span>` : "";
+  wrap.innerHTML = `
+    <div class="fact-grid">
+      <div class="fact-card"><span class="fact-k">Size</span><span class="fact-v">${typeof room.size === "number" ? `${room.size}<small> m²</small>` : "—"}</span></div>
+      <div class="fact-card"><span class="fact-k">Late checkout</span><span class="fact-v fact-v-sm">${tierShort}${tierNote}</span></div>
+    </div>
+    ${changed
+      ? `<div class="fact-change">
+          <div class="fc-col"><span class="fc-kicker">Until 31/10</span><span class="fc-line">${pill(oldT)} ${typeLabel("old", oldT)}</span></div>
+          <span class="fc-arrow" aria-hidden="true">→</span>
+          <div class="fc-col"><span class="fc-kicker">From 1/11</span><span class="fc-line">${pill(newT)} ${typeLabel("new", newT)}</span></div>
+        </div>`
+      : `<div class="fact-note">Category unchanged on 1/11.</div>`}`;
+}
+
 function highlightConnections(room) {
   $$(".tile.room-tile").forEach((t) => {
     const rn = Number(t.dataset.room);
@@ -723,12 +965,13 @@ function renderUpsellResults() {
   const tier = tierKey ? UPSELL_TIERS.find((t) => t.key === tierKey) : null;
   const wrap = $("#upsellBody");
 
+  const dbaNote = isNew() ? `<div class="up-supplement-note up-missing">Superior (DBA) upgrade prices haven't been published yet, so DBA isn't in this grid.</div>` : "";
   if (!tier) {
-    wrap.innerHTML = `<div class="up-prompt">Enter an occupancy % (or check "4+ nights stay") to see the matching prices.</div>`;
+    wrap.innerHTML = dbaNote + `<div class="up-prompt">Enter an occupancy % (or check "4+ nights stay") to see the matching prices.</div>`;
     return;
   }
 
-  let html = `<div class="up-supplement-note">Matched tier: <b>${tier.label}</b> — extra-pax supplement (if not same occupancy): <b>AED ${tier.extraPax}</b></div>
+  let html = dbaNote + `<div class="up-supplement-note">Matched tier: <b>${tier.label}</b> — extra-pax supplement (if not same occupancy): <b>AED ${tier.extraPax}</b></div>
     <div class="up-select-row">
       <label>From <select id="upFromSelect"><option value="">Any</option>
         ${upsellRowOptions(tierKey).map((r) => `<option value="${r}" ${r === upsellFrom ? "selected" : ""}>${r}</option>`).join("")}
@@ -774,8 +1017,9 @@ function renderUpsellResults() {
 /* ================= Late Checkout ================= */
 // NOTE: DBA (Superior) -> "Deluxe" is a placeholder; the late-checkout tier for
 // Superior rooms has not been confirmed yet.
+// TWA/TWAOV only exist in the "Until 31/10" view; DBA only in "From 1/11".
 const LC_TYPE_TIER = {
-  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe",
+  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
   SKB: "Premium / Family Suite / Interconnecting", SKC: "Premium / Family Suite / Interconnecting",
   SKD: "All Suites", SKP: "All Suites", SXA: "All Suites", SKA: "All Suites",
@@ -798,7 +1042,8 @@ function lcEffectiveTier(typeCode) {
 
 function renderLateCheckout() {
   const wrap = $("#lateCheckoutBody");
-  const typeCodes = Object.keys(LC_TYPE_TIER);
+  const present = new Set(allRoomsFlat().map((x) => x.room.type));
+  const typeCodes = Object.keys(LC_TYPE_TIER).filter((t) => present.has(t));
   const times = Array.from(new Set(LATE_CHECKOUT_DATA.map((r) => r.time)));
 
   let html = `<div class="up-select-row">
@@ -814,7 +1059,7 @@ function renderLateCheckout() {
   const matches = LATE_CHECKOUT_DATA.filter((r) => (!tier || r.category === tier) && (!lcTime || r.time === lcTime));
 
   if (tier) {
-    html += `<div class="up-supplement-note">${lcType} falls under <b>${tier}</b> pricing.</div>`;
+    html += `<div class="up-supplement-note">${lcType} falls under <b>${tier}</b> pricing.${lcType === "DBA" ? " <em>(Placeholder: the tier for Superior rooms is not confirmed yet.)</em>" : ""}</div>`;
   }
 
   if (tier && lcTime && matches.length === 1) {
@@ -943,6 +1188,7 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
+  { sel: "#rgVersion", title: "Old or new room categories", text: "Switch between the categories in use until 31/10 and the new ones from 1/11. The guide picks the right one by today's date." },
   { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
   { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
   { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },
@@ -998,7 +1244,11 @@ function endTour() {
 
 /* ================= Init ================= */
 function initApp() {
+  snapshotRoomVersions();
+  applyVersionToData(initialVersion());
   initTheme();
+  setupVersionSwitch();
+  updateVersionSwitch();
   if (isTouch) $("#detailHint").innerHTML = "Tap a room on the plan<br>to see its view and features.";
   buildBuildingTabs();
   setupSearch();
