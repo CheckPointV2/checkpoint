@@ -4,8 +4,8 @@
    glossary, dark mode, and recently-viewed rooms. */
 
 const TYPE_COLOR = {
-  KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
-  TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
+  DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
+  SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
 
@@ -368,6 +368,18 @@ function buildFilterBar(rooms) {
   sep2.className = "filter-sep";
   bar.appendChild(sep2);
 
+  const supChip = document.createElement("button");
+  supChip.className = "filter-chip";
+  supChip.textContent = "Superior";
+  supChip.title = "Show only Superior rooms (DBA)";
+  const supOn = filters.types.size === 1 && filters.types.has("DBA");
+  supChip.classList.toggle("active", supOn);
+  supChip.addEventListener("click", () => {
+    filters.types = supOn ? new Set() : new Set(["DBA"]);
+    buildFilterBar(rooms);
+  });
+  bar.appendChild(supChip);
+
   const connChip = document.createElement("button");
   connChip.className = "filter-chip";
   connChip.textContent = "Interconnecting only";
@@ -569,14 +581,18 @@ function showDetail(bkey, roomNum) {
   activeRoom = roomNum;
   addRecent(bkey, roomNum);
 
-  if (bkey !== currentBuilding) {
+  const buildingChanged = bkey !== currentBuilding;
+  if (buildingChanged) {
     currentBuilding = bkey;
     $$("#buildingTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.building === bkey));
     buildFloorTabs();
   }
-  if (room.floor !== currentFloor) {
+  // Re-render when the building changes too: the same floor key (e.g. "GF")
+  // exists in every building, so checking the floor alone left the previous
+  // building's plan on screen.
+  if (buildingChanged || room.floor !== currentFloor) {
+    if (room.floor !== currentFloor) filters = { types: new Set(), codes: new Set(), connectOnly: false };
     currentFloor = room.floor;
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
   }
@@ -590,7 +606,7 @@ function showDetail(bkey, roomNum) {
   const pill = $("#dTypePill");
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
-  $("#dDesc").textContent = label;
+  $("#dDesc").textContent = room.size ? `${label} · ${room.size} m²` : label;
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -756,8 +772,10 @@ function renderUpsellResults() {
 }
 
 /* ================= Late Checkout ================= */
+// NOTE: DBA (Superior) -> "Deluxe" is a placeholder; the late-checkout tier for
+// Superior rooms has not been confirmed yet.
 const LC_TYPE_TIER = {
-  KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
+  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
   SKB: "Premium / Family Suite / Interconnecting", SKC: "Premium / Family Suite / Interconnecting",
   SKD: "All Suites", SKP: "All Suites", SXA: "All Suites", SKA: "All Suites",
