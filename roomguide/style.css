@@ -1585,3 +1585,6 @@ html[data-theme="dark"] #view-roomguide .fc-go { background: #2DD4BF; color: #04
   #view-roomguide .size-filter { flex-wrap: wrap; }
   #view-roomguide .sf-range { width: 110px; }
 }
+
+.tour-btn { display: block; margin: 12px 0 4px; padding: 10px 14px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; text-decoration: none; color: #fff; background: var(--ink, #222); }
+.tour-btn:hover { opacity: .85; }
