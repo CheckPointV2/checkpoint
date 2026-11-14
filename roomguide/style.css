@@ -1302,3 +1302,6 @@ header.topbar {
   .ov-floor-card { flex-wrap: wrap; }
   .tour-card { width: 240px; }
 }
+
+.tour-btn { display: block; margin: 12px 0 4px; padding: 10px 14px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; text-decoration: none; color: #fff; background: var(--ink, #222); }
+.tour-btn:hover { opacity: .85; }

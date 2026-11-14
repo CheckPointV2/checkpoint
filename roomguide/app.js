@@ -21,6 +21,16 @@ const TYPE_DESC = {
   SKD: "Two Bedroom Junior Suite", SKP: "Three Bedroom Senior Suite", SXA: "Three Bedroom King Suite",
 };
 
+// Matterport 3D tours, keyed by room type code.
+const MP = (id) => `https://my.matterport.com/show/?m=${id}`;
+const TOUR_URL = {
+  KGA: MP("Qgu7kVwVoXV"), KGAOV: MP("Qgu7kVwVoXV"),
+  KGE: MP("gWD8XSyYAdX"), KGEOV: MP("gWD8XSyYAdX"),
+  SKB: MP("gRomPZk2eGW"), SKC: MP("gRomPZk2eGW"),
+  SKA: MP("2CA89aughXW"), SKD: MP("zrX453XZxx3"),
+  SKP: MP("6m3GtUFHW4E"), SXA: MP("Q2tQqkVcuqn"),
+};
+
 // Feature code meanings, confirmed against the hotel's official Opera code list.
 const GLOSSARY = {
   BAL:    { label: "Balcony", conf: "high" },
@@ -613,6 +623,12 @@ function showDetail(bkey, roomNum) {
       <svg class="no-img-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l18 18M10.5 5H17a2 2 0 0 1 2 2v9.5M3 7v10a2 2 0 0 0 2 2h11.5"/><circle cx="12" cy="13" r="3.2"/></svg><br>
       No photo available yet<br>for room ${room.room}</div>`;
   }
+
+  const tourWrap = $("#dTour");
+  const tour = TOUR_URL[room.type];
+  tourWrap.innerHTML = tour
+    ? `<a class="tour-btn" href="${tour}" target="_blank" rel="noopener">🧭 View 3D tour — ${TYPE_DESC[room.type] || room.type}</a>`
+    : "";
 
   const tagsWrap = $("#dTags");
   tagsWrap.innerHTML = "";
