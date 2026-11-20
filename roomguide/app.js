@@ -4,7 +4,7 @@
    glossary, dark mode, and recently-viewed rooms. */
 
 const TYPE_COLOR = {
-  KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
+  DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
   TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
@@ -18,25 +18,77 @@ const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 4
 // (roomguide/data.js) now, not here, so any module that loads the data file
 // (Allocation Copilot, Room Finder) gets the same real, hotel-confirmed
 // definitions instead of a second hand-copied version.
-const TYPE_DESC = RBAB_DATA.typeDesc;
+let TYPE_DESC = RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc;
 const GLOSSARY = RBAB_DATA.glossary;
-
-// Matterport 3D tours, keyed by room type code.
-const MP = (id) => `https://my.matterport.com/show/?m=${id}`;
-const TOUR_URL = {
-  KGA: MP("Qgu7kVwVoXV"), KGAOV: MP("Qgu7kVwVoXV"),
-  KGE: MP("gWD8XSyYAdX"), KGEOV: MP("gWD8XSyYAdX"),
-  SKB: MP("gRomPZk2eGW"), SKC: MP("gRomPZk2eGW"),
-  SKA: MP("2CA89aughXW"), SKD: MP("zrX453XZxx3"),
-  SKP: MP("6m3GtUFHW4E"), SXA: MP("Q2tQqkVcuqn"),
-};
 
 const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
 let currentBuilding = null;
 let currentFloor = null;
 let activeRoom = null;
-let filters = { types: new Set(), codes: new Set(), connectOnly: false };
+function emptyFilters() { return { types: new Set(), codes: new Set(), beds: new Set(), connectOnly: false }; }
+let filters = emptyFilters();
+
+/* ================= Old / New room types =================
+   data.js keeps each room's current code/name as prevType/prevDescription and
+   the new one (from the "RN Changed" tab) as type/description. r.type and
+   r.description always hold the version being shown. r.bed (King/Twin) exists
+   only for new DBA / KGA / KGAOV rooms and is shown only in the New view. */
+const VERSION_KEY = "rbab-matrix-version";
+const TYPE_DESC_BY_VERSION = { old: RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc, new: RBAB_DATA.typeDesc };
+let rgVersion = "old";
+
+function isNew() { return rgVersion === "new"; }
+function roomBed(r) { return isNew() && r.bed ? r.bed : null; }
+function bedLabel(b) { return b === "King" ? "King bed" : "Twin beds"; }
+
+function initialVersion() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(VERSION_KEY) || "null");
+    if (saved && (saved.v === "old" || saved.v === "new")) return saved.v;
+  } catch (e) {}
+  return "old";
+}
+function snapshotRoomVersions() {
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
+      if (r._v) return;
+      r._v = {
+        new: { type: r.type, description: r.description },
+        old: { type: r.prevType || r.type, description: r.prevDescription || r.description },
+      };
+    });
+  });
+}
+function applyVersionToData(v) {
+  rgVersion = v;
+  TYPE_DESC = TYPE_DESC_BY_VERSION[v];
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
+      r.type = r._v[v].type;
+      r.description = r._v[v].description;
+    });
+  });
+}
+function updateVersionSwitch() {
+  $$("#rgVersion button").forEach((btn) => {
+    const on = btn.dataset.v === rgVersion;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  });
+}
+function setVersion(v) {
+  if (v === rgVersion) return;
+  try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v })); } catch (e) {}
+  applyVersionToData(v);
+  updateVersionSwitch();
+  filters = emptyFilters();
+  renderFloor(currentFloor);
+  if (activeRoom != null) showDetail(currentBuilding, activeRoom); else clearDetail();
+}
+function setupVersionSwitch() {
+  $$("#rgVersion button").forEach((btn) => btn.addEventListener("click", () => setVersion(btn.dataset.v)));
+}
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -148,7 +200,7 @@ function buildFloorTabs() {
 
 function selectFloor(key) {
   currentFloor = key;
-  filters = { types: new Set(), codes: new Set(), connectOnly: false };
+  filters = emptyFilters();
   $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === key));
   renderFloor(key);
   clearDetail();
@@ -227,6 +279,8 @@ function renderFloorContent(key) {
   grid.style.gridTemplateRows = `repeat(${f.rows}, ${tileSize}px)`;
 
   rooms.forEach((r) => {
+    const bed = roomBed(r);
+    const bedBadge = bed ? `<span class="bed-badge bed-${bed.toLowerCase()}">${bed.toUpperCase()}</span>` : "";
     const tile = document.createElement("div");
     tile.className = "tile room-tile";
     tile.dataset.room = r.room;
@@ -240,11 +294,11 @@ function renderFloorContent(key) {
       // firing every request on the floor the instant it renders.
       tile.dataset.thumbSrc = thumbPath(currentBuilding, r.room);
       observeLazyThumb(tile);
-      tile.innerHTML = `<span class="type-dot" style="background:${typeColor(r.type)}"></span><div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>`;
+      tile.innerHTML = `<span class="type-dot" style="background:${typeColor(r.type)}"></span><div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>${bedBadge}`;
     } else {
       tile.style.background = typeColor(r.type);
       tile.classList.add("no-photo");
-      tile.innerHTML = `<div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>`;
+      tile.innerHTML = `<div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>${bedBadge}`;
     }
 
     if (r.connecting != null) tile.classList.add("link-badge");
@@ -346,7 +400,7 @@ function buildLegend(rooms) {
   legend.innerHTML = "";
   types.forEach((t) => {
     const sample = rooms.find((r) => r.type === t);
-    const label = titleCase(sample ? sample.description : t);
+    const label = isNew() ? (TYPE_DESC[t] || t) : titleCase(sample ? sample.description : t);
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `<span class="swatch" style="background:${typeColor(t)}"></span>${t} — ${label}`;
@@ -374,6 +428,15 @@ function buildFilterBar(rooms) {
     .map((c) => ({ value: c, desc: GLOSSARY[c] ? GLOSSARY[c].label : "Meaning not yet confirmed" }));
   buildDropdownFilter(bar, "Features", codeOptions, filters.codes, () => applyFilters());
 
+  if (isNew()) {
+    const bedOptions = [
+      { value: "King", desc: "King bed (DBA / KGA / KGAOV)" },
+      { value: "Twin", desc: "Twin beds (DBA / KGA / KGAOV)" },
+    ];
+    buildDropdownFilter(bar, "Bed", bedOptions, filters.beds, () => applyFilters());
+    bar.lastElementChild.classList.add("fdrop-bed");
+  }
+
   const sep2 = document.createElement("div");
   sep2.className = "filter-sep";
   bar.appendChild(sep2);
@@ -394,7 +457,7 @@ function buildFilterBar(rooms) {
   clear.textContent = "Clear filters";
   clear.style.display = "none";
   clear.addEventListener("click", () => {
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
+    filters = emptyFilters();
     buildFilterBar(rooms);
     applyFilters();
   });
@@ -472,10 +535,11 @@ function buildDropdownFilter(bar, label, options, selectedSet, onChange) {
 }
 
 function filtersActive() {
-  return filters.types.size || filters.codes.size || filters.connectOnly;
+  return filters.types.size || filters.codes.size || filters.beds.size || filters.connectOnly;
 }
 
 function roomMatchesFilters(r) {
+  if (filters.beds.size && !filters.beds.has(roomBed(r))) return false;
   if (filters.types.size && !filters.types.has(r.type)) return false;
   if (filters.codes.size) {
     for (const c of filters.codes) { if (!r.codes.includes(c)) return false; }
@@ -586,7 +650,7 @@ function showDetail(bkey, roomNum) {
   }
   if (room.floor !== currentFloor) {
     currentFloor = room.floor;
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
+    filters = emptyFilters();
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
   }
@@ -595,12 +659,14 @@ function showDetail(bkey, roomNum) {
   $("#detailRoom").classList.add("show");
   renderBreadcrumb(`Room ${room.room}`);
 
-  const label = titleCase(room.description) || room.type;
+  // Official new names are shown exactly as written; older sheet text is tidied.
+  const label = (isNew() && room.description === TYPE_DESC[room.type]) ? room.description : (titleCase(room.description) || room.type);
+  const dBed = roomBed(room);
   $("#dRoomNum").textContent = room.room;
   const pill = $("#dTypePill");
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
-  $("#dDesc").textContent = label;
+  $("#dDesc").textContent = dBed ? `${label} · ${bedLabel(dBed)}` : label;
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -615,12 +681,6 @@ function showDetail(bkey, roomNum) {
       <svg class="no-img-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l18 18M10.5 5H17a2 2 0 0 1 2 2v9.5M3 7v10a2 2 0 0 0 2 2h11.5"/><circle cx="12" cy="13" r="3.2"/></svg><br>
       No photo available yet<br>for room ${room.room}</div>`;
   }
-
-  const tourWrap = $("#dTour");
-  const tour = TOUR_URL[room.type];
-  tourWrap.innerHTML = tour
-    ? `<a class="tour-btn" href="${tour}" target="_blank" rel="noopener">🧭 View 3D tour — ${TYPE_DESC[room.type] || room.type}</a>`
-    : "";
 
   const tagsWrap = $("#dTags");
   tagsWrap.innerHTML = "";
@@ -863,7 +923,7 @@ function setupSearch() {
       dropdown.innerHTML = matches.slice(0, 8).map((m, i) => `
         <div class="sd-item" data-idx="${i}" data-b="${m.building}" data-r="${m.room.room}">
           <span class="sd-room">${m.room.room}</span>
-          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}</span>
+          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}${roomBed(m.room) ? ` · ${roomBed(m.room)}` : ""}</span>
         </div>`).join("");
       $$(".sd-item", dropdown).forEach((el) => {
         el.addEventListener("click", () => {
@@ -941,6 +1001,7 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
+  { sel: "#rgVersion", title: "Old or new room types", text: "Switch between the old room types and the new ones. The New view also shows King or Twin for DBA, KGA and KGAOV rooms." },
   { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
   { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
   { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },
@@ -996,7 +1057,11 @@ function endTour() {
 
 /* ================= Init ================= */
 function initApp() {
+  snapshotRoomVersions();
+  applyVersionToData(initialVersion());
   initTheme();
+  setupVersionSwitch();
+  updateVersionSwitch();
   if (isTouch) $("#detailHint").innerHTML = "Tap a room on the plan<br>to see its view and features.";
   buildBuildingTabs();
   setupSearch();

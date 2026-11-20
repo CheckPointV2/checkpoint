@@ -9,6 +9,7 @@
   --c-kgaov: #8FB6DC;
   --c-kge: #17395C;
   --c-kgeov: #5C93BF;
+  --c-dba: #7C8FA6;
   --c-twa: #3F9169;
   --c-twaov: #99CFB1;
   --c-ska: #DE9F2E;
@@ -1252,5 +1253,43 @@ html, body  {
    #view-roomguide .tour-card { width: 240px; }
 }
 
-.tour-btn { display: block; margin: 12px 0 4px; padding: 10px 14px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; text-decoration: none; color: #fff; background: var(--ink, #222); }
-.tour-btn:hover { opacity: .85; }
+/* ---- Old / New switch ---- */
+#view-roomguide .rg-version {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+#view-roomguide .rg-version button {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+#view-roomguide .rg-version button.active { background: var(--bronze); color: #fff; }
+
+/* ---- New view: bed type badge on DBA / KGA / KGAOV tiles ---- */
+#view-roomguide .bed-badge {
+  margin-top: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  text-shadow: none;
+  background: #FFFFFF;
+  color: #2B2118;
+}
+#view-roomguide .bed-badge.bed-twin { background: #FDE7C7; color: #8A3A00; }
+
+@media (max-width: 860px) {
+  /* the Bed dropdown sits further right: open its panel from the right edge on phones */
+  #view-roomguide .fdrop-bed .fdrop-panel { left: auto; right: 0; width: 220px; }
+}
