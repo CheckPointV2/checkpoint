@@ -226,8 +226,8 @@ html, body  {
  #view-roomguide .search-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
-  width: 260px;
+  left: 0; /* open rightward: the search box sits at the left of the toolbar, next to the hub sidebar */
+  width: 300px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1376,3 +1376,7 @@ html[data-theme="dark"] #view-roomguide .bed-hero-twin { background: #3A2410; bo
 
 /* keep the hub's floating notes button from covering the end of the room panel */
 #view-roomguide .detail-col { padding-bottom: 90px; }
+
+/* New view: connection shown in search results */
+#view-roomguide .search-dropdown .sd-ic { color: var(--bronze-deep); font-weight: 700; }
+#view-roomguide .search-dropdown .sd-phy { color: var(--ink-soft); font-weight: 700; }

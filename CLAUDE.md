@@ -41,6 +41,7 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   - New-view extras: "Copy N rooms for Opera" button on filter matches (comma list, no spaces,
     no trailing comma — Opera rejects a trailing comma), text search (twin / DBA / D3B / PHY /
     building), KING/TWIN + PHY legend, Overview shows PHY count and King/Twin split.
+    Search results also show the connection: "Inter 2158 · D3B" or "PHY 2003" (New view only).
 - Late checkout and upsell are deliberately **unchanged** (no DBA tier/prices yet).
 
 ## Updating the room data next time
