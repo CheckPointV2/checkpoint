@@ -667,6 +667,7 @@ function showDetail(bkey, roomNum) {
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
   $("#dDesc").textContent = dBed ? `${label} · ${bedLabel(dBed)}` : label;
+  renderDetailFacts(room, dBed);
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -727,6 +728,28 @@ function showDetail(bkey, roomNum) {
 
   highlightConnections(room);
   renderRecent();
+}
+
+// New view only: a Bed type card (DBA / KGA / KGAOV) and an Old -> New card for
+// rooms whose code changes. The Old view shows neither.
+function renderDetailFacts(room, bed) {
+  const wrap = $("#dFacts");
+  if (!wrap) return;
+  const oldT = room._v ? room._v.old.type : room.type;
+  const newT = room._v ? room._v.new.type : room.type;
+  if (!isNew() || room.type === "PI") { wrap.innerHTML = ""; return; }
+  const pill = (code) => `<span class="mini-pill" style="background:${typeColor(code)}">${code}</span>`;
+  const name = (v, code) => { const d = TYPE_DESC_BY_VERSION[v][code]; return d ? (v === "new" ? d : titleCase(d)) : code; };
+  wrap.innerHTML = `
+    ${bed ? `<div class="bed-hero bed-hero-${bed.toLowerCase()}">
+      <span class="bed-hero-icon" aria-hidden="true">${bed === "King" ? "🛏" : "🛏🛏"}</span>
+      <span><span class="bed-hero-k">Bed type</span><span class="bed-hero-v">${bedLabel(bed)}</span></span>
+    </div>` : ""}
+    ${oldT !== newT ? `<div class="fact-change">
+      <div class="fc-col"><span class="fc-kicker">Old</span><span class="fc-line">${pill(oldT)} ${name("old", oldT)}</span></div>
+      <span class="fc-arrow" aria-hidden="true">→</span>
+      <div class="fc-col"><span class="fc-kicker">New</span><span class="fc-line">${pill(newT)} ${name("new", newT)}</span></div>
+    </div>` : ""}`;
 }
 
 function highlightConnections(room) {

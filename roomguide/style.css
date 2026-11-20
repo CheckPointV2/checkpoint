@@ -9,7 +9,7 @@
   --c-kgaov: #8FB6DC;
   --c-kge: #17395C;
   --c-kgeov: #5C93BF;
-  --c-dba: #7C8FA6;
+  --c-dba: #7C5CFA;
   --c-twa: #3F9169;
   --c-twaov: #99CFB1;
   --c-ska: #DE9F2E;
@@ -1276,8 +1276,11 @@ html, body  {
 
 /* ---- New view: bed type badge on DBA / KGA / KGAOV tiles ---- */
 #view-roomguide .bed-badge {
-  margin-top: 2px;
-  font-size: 8px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  font-size: 8.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -1293,3 +1296,37 @@ html, body  {
   /* the Bed dropdown sits further right: open its panel from the right edge on phones */
   #view-roomguide .fdrop-bed .fdrop-panel { left: auto; right: 0; width: 220px; }
 }
+#view-roomguide .tile.link-badge .bed-badge { right: 15px; } /* keep the interconnecting dot visible */
+
+/* ---- New view: room detail cards ---- */
+#view-roomguide .detail-facts:empty { display: none; }
+#view-roomguide .detail-facts { margin: -6px 0 16px; display: flex; flex-direction: column; gap: 8px; }
+#view-roomguide .bed-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid;
+}
+#view-roomguide .bed-hero-icon { font-size: 24px; }
+#view-roomguide .bed-hero-k { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+#view-roomguide .bed-hero-v { display: block; font-size: 20px; font-weight: 800; }
+#view-roomguide .bed-hero-king { border-color: var(--ink); background: var(--panel-2); color: var(--ink); }
+#view-roomguide .bed-hero-twin { border-color: #B45309; background: #FEF3E2; color: #92400E; }
+html[data-theme="dark"] #view-roomguide .bed-hero-twin { background: #3A2410; border-color: #F59E0B; color: #FCD34D; }
+
+#view-roomguide .fact-change {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #7C5CFA 45%, var(--line));
+  background: color-mix(in srgb, #7C5CFA 8%, var(--panel));
+}
+#view-roomguide .fc-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+#view-roomguide .fc-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
+#view-roomguide .fc-line { font-size: 12.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#view-roomguide .fc-arrow { font-size: 18px; color: #7C5CFA; flex-shrink: 0; }
+#view-roomguide .mini-pill { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
