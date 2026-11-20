@@ -152,7 +152,7 @@ window.CP = window.CP || {};
   }));
   CP.LIB = {
     ocr: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
-    xlsx: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+    xlsx: 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js', // patched SheetJS (xlsx 0.18.5 on npm has known CVEs)
     pdf: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
     pdfWorker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
   };

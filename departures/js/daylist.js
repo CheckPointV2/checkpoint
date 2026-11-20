@@ -9,7 +9,7 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = CP.LIB.pdfWorker;
     }
     const buf = await file.arrayBuffer();
-    const doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    const doc = await window.pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise; // CVE-2024-4367 mitigation
     let text = '';
     for (let i = 1; i <= doc.numPages; i++) {
       const page = await doc.getPage(i);
