@@ -1349,12 +1349,10 @@ html[data-theme="dark"] #view-roomguide .bed-hero-twin { background: #3A2410; bo
 /* New view: compact interconnecting line (system configured vs physical only) */
 #view-roomguide .ic-line { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); }
 #view-roomguide .ic-dot { flex-shrink: 0; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; box-sizing: border-box; }
-#view-roomguide .ic-sys .ic-dot { background: var(--gold-accent); }
 #view-roomguide .ic-phys .ic-dot { border: 2px solid #9CA3AF; background: transparent; }
 #view-roomguide .ic-text { font-size: 13px; color: var(--ink); line-height: 1.45; }
 #view-roomguide .ic-room { border: none; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--bronze-deep); text-decoration: underline; cursor: pointer; }
 #view-roomguide .ic-sub { display: block; font-size: 11.5px; color: var(--ink-soft); }
-#view-roomguide .ic-sys .ic-sub { color: var(--bronze-deep); font-weight: 600; }
 
 /* ---- New view: Copy for Opera, legend badge, overview split ---- */
 #view-roomguide .copy-opera {
