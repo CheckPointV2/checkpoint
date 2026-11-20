@@ -87,6 +87,7 @@ function setVersion(v) {
   try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v })); } catch (e) {}
   applyVersionToData(v);
   updateVersionSwitch();
+  updateSearchHint();
   filters = emptyFilters();
   renderFloor(currentFloor);
   if (activeRoom != null) showDetail(currentBuilding, activeRoom); else clearDetail();
@@ -347,9 +348,15 @@ function openOverview() {
     const withPhoto = guestRooms.filter((r) => r.hasPhoto).length;
     const pct = Math.round((withPhoto / guestRooms.length) * 100);
     const withConnect = allRooms.filter((r) => r.connecting != null).length;
+    const withPhys = allRooms.filter((r) => r.physical != null).length;
 
     const typeCounts = {};
-    guestRooms.forEach((r) => { typeCounts[r.type] = (typeCounts[r.type] || 0) + 1; });
+    const bedSplit = {};
+    guestRooms.forEach((r) => {
+      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+      const bd = roomBed(r);
+      if (bd) { bedSplit[r.type] = bedSplit[r.type] || { King: 0, Twin: 0 }; bedSplit[r.type][bd]++; }
+    });
     const maxCount = Math.max(...Object.values(typeCounts));
 
     html += `<div class="ov-building-block">
@@ -358,6 +365,7 @@ function openOverview() {
         <div class="ov-stat-card"><div class="ov-num">${allRooms.length}</div><div class="ov-label">Total Rooms</div></div>
         <div class="ov-stat-card"><div class="ov-num">${b.floorOrder.length}</div><div class="ov-label">Floors</div></div>
         <div class="ov-stat-card"><div class="ov-num">${withConnect}</div><div class="ov-label">Interconnecting</div></div>
+        ${isNew() ? `<div class="ov-stat-card"><div class="ov-num">${withPhys}</div><div class="ov-label">Physical only (PHY)</div></div>` : ""}
         <div class="ov-stat-card"><div class="ov-num">${pct}%</div><div class="ov-label">Photo Coverage</div></div>
       </div>
 
@@ -366,7 +374,7 @@ function openOverview() {
       html += `<div class="ov-type-row">
         <span class="ov-type-label">${t}</span>
         <span class="ov-type-track"><span class="ov-type-fill" style="width:${(count / maxCount) * 100}%; background:${typeColor(t)}"></span></span>
-        <span class="ov-type-count">${count}</span>
+        <span class="ov-type-count">${count}${bedSplit[t] ? `<small class="ov-bed-split"> ${bedSplit[t].King} K · ${bedSplit[t].Twin} T</small>` : ""}</span>
       </div>`;
     });
     html += `</div><div class="ov-floor-list">`;
@@ -420,7 +428,8 @@ function buildLegend(rooms) {
     <div class="item"><span class="swatch" style="background:var(--c-atrium)"></span>Atrium</div>
     <div class="item"><span class="swatch" style="background:var(--gold-accent)"></span>Interconnecting room</div>
   `);
-  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>`);
+  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>
+    <div class="item"><span class="bed-badge legend-badge">KING</span><span class="bed-badge bed-twin legend-badge">TWIN</span>Bed type (DBA / KGA / KGAOV)</div>`);
 }
 
 /* ================= Filter bar ================= */
@@ -620,7 +629,18 @@ function renderCrossBuildingPanel(active) {
     html += `</div></div>`;
   });
 
-  $("#crossBody").innerHTML = html;
+  if (isNew()) {
+    const all = RBAB_DATA.buildingOrder.flatMap((bk) => Object.values(buildingData(bk).rooms).filter(roomMatchesFilters))
+      .map((r) => r.room).sort((a, c) => a - c);
+    if (all.length) {
+      html = `<button type="button" class="copy-opera" id="copyOpera" title="Copies the room numbers as 2003,2005,2054 for pasting into Opera">Copy ${all.length} rooms for Opera</button>` + html;
+    }
+    $("#crossBody").innerHTML = html;
+    const btn = $("#copyOpera");
+    if (btn) btn.addEventListener("click", () => copyText(all.join(","), btn, `Copied ${all.length} rooms ✓`));
+  } else {
+    $("#crossBody").innerHTML = html;
+  }
 
   $$(".cross-chip", $("#crossBody")).forEach((chip) => {
     const bkey = chip.dataset.b;
@@ -649,6 +669,20 @@ function renderCrossBuildingPanel(active) {
       });
     }
   });
+}
+
+function copyText(text, btn, doneLabel) {
+  const old = btn.textContent;
+  const done = () => { btn.textContent = doneLabel; btn.classList.add("done"); setTimeout(() => { btn.textContent = old; btn.classList.remove("done"); }, 1800); };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    ta.remove(); done();
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback);
+  else fallback();
 }
 
 /* ================= Detail panel ================= */
@@ -975,6 +1009,24 @@ function allRoomsFlat() {
 
 let searchHighlight = -1;
 
+// New view: every word must match the room's code, category name, bed,
+// interconnecting code, "PHY", or building name (e.g. "twin dba", "superior",
+// "d3b", "phy amwaj").
+function roomMatchesWords(m, val) {
+  const r = m.room;
+  const nameWords = String(TYPE_DESC[r.type] || "").split(/[\s/]+/);
+  const tags = [r.type, roomBed(r), r.icCode, r.physical != null ? "PHY" : null, m.buildingLabel, String(r.room), ...nameWords]
+    .filter(Boolean).map((x) => String(x).toLowerCase());
+  return val.toLowerCase().split(/\s+/).filter(Boolean)
+    .every((w) => tags.some((t) => t === w || (w.length >= 3 && t.startsWith(w))));
+}
+function updateSearchHint() {
+  const input = $("#searchInput");
+  if (!input) return;
+  input.placeholder = isNew() ? "Room #, or twin / DBA / D3B / PHY" : "Go to room #";
+  input.setAttribute("inputmode", isNew() ? "text" : "numeric");
+}
+
 function setupSearch() {
   const input = $("#searchInput");
   const dropdown = $("#searchDropdown");
@@ -985,11 +1037,12 @@ function setupSearch() {
     if (!matches.length) {
       dropdown.innerHTML = `<div class="sd-empty">No matching room</div>`;
     } else {
+      const more = matches.length > 8 ? `<div class="sd-empty">+${matches.length - 8} more · use the filters to list them all</div>` : "";
       dropdown.innerHTML = matches.slice(0, 8).map((m, i) => `
         <div class="sd-item" data-idx="${i}" data-b="${m.building}" data-r="${m.room.room}">
           <span class="sd-room">${m.room.room}</span>
           <span class="sd-meta">${m.buildingLabel} · ${m.room.type}${roomBed(m.room) ? ` · ${roomBed(m.room)}` : ""}</span>
-        </div>`).join("");
+        </div>`).join("") + more;
       $$(".sd-item", dropdown).forEach((el) => {
         el.addEventListener("click", () => {
           showDetail(el.dataset.b, Number(el.dataset.r));
@@ -1005,7 +1058,9 @@ function setupSearch() {
   input.addEventListener("input", () => {
     const val = input.value.trim();
     if (!val) { dropdown.classList.remove("show"); return; }
-    const matches = allRooms.filter((m) => String(m.room.room).startsWith(val));
+    const matches = (isNew() && /[a-z]/i.test(val))
+      ? allRooms.filter((m) => roomMatchesWords(m, val))
+      : allRooms.filter((m) => String(m.room.room).startsWith(val));
     renderResults(matches);
   });
 
@@ -1127,6 +1182,7 @@ function initApp() {
   initTheme();
   setupVersionSwitch();
   updateVersionSwitch();
+  updateSearchHint();
   if (isTouch) $("#detailHint").innerHTML = "Tap a room on the plan<br>to see its view and features.";
   buildBuildingTabs();
   setupSearch();

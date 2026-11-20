@@ -1355,3 +1355,26 @@ html[data-theme="dark"] #view-roomguide .bed-hero-twin { background: #3A2410; bo
 #view-roomguide .ic-room { border: none; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--bronze-deep); text-decoration: underline; cursor: pointer; }
 #view-roomguide .ic-sub { display: block; font-size: 11.5px; color: var(--ink-soft); }
 #view-roomguide .ic-sys .ic-sub { color: var(--bronze-deep); font-weight: 600; }
+
+/* ---- New view: Copy for Opera, legend badge, overview split ---- */
+#view-roomguide .copy-opera {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--bronze);
+  background: var(--bronze);
+  color: #fff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#view-roomguide .copy-opera:hover { filter: brightness(1.08); }
+#view-roomguide .copy-opera.done { background: #2E7D6E; border-color: #2E7D6E; }
+#view-roomguide .legend .legend-badge { position: static; margin: 0 2px 0 0; }
+#view-roomguide .ov-bed-split { font-size: 10.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+
+/* keep the hub's floating notes button from covering the end of the room panel */
+#view-roomguide .detail-col { padding-bottom: 90px; }
