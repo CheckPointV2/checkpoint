@@ -727,13 +727,21 @@ function showDetail(bkey, roomNum) {
 
   const connectWrap = $("#dConnect");
   const partner = room.connecting != null ? room.connecting : room.physical;
-  if (partner != null) {
+  if (isNew() && partner != null) {
+    // New view: one compact line that says which kind of connection it is.
+    const sys = room.connecting != null;
+    connectWrap.innerHTML = `<div class="ic-line ${sys ? "ic-sys" : "ic-phys"}">
+        <span class="ic-dot" aria-hidden="true"></span>
+        <span class="ic-text">${sys ? "Interconnecting with" : "Physically connected to"}
+          <button type="button" class="ic-room">Room ${partner}</button>
+          · <b>${sys ? (room.icCode || "") : "PHY"}</b>
+          <span class="ic-sub">${sys ? "System configured" : "Not configured in the system"}</span>
+        </span>
+      </div>`;
+    $(".ic-room", connectWrap).addEventListener("click", () => showDetail(bkey, partner));
+  } else if (room.connecting != null) {
     const other = b.rooms[String(partner)];
-    const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>`;
-    connectWrap.innerHTML = room.connecting != null
-      ? `<div class="connect-title">${icon}Interconnecting with Room ${room.connecting}${room.icCode ? ` · ${room.icCode}` : ""}</div>`
-      : `<div class="connect-title phys-title">${icon}Physically connected to Room ${room.physical} · PHY</div>
-         <div class="phys-note">Connecting door exists, but this pair is no longer sold as interconnecting.</div>`;
+    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";
