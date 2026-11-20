@@ -33,9 +33,10 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   - Room details also show an Old → New card for rooms whose code changed.
   - **Interconnecting** from the "Interconnecting Rooms" tab: 18 configured pairs, codes renamed
     by the owner: **D2A → D3A (4 pairs), D2C → D3B (9), D2D → D3C (5)**. Shown as a gold dot +
-    "Interconnecting with Room X · D3x / System configured".
-  - The 53 old pairs that were dropped still have a door: shown as **PHY** (hollow grey ring,
-    "Physically connected to Room X · PHY / Not configured in the system", "Physical only" filter).
+    the full box with the partner room's photo, titled "Interconnecting with Room X · D3x" (owner wants the photo kept here).
+  - The 53 old pairs that were dropped still have a door: shown as **PHY** — kept SMALL on purpose:
+    hollow grey ring, one line "Physically connected to Room X · PHY / Not configured in the system",
+    no photo card, "Physical only" filter.
   - 3D (Matterport) tour buttons were removed from all rooms at the owner's request.
   - New-view extras: "Copy N rooms for Opera" button on filter matches (comma list, no spaces,
     no trailing comma — Opera rejects a trailing comma), text search (twin / DBA / D3B / PHY /

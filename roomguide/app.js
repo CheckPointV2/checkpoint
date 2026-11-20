@@ -761,21 +761,20 @@ function showDetail(bkey, roomNum) {
 
   const connectWrap = $("#dConnect");
   const partner = room.connecting != null ? room.connecting : room.physical;
-  if (isNew() && partner != null) {
-    // New view: one compact line that says which kind of connection it is.
-    const sys = room.connecting != null;
-    connectWrap.innerHTML = `<div class="ic-line ${sys ? "ic-sys" : "ic-phys"}">
+  if (isNew() && room.connecting == null && room.physical != null) {
+    // New view, physical connection only (PHY): one small line, no photo card.
+    connectWrap.innerHTML = `<div class="ic-line ic-phys">
         <span class="ic-dot" aria-hidden="true"></span>
-        <span class="ic-text">${sys ? "Interconnecting with" : "Physically connected to"}
-          <button type="button" class="ic-room">Room ${partner}</button>
-          · <b>${sys ? (room.icCode || "") : "PHY"}</b>
-          <span class="ic-sub">${sys ? "System configured" : "Not configured in the system"}</span>
+        <span class="ic-text">Physically connected to
+          <button type="button" class="ic-room">Room ${partner}</button> · <b>PHY</b>
+          <span class="ic-sub">Not configured in the system</span>
         </span>
       </div>`;
     $(".ic-room", connectWrap).addEventListener("click", () => showDetail(bkey, partner));
   } else if (room.connecting != null) {
+    // Configured pair: full box with the partner's photo (New view adds its D3x code).
     const other = b.rooms[String(partner)];
-    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}</div>`;
+    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}${isNew() && room.icCode ? ` · ${room.icCode}` : ""}</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";
