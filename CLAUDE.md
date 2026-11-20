@@ -34,6 +34,7 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   - **Interconnecting** from the "Interconnecting Rooms" tab: 18 configured pairs, codes renamed
     by the owner: **D2A → D3A (4 pairs), D2C → D3B (9), D2D → D3C (5)**. Shown as a gold dot +
     the full box with the partner room's photo, titled "Interconnecting with Room X · D3x" (owner wants the photo kept here).
+    On the plan: SOLID GOLD RING around the tile = configured pair; DASHED black/white ring = PHY.
   - The 53 old pairs that were dropped still have a door: shown as **PHY** — kept SMALL on purpose:
     hollow grey ring, one line "Physically connected to Room X · PHY / Not configured in the system",
     no photo card, "Physical only" filter.
