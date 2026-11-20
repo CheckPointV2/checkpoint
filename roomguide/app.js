@@ -53,9 +53,11 @@ function snapshotRoomVersions() {
   RBAB_DATA.buildingOrder.forEach((bkey) => {
     Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
       if (r._v) return;
+      // Interconnecting: Old = today's pairs (r.connecting); New = the pairs from
+      // the "Interconnecting Rooms" tab (r.connectingNew, with its D3A/D3B/D3C code).
       r._v = {
-        new: { type: r.type, description: r.description },
-        old: { type: r.prevType || r.type, description: r.prevDescription || r.description },
+        new: { type: r.type, description: r.description, connecting: r.connectingNew === undefined ? r.connecting : r.connectingNew, icCode: r.icCodeNew || null },
+        old: { type: r.prevType || r.type, description: r.prevDescription || r.description, connecting: r.connecting, icCode: null },
       };
     });
   });
@@ -67,6 +69,8 @@ function applyVersionToData(v) {
     Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
       r.type = r._v[v].type;
       r.description = r._v[v].description;
+      r.connecting = r._v[v].connecting;
+      r.icCode = r._v[v].icCode;
     });
   });
 }
@@ -703,7 +707,7 @@ function showDetail(bkey, roomNum) {
   const connectWrap = $("#dConnect");
   if (room.connecting != null) {
     const other = b.rooms[String(room.connecting)];
-    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}</div>`;
+    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}${room.icCode ? ` · ${room.icCode}` : ""}</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";
