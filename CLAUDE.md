@@ -77,4 +77,5 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
 - Nov 20 2026 (later): bed overrides for 6 rooms, DBA late checkout "TBA", New as default view,
   new tour; team tool reviewed (same app.js/data.js as CheckPoint's first Room Guide copy, all
   715 rooms identical to the Old view) and its update prepared locally — awaiting owner's go.
+  Rebuild it any time with `tools/roomguide/port_to_team_site.py` (see its docstring).
   The owner wants 3D (Matterport) tours IN the team tool (they were removed from CheckPoint).
