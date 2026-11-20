@@ -1019,6 +1019,15 @@ function roomMatchesWords(m, val) {
   return val.toLowerCase().split(/\s+/).filter(Boolean)
     .every((w) => tags.some((t) => t === w || (w.length >= 3 && t.startsWith(w))));
 }
+// New view only: show the connection in search results,
+// e.g. " · Inter 2157 · D3B" (configured) or " · PHY 2003" (physical door only).
+function searchLinkLabel(r) {
+  if (!isNew()) return "";
+  if (r.connecting != null) return ` · <b class="sd-ic">Inter ${r.connecting}${r.icCode ? ` · ${r.icCode}` : ""}</b>`;
+  if (r.physical != null) return ` · <b class="sd-phy">PHY ${r.physical}</b>`;
+  return "";
+}
+
 function updateSearchHint() {
   const input = $("#searchInput");
   if (!input) return;
@@ -1040,7 +1049,7 @@ function setupSearch() {
       dropdown.innerHTML = matches.slice(0, 8).map((m, i) => `
         <div class="sd-item" data-idx="${i}" data-b="${m.building}" data-r="${m.room.room}">
           <span class="sd-room">${m.room.room}</span>
-          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}${roomBed(m.room) ? ` · ${roomBed(m.room)}` : ""}</span>
+          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}${roomBed(m.room) ? ` · ${roomBed(m.room)}` : ""}${searchLinkLabel(m.room)}</span>
         </div>`).join("") + more;
       $$(".sd-item", dropdown).forEach((el) => {
         el.addEventListener("click", () => {
