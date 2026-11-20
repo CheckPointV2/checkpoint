@@ -9,6 +9,9 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   (https://rbabroomguide.github.io/, served from its default branch, standalone, own login).
   Since Nov 20 2026 the owner allows reading/reviewing it and preparing changes locally,
   but **nothing is pushed there without the owner's explicit "go"** for that push.
+  It was updated on Nov 20 2026 (commit d617b00) with the same Room Guide as CheckPoint plus the
+  3D tour button; build it with tools/roomguide/port_to_team_site.py, push to its main branch
+  (GitHub Pages "pages build and deployment", ~1 min). The Claude GitHub App is installed there.
 - Show a plan / screenshots before building anything big; the owner prefers **simple** UI
   (they asked to remove extra visuals more than once).
 - Keep the **Old** Room Guide view exactly as it is. New features go in the **New** view only.
@@ -76,6 +79,6 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   (xlsx from cdn.sheetjs.com, pdf.js `isEvalSupported:false`, password comment removed).
 - Nov 20 2026 (later): bed overrides for 6 rooms, DBA late checkout "TBA", New as default view,
   new tour; team tool reviewed (same app.js/data.js as CheckPoint's first Room Guide copy, all
-  715 rooms identical to the Old view) and its update prepared locally — awaiting owner's go.
+  715 rooms identical to the Old view) and updated on the owner's go (d617b00).
   Rebuild it any time with `tools/roomguide/port_to_team_site.py` (see its docstring).
   The owner wants 3D (Matterport) tours IN the team tool (they were removed from CheckPoint).
