@@ -40,12 +40,15 @@ test('bed type only on DBA / KGA / KGAOV, from the old code (TWA/TWAOV = Twin, K
   assert.ok(withBed.every((r) => ['DBA', 'KGA', 'KGAOV'].includes(r.type)));
   assert.ok(rooms.filter((r) => ['DBA', 'KGA', 'KGAOV'].includes(r.type)).every((r) => r.bed === 'King' || r.bed === 'Twin'));
   assert.deepEqual(count(withBed, (r) => `${r.type} ${r.bed}`), {
-    'DBA King': 32, 'DBA Twin': 34, 'KGA King': 116, 'KGA Twin': 59, 'KGAOV King': 33, 'KGAOV Twin': 26,
+    'DBA King': 36, 'DBA Twin': 30, 'KGA King': 116, 'KGA Twin': 59, 'KGAOV King': 31, 'KGAOV Twin': 28,
   });
   // spot checks
   assert.equal(byNum['2003'].bed, 'Twin');   // TWA -> DBA
   assert.equal(byNum['2050'].bed, 'King');   // KGA -> DBA
   assert.equal(byNum['1019'].bed, 'Twin');   // TWA -> KGA
+  // confirmed by the owner (RN tab and old data disagreed)
+  for (const n of ['3249', '3252', '3260', '3350']) assert.equal(byNum[n].bed, 'King', n);
+  for (const n of ['3263', '3349']) assert.equal(byNum[n].bed, 'Twin', n);
 });
 
 test('New view interconnecting: 18 configured pairs (D3A 4, D3B 9, D3C 5), listed both ways', () => {
