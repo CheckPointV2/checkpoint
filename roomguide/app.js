@@ -311,6 +311,7 @@ function renderFloorContent(key) {
     }
 
     if (r.connecting != null) tile.classList.add("link-badge");
+    if (isNew() && r.connecting != null) tile.classList.add("ic-ring"); // New view: solid gold ring = configured pair
     else if (r.physical != null) tile.classList.add("phys-badge");
     attachRoomEvents(tile, r.room);
     grid.appendChild(tile);
@@ -428,7 +429,8 @@ function buildLegend(rooms) {
     <div class="item"><span class="swatch" style="background:var(--c-atrium)"></span>Atrium</div>
     <div class="item"><span class="swatch" style="background:var(--gold-accent)"></span>Interconnecting room</div>
   `);
-  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>
+  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-ring"></span>Configured interconnecting (D3A / D3B / D3C)</div>
+    <div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>
     <div class="item"><span class="bed-badge legend-badge">KING</span><span class="bed-badge bed-twin legend-badge">TWIN</span>Bed type (DBA / KGA / KGAOV)</div>`);
 }
 

@@ -1332,19 +1332,15 @@ html[data-theme="dark"] #view-roomguide .bed-hero-twin { background: #3A2410; bo
 #view-roomguide .mini-pill { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
 
 /* ---- New view: physical connection only (removed interconnecting pairs) ---- */
-#view-roomguide .tile.phys-badge::after {
-  content: "";
-  position: absolute;
-  top: 5px; right: 5px;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  border: 2px solid #9CA3AF;
-  background: transparent;
-  box-sizing: border-box;
-}
-#view-roomguide .tile.phys-badge .bed-badge { right: 15px; }
-#view-roomguide .tile.phys-linked { outline: 3px dashed #9CA3AF; outline-offset: 2px; z-index: 4; }
-#view-roomguide .legend .swatch-phys { border: 2px solid #9CA3AF; background: transparent; border-radius: 50%; box-sizing: border-box; }
+/* Rings around the whole tile so the two kinds are easy to tell apart on the plan:
+   solid gold = configured pair (D3A/D3B/D3C), dashed grey = physical door only (PHY). */
+#view-roomguide .tile.ic-ring { outline: 3px solid var(--gold-accent); outline-offset: -3px; }
+#view-roomguide .tile.phys-badge { outline: 3px dashed #FFFFFF; outline-offset: -3px; box-shadow: inset 0 0 0 3px rgba(31,41,55,0.75); }
+#view-roomguide .tile.ic-ring.linked { outline: 3px solid var(--gold-accent); outline-offset: 2px; }
+#view-roomguide .tile.phys-linked,
+#view-roomguide .tile.phys-badge.phys-linked { outline: 3px dashed #6B7280; outline-offset: 2px; z-index: 4; }
+#view-roomguide .legend .swatch-ring { border: 3px solid var(--gold-accent); background: transparent; border-radius: 3px; box-sizing: border-box; width: 14px; height: 14px; }
+#view-roomguide .legend .swatch-phys { border: 3px dashed #6B7280; background: transparent; border-radius: 3px; box-sizing: border-box; width: 14px; height: 14px; }
 
 /* New view: compact interconnecting line (system configured vs physical only) */
 #view-roomguide .ic-line { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); }
