@@ -1155,6 +1155,9 @@ function positionTour() {
   const step = TOUR_STEPS[tourIdx];
   const target = document.querySelector(step.sel);
   if (!target) { nextTourStep(); return; }
+  // Bring the item on screen first if it's off-screen (e.g. the legend below the floor plan).
+  const before = target.getBoundingClientRect();
+  if (before.top < 0 || before.top > window.innerHeight - 80) target.scrollIntoView({ block: "center", inline: "start" });
   const rect = target.getBoundingClientRect();
   const pad = 6;
   const hl = $("#tourHighlight");
@@ -1173,6 +1176,7 @@ function positionTour() {
   let top = rect.bottom + 16;
   let left = Math.min(Math.max(rect.left, 10), window.innerWidth - cardWidth - 10);
   if (top + 140 > window.innerHeight) top = Math.max(rect.top - 160, 10);
+  top = Math.min(top, window.innerHeight - 190); // never let the card fall off the screen
   card.style.top = top + "px";
   card.style.left = left + "px";
 }
