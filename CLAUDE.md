@@ -4,8 +4,11 @@ Personal hub for the Rixos Bab Al Bahr rooms controller (Room Guide, Departures,
 Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared/` load each tool.
 
 ## Ground rules from the owner
-- **Room Guide work happens only in this repo's `roomguide/`.** Never touch the team's
-  standalone RBAB Room Guide repo, and never touch `sherilngar/Checkpoint`.
+- **Room Guide work happens in this repo's `roomguide/`.** Never touch `sherilngar/Checkpoint`.
+- The team's live Room Guide is **`rbabroomguide/rbabroomguide.github.io`**
+  (https://rbabroomguide.github.io/, served from its default branch, standalone, own login).
+  Since Nov 20 2026 the owner allows reading/reviewing it and preparing changes locally,
+  but **nothing is pushed there without the owner's explicit "go"** for that push.
 - Show a plan / screenshots before building anything big; the owner prefers **simple** UI
   (they asked to remove extra visuals more than once).
 - Keep the **Old** Room Guide view exactly as it is. New features go in the **New** view only.
@@ -19,7 +22,9 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
 
 ## Room Guide: Old | New switch (live since Nov 2026)
 - Manual switch in the Room Guide header, remembered per device (`localStorage`
-  `rbab-matrix-version`). Opens on **Old**. No date-based switching (owner rejected it).
+  `rbab-matrix-version`). Opens on **New** unless the device picked Old (Opera fully switched,
+  owner made New the main view on Nov 20). No date-based switching (owner rejected it).
+- First-visit tour was rewritten for the new features; key `rbab-tour-seen-v2` so everyone sees it once.
 - **Old** = the guide as it was (original codes incl. TWA/TWAOV, original 63 interconnecting pairs).
 - **New** = data from `ROOMS_Matrix - UPDATED FILE` (Nov 2026):
   - Room codes **only from the "RN Changed" tab** (276 changed, 426 unchanged).
@@ -28,7 +33,9 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
   - New counts: DBA 66 · KGA 175 · KGAOV 59 · KGE 172 · KGEOV 77 · SKA 17 · SKB 73 · SKC 29 ·
     SKD 9 · SKP 14 · SXA 11 (+ PI 13). TWA / TWAOV no longer exist.
   - **Bed type** shown only for DBA / KGA / KGAOV, taken from the room's OLD code in the tab:
-    TWA/TWAOV = Twin, KGA/KGAOV = King (King 181, Twin 119). Shown as a KING/TWIN badge
+    TWA/TWAOV = Twin, KGA/KGAOV = King. Owner-confirmed overrides (BED_OVERRIDE in the build
+    script): 3249, 3252, 3260, 3350 = King; 3263, 3349 = Twin. Totals: King 183, Twin 117
+    (DBA 36/30, KGA 116/59, KGAOV 31/28). Shown as a KING/TWIN badge
     (tile top-right), "· Twin beds" after the name, a Bed type card, search results, Bed filter.
   - Room details also show an Old → New card for rooms whose code changed.
   - **Interconnecting** from the "Interconnecting Rooms" tab: 18 configured pairs, codes renamed
@@ -43,7 +50,8 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
     no trailing comma — Opera rejects a trailing comma), text search (twin / DBA / D3B / PHY /
     building), KING/TWIN + PHY legend, Overview shows PHY count and King/Twin split.
     Search results also show the connection: "Inter 2158 · D3B" or "PHY 2003" (New view only).
-- Late checkout and upsell are deliberately **unchanged** (no DBA tier/prices yet).
+- Late checkout: New view lists **DBA with "Price TBA"** and hides the deleted TWA/TWAOV; Old view
+  unchanged. Upsell grid unchanged (no DBA prices yet).
 
 ## Updating the room data next time
 1. Put the new workbook somewhere local, then from the repo root:
@@ -53,16 +61,20 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
    run `npm test`, check both views in a browser, then push to the deploy branch.
 
 ## Open items (need the owner / hotel)
-- Superior (DBA) late-checkout tier and DBA upgrade prices; upsell grid still uses old
-  interconnecting codes (D2A/D2C, D2B/D2D).
-- RN tab vs old guide data disagree on 11 rooms. Bed type depends on it for 6:
-  3249, 3252, 3260, 3350 show Twin; 3263, 3349 show King (RN tab was followed).
+- Upsell grid still uses old interconnecting codes (D2A/D2C, D2B/D2D).
+- DBA late-checkout price (currently "TBA") and DBA upgrade prices.
 - INT feature tag is inconsistent with real pairs (120 with no pair, 112 pairs without it); left as is.
 - Hub password: the old one was written in `shared/app.js` (removed) and is still in git history,
   so it should be changed — owner to choose the new one.
+- Team Room Guide login (`RBABFRONT` / its password) is written in plain text in that repo's
+  `app.js` — public. Owner to decide on a new one when the team tool is updated.
 
 ## History (short)
 - Oct 31 2026: October matrix work (Superior, sizes, switch, teal UI) — later fully reverted
   on Nov 20 at the owner's request (reverts, not history rewrites; Matterport kept then).
 - Nov 20 2026: rebuilt simply from the updated matrix as described above; security fixes ported
   (xlsx from cdn.sheetjs.com, pdf.js `isEvalSupported:false`, password comment removed).
+- Nov 20 2026 (later): bed overrides for 6 rooms, DBA late checkout "TBA", New as default view,
+  new tour; team tool reviewed (same app.js/data.js as CheckPoint's first Room Guide copy, all
+  715 rooms identical to the Old view) and its update prepared locally — awaiting owner's go.
+  The owner wants 3D (Matterport) tours IN the team tool (they were removed from CheckPoint).

@@ -47,7 +47,7 @@ function initialVersion() {
     const saved = JSON.parse(localStorage.getItem(VERSION_KEY) || "null");
     if (saved && (saved.v === "old" || saved.v === "new")) return saved.v;
   } catch (e) {}
-  return "old";
+  return "new"; // New is the main view; Old stays one click away
 }
 function snapshotRoomVersions() {
   RBAB_DATA.buildingOrder.forEach((bkey) => {
@@ -956,7 +956,9 @@ function lcEffectiveTier(typeCode) {
 
 function renderLateCheckout() {
   const wrap = $("#lateCheckoutBody");
-  const typeCodes = Object.keys(LC_TYPE_TIER);
+  const typeCodes = isNew()
+    ? ["DBA", ...Object.keys(LC_TYPE_TIER).filter((t) => t !== "TWA" && t !== "TWAOV")]
+    : Object.keys(LC_TYPE_TIER);
   const times = Array.from(new Set(LATE_CHECKOUT_DATA.map((r) => r.time)));
 
   let html = `<div class="up-select-row">
@@ -968,6 +970,12 @@ function renderLateCheckout() {
       </select></label>
     </div>`;
 
+  if (lcType === "DBA") {
+    wrap.innerHTML = html + `<div class="up-result"><div class="up-result-label">DBA — Superior Room</div><div class="up-result-price">Price TBA</div><div class="lc-breakdown"><span>Late checkout charges for Superior rooms have not been announced yet.</span></div></div>`;
+    $("#lcTypeSelect").addEventListener("change", (e) => { lcType = e.target.value; renderLateCheckout(); });
+    $("#lcTimeSelect").addEventListener("change", (e) => { lcTime = e.target.value; renderLateCheckout(); });
+    return;
+  }
   const tier = lcType ? lcEffectiveTier(lcType) : null;
   const matches = LATE_CHECKOUT_DATA.filter((r) => (!tier || r.category === tier) && (!lcTime || r.time === lcTime));
 
@@ -1131,14 +1139,15 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
-  { sel: "#rgVersion", title: "Old or new room types", text: "Switch between the old room types and the new ones. The New view also shows King or Twin for DBA, KGA and KGAOV rooms." },
-  { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
-  { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
-  { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },
-  { sel: "#searchWrap", title: "Jump to any room", text: "Type a room number from any building to go straight to it." },
-  { sel: "#overviewBtn", title: "All-buildings overview", text: "Room counts, type breakdown, and coverage for all three buildings at a glance." },
-  { sel: "#upsellBtn", title: "Upselling grid", text: "Look up upgrade prices by occupancy tier, from category and to category." },
-  { sel: "#lateCheckoutBtn", title: "Late checkout", text: "Charges and room/F&B split by category and checkout time." },
+  { sel: "#rgVersion", title: "New and Old room types", text: "The guide opens on New: the room types after today's reconfiguration. Switch to Old any time to see the previous set." },
+  { sel: "#buildingTabs", title: "Buildings and floors", text: "Pick Zumroud, Amwaj or Marmar, then a floor. Use ← → on the keyboard to change floor." },
+  { sel: "#grid", title: "KING / TWIN on every room", text: "Superior (DBA), Deluxe Garden (KGA) and Deluxe Sea/Pool (KGAOV) rooms show their bed type right on the plan." },
+  { sel: "#legend", title: "Interconnecting rings", text: "Solid gold ring = interconnecting pair configured in the system (D3A / D3B / D3C). Dashed ring = connecting door only (PHY), not configured: don't sell as interconnecting." },
+  { sel: "#filterBar", title: "Filters", text: "Category, Features and Bed (King / Twin), plus Interconnecting and Physical only. Matches for all buildings appear on the right, with a Copy for Opera button." },
+  { sel: "#searchWrap", title: "Search", text: "Type a room number, or words like \"superior twin\", \"D3B\" or \"PHY\". Results show the bed type and the connecting room." },
+  { sel: "#overviewBtn", title: "Overview", text: "Room counts per building, including King / Twin and PHY." },
+  { sel: "#upsellBtn", title: "Upselling grid", text: "Upgrade prices by occupancy tier, from and to category." },
+  { sel: "#lateCheckoutBtn", title: "Late checkout", text: "Charges and room / F&B split by category. Superior (DBA) price is TBA." },
 ];
 let tourIdx = 0;
 
@@ -1182,7 +1191,7 @@ function startTour() {
 
 function endTour() {
   $("#tourOverlay").classList.remove("show");
-  localStorage.setItem("rbab-tour-seen", "yes");
+  localStorage.setItem("rbab-tour-seen-v2", "yes");
 }
 
 /* ================= Init ================= */
@@ -1235,7 +1244,7 @@ function initApp() {
   selectBuilding(RBAB_DATA.buildingOrder[0]);
   renderRecent();
 
-  if (!localStorage.getItem("rbab-tour-seen")) {
+  if (!localStorage.getItem("rbab-tour-seen-v2")) {
     setTimeout(startTour, 500);
   }
 }

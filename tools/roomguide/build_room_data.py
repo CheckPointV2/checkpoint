@@ -39,6 +39,9 @@ DATA = ROOT / "roomguide" / "data.js"
 
 BED_FROM_OLD_CODE = {"TWA": "Twin", "TWAOV": "Twin", "KGA": "King", "KGAOV": "King"}
 BED_SHOWN_FOR = {"DBA", "KGA", "KGAOV"}
+# Rooms where the RN Changed tab's FROM code disagreed with the guide's old data;
+# bed type confirmed by the owner on 20 Nov 2026 (takes priority over the rule above).
+BED_OVERRIDE = {"3249": "King", "3252": "King", "3260": "King", "3350": "King", "3263": "Twin", "3349": "Twin"}
 IC_CODE = {"D2A": "D3A", "D2C": "D3B", "D2D": "D3C"}
 NEW_NAME = {
     "DBA": "Superior Room", "KGA": "Deluxe Room Garden View", "KGAOV": "Deluxe Room Sea/Pool View",
@@ -108,7 +111,7 @@ def main(xlsx):
                     room["type"], room["description"] = to, NEW_NAME[to]
                 if to in BED_SHOWN_FOR:
                     assert frm in BED_FROM_OLD_CODE, f"{key}: no bed rule for old code {frm}"
-                    room["bed"] = BED_FROM_OLD_CODE[frm]
+                    room["bed"] = BED_OVERRIDE.get(key, BED_FROM_OLD_CODE[frm])
             partner, code = ic.get(key, (None, None))
             room["connectingNew"], room["icCodeNew"] = partner, code
             old_partner = room.get("connecting")
