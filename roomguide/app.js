@@ -4,8 +4,8 @@
    glossary, dark mode, and recently-viewed rooms. */
 
 const TYPE_COLOR = {
-  DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
-  SKA: "var(--c-ska)", SKB: "var(--c-skb)",
+  KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
+  TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
 
@@ -15,10 +15,9 @@ const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 4
 
 
 const TYPE_DESC = {
-  DBA: "Superior Room", KGA: "Deluxe Room Garden View", KGAOV: "Deluxe Room Sea/Pool View",
-  KGE: "Premium Room Garden View", KGEOV: "Premium Room Sea/Pool View", PI: "Posting Interface",
-  SKA: "Kids Escape Family Suite", SKB: "Two Bedroom Family Suite Garden", SKC: "Two Bedroom Family Suite Sea/Pool View",
-  SKD: "Two Bedroom Junior Suite", SKP: "Three Bedroom Senior Suite", SXA: "Three Bedroom King Suite",
+  KGA: "Deluxe King Garden", KGAOV: "Deluxe King View", KGE: "Premium King Garden", KGEOV: "Premium King View",
+  PI: "Posting Interface", SKA: "Kids Escape Suite", SKB: "Family Room Garden", SKC: "Family Room View",
+  SKD: "Junior Suite", SKP: "Senior Suite", SXA: "King Suite", TWA: "Deluxe Twin Garden", TWAOV: "Deluxe Twin View",
 };
 
 // Matterport 3D tours, keyed by room type code.
@@ -376,18 +375,6 @@ function buildFilterBar(rooms) {
   sep2.className = "filter-sep";
   bar.appendChild(sep2);
 
-  const supChip = document.createElement("button");
-  supChip.className = "filter-chip";
-  supChip.textContent = "Superior";
-  supChip.title = "Show only Superior rooms (DBA)";
-  const supOn = filters.types.size === 1 && filters.types.has("DBA");
-  supChip.classList.toggle("active", supOn);
-  supChip.addEventListener("click", () => {
-    filters.types = supOn ? new Set() : new Set(["DBA"]);
-    buildFilterBar(rooms);
-  });
-  bar.appendChild(supChip);
-
   const connChip = document.createElement("button");
   connChip.className = "filter-chip";
   connChip.textContent = "Interconnecting only";
@@ -608,7 +595,7 @@ function showDetail(bkey, roomNum) {
   const pill = $("#dTypePill");
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
-  $("#dDesc").textContent = room.size ? `${label} · ${room.size} m²` : label;
+  $("#dDesc").textContent = label;
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -780,10 +767,8 @@ function renderUpsellResults() {
 }
 
 /* ================= Late Checkout ================= */
-// NOTE: DBA (Superior) -> "Deluxe" is a placeholder; the late-checkout tier for
-// Superior rooms has not been confirmed yet.
 const LC_TYPE_TIER = {
-  DBA: "Deluxe", KGA: "Deluxe", KGAOV: "Deluxe",
+  KGA: "Deluxe", KGAOV: "Deluxe", TWA: "Deluxe", TWAOV: "Deluxe",
   KGE: "Premium / Family Suite / Interconnecting", KGEOV: "Premium / Family Suite / Interconnecting",
   SKB: "Premium / Family Suite / Interconnecting", SKC: "Premium / Family Suite / Interconnecting",
   SKD: "All Suites", SKP: "All Suites", SXA: "All Suites", SKA: "All Suites",
