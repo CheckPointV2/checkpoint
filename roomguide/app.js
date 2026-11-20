@@ -26,7 +26,7 @@ const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 let currentBuilding = null;
 let currentFloor = null;
 let activeRoom = null;
-function emptyFilters() { return { types: new Set(), codes: new Set(), beds: new Set(), connectOnly: false }; }
+function emptyFilters() { return { types: new Set(), codes: new Set(), beds: new Set(), connectOnly: false, physOnly: false }; }
 let filters = emptyFilters();
 
 /* ================= Old / New room types =================
@@ -56,8 +56,8 @@ function snapshotRoomVersions() {
       // Interconnecting: Old = today's pairs (r.connecting); New = the pairs from
       // the "Interconnecting Rooms" tab (r.connectingNew, with its D3A/D3B/D3C code).
       r._v = {
-        new: { type: r.type, description: r.description, connecting: r.connectingNew === undefined ? r.connecting : r.connectingNew, icCode: r.icCodeNew || null },
-        old: { type: r.prevType || r.type, description: r.prevDescription || r.description, connecting: r.connecting, icCode: null },
+        new: { type: r.type, description: r.description, connecting: r.connectingNew === undefined ? r.connecting : r.connectingNew, icCode: r.icCodeNew || null, physical: r.physicalNew || null },
+        old: { type: r.prevType || r.type, description: r.prevDescription || r.description, connecting: r.connecting, icCode: null, physical: null },
       };
     });
   });
@@ -71,6 +71,7 @@ function applyVersionToData(v) {
       r.description = r._v[v].description;
       r.connecting = r._v[v].connecting;
       r.icCode = r._v[v].icCode;
+      r.physical = r._v[v].physical;
     });
   });
 }
@@ -270,6 +271,9 @@ function renderFloorContent(key) {
   $("#roomCount").textContent = rooms.length;
   const withConnect = rooms.filter((r) => r.connecting != null).length;
   $("#connectCount").textContent = withConnect;
+  const withPhys = rooms.filter((r) => r.physical != null).length;
+  const physStat = $("#physStat");
+  if (physStat) { $("#physCount").textContent = withPhys; physStat.style.display = withPhys ? "" : "none"; }
   const noPhoto = rooms.filter((r) => !r.hasPhoto && r.type !== "PI").length;
   const photoStat = $("#photoStat");
   if (noPhoto > 0) { $("#noPhotoCount").textContent = noPhoto; photoStat.style.display = ""; }
@@ -306,6 +310,7 @@ function renderFloorContent(key) {
     }
 
     if (r.connecting != null) tile.classList.add("link-badge");
+    else if (r.physical != null) tile.classList.add("phys-badge");
     attachRoomEvents(tile, r.room);
     grid.appendChild(tile);
   });
@@ -415,6 +420,7 @@ function buildLegend(rooms) {
     <div class="item"><span class="swatch" style="background:var(--c-atrium)"></span>Atrium</div>
     <div class="item"><span class="swatch" style="background:var(--gold-accent)"></span>Interconnecting room</div>
   `);
+  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>`);
 }
 
 /* ================= Filter bar ================= */
@@ -455,6 +461,20 @@ function buildFilterBar(rooms) {
     applyFilters();
   });
   bar.appendChild(connChip);
+
+  if (isNew()) {
+    const physChip = document.createElement("button");
+    physChip.className = "filter-chip";
+    physChip.textContent = "Physical only (PHY)";
+    physChip.title = "Rooms with a connecting door that are no longer sold as interconnecting";
+    physChip.classList.toggle("active", filters.physOnly);
+    physChip.addEventListener("click", () => {
+      filters.physOnly = !filters.physOnly;
+      physChip.classList.toggle("active");
+      applyFilters();
+    });
+    bar.appendChild(physChip);
+  }
 
   const clear = document.createElement("button");
   clear.className = "filter-clear";
@@ -539,7 +559,7 @@ function buildDropdownFilter(bar, label, options, selectedSet, onChange) {
 }
 
 function filtersActive() {
-  return filters.types.size || filters.codes.size || filters.beds.size || filters.connectOnly;
+  return filters.types.size || filters.codes.size || filters.beds.size || filters.connectOnly || filters.physOnly;
 }
 
 function roomMatchesFilters(r) {
@@ -549,6 +569,7 @@ function roomMatchesFilters(r) {
     for (const c of filters.codes) { if (!r.codes.includes(c)) return false; }
   }
   if (filters.connectOnly && r.connecting == null) return false;
+  if (filters.physOnly && r.physical == null) return false;
   return true;
 }
 
@@ -635,7 +656,7 @@ function clearDetail() {
   activeRoom = null;
   $("#detailEmpty").style.display = "flex";
   $("#detailRoom").classList.remove("show");
-  $$(".tile.room-tile").forEach((t) => t.classList.remove("active", "linked", "dim"));
+  $$(".tile.room-tile").forEach((t) => t.classList.remove("active", "linked", "phys-linked", "dim"));
   renderRecent();
   renderBreadcrumb();
 }
@@ -705,9 +726,14 @@ function showDetail(bkey, roomNum) {
   }
 
   const connectWrap = $("#dConnect");
-  if (room.connecting != null) {
-    const other = b.rooms[String(room.connecting)];
-    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}${room.icCode ? ` · ${room.icCode}` : ""}</div>`;
+  const partner = room.connecting != null ? room.connecting : room.physical;
+  if (partner != null) {
+    const other = b.rooms[String(partner)];
+    const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>`;
+    connectWrap.innerHTML = room.connecting != null
+      ? `<div class="connect-title">${icon}Interconnecting with Room ${room.connecting}${room.icCode ? ` · ${room.icCode}` : ""}</div>`
+      : `<div class="connect-title phys-title">${icon}Physically connected to Room ${room.physical} · PHY</div>
+         <div class="phys-note">Connecting door exists, but this pair is no longer sold as interconnecting.</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";
@@ -718,7 +744,7 @@ function showDetail(bkey, roomNum) {
           : `<div class="thumb-empty">No photo available yet</div>`
       }</div>
       <div class="cmeta">
-        <div><strong>Room ${room.connecting}</strong><br><span class="ctype">${other ? `${other.type} — ${otherLabel}` : ""}</span></div>
+        <div><strong>Room ${partner}</strong><br><span class="ctype">${other ? `${other.type} — ${otherLabel}` : ""}</span></div>
         <span class="go">View room →</span>
       </div>`;
     if (other && other.hasPhoto) {
@@ -727,7 +753,7 @@ function showDetail(bkey, roomNum) {
         openLightbox(imgPath(bkey, other.room), `Room ${other.room} — view`);
       });
     }
-    card.querySelector(".cmeta").addEventListener("click", () => showDetail(bkey, room.connecting));
+    card.querySelector(".cmeta").addEventListener("click", () => showDetail(bkey, partner));
     connectWrap.appendChild(card);
   } else {
     connectWrap.innerHTML = `<div class="no-connect">This room is not interconnecting.</div>`;
@@ -762,9 +788,10 @@ function renderDetailFacts(room, bed) {
 function highlightConnections(room) {
   $$(".tile.room-tile").forEach((t) => {
     const rn = Number(t.dataset.room);
-    t.classList.remove("active", "linked", "dim");
+    t.classList.remove("active", "linked", "phys-linked", "dim");
     if (rn === room.room) t.classList.add("active");
     else if (room.connecting != null && rn === room.connecting) t.classList.add("linked");
+    else if (room.physical != null && rn === room.physical) t.classList.add("phys-linked");
     else t.classList.add("dim");
   });
 }
