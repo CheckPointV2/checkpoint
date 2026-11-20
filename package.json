@@ -1,0 +1,8 @@
+{
+  "name": "checkpoint",
+  "private": true,
+  "description": "CheckPoint — Rixos Bab Al Bahr Rooms Controller hub. Static app, no build step, no dependencies.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

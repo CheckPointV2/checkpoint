@@ -1,7 +1,7 @@
 {
   "name": "CheckPoint — Rixos Bab Al Bahr",
   "short_name": "CheckPoint",
-  "description": "Personal Rooms Controller hub — Room Guide, Departures, Email Templates",
+  "description": "Personal hub — Room Guide, Departures, Templates, Reminders, Notes",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

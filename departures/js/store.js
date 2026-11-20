@@ -103,8 +103,23 @@ window.CP = window.CP || {};
     if (s.co.reported[r.room]) return 'co';
     if (etd === '12:05') return 'left';
     if (etd === '12:06') return 'ext';
-    const cut = CP.toMinutes(s.cutoff), m = CP.toMinutes(etd);
-    if (etd === '' || m === null || cut === null || m < cut) return 'check';
+    // 12:01/12:02/12:04 are Opera status codes (Preparing/Luggage help/
+    // Unreachable), not real departure times — they never get compared
+    // against the cutoff, same as a blank ETD. Otherwise, when the cutoff
+    // itself is left at its default of 12:04, an "Unreachable" room would
+    // compare 12:04 < 12:04 (false) and be wrongly dropped from the list.
+    if (etd === '' || etd === '12:01' || etd === '12:02' || etd === '12:04') return 'check';
+    const m = CP.toMinutes(etd);
+    if (m === null) return 'check';
+    // The configured cutoff only ever pulls rooms in early (so staff can
+    // get ahead of upcoming checks) — it can never push a room out past
+    // "now". Without this, any real ETD later than a stale/default cutoff
+    // (e.g. a 13:00 checkout with the 12:04 default) would stay hidden
+    // from the check list long after it was actually due, even though the
+    // clock has already passed it.
+    const cut = CP.toMinutes(s.cutoff);
+    const effectiveCut = Math.max(cut === null ? -Infinity : cut, CP.nowMinutes());
+    if (m < effectiveCut) return 'check';
     return 'later';
   };
   CP.rowByRoom = (room, s) => {
@@ -137,7 +152,7 @@ window.CP = window.CP || {};
   }));
   CP.LIB = {
     ocr: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
-    xlsx: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+    xlsx: 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js', // patched SheetJS (xlsx 0.18.5 on npm has known CVEs)
     pdf: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
     pdfWorker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
   };

@@ -1,20 +1,19 @@
 (function (CP) {
   const $ = (id) => document.getElementById(id);
-  const VIEWS = ['departures', 'checkouts', 'finder', 'tools', 'daylist'];
+  const VIEWS = ['departures', 'checkouts', 'tools', 'daylist'];
   let current = 'departures';
 
   // ---------- header actions per tab ----------
   const ACTIONS = {
     departures: [
       { id: 'import', label: 'Import export', primary: true },
-      { id: 'reset-dep', label: 'Reset departures' },
+      { id: 'reset-dep', label: 'Reset physical check' },
       { id: 'newshift', label: 'Start new shift' }
     ],
     checkouts: [
-      { id: 'reset-co', label: 'Reset checkouts' },
+      { id: 'reset-co', label: 'Reset formatting' },
       { id: 'newshift', label: 'Start new shift' }
     ],
-    finder: [],
     tools: [],
     daylist: [
       { id: 'import-dl', label: 'Upload PDF', primary: true },
@@ -31,16 +30,14 @@
   function go(view) {
     if (!VIEWS.includes(view)) view = 'departures';
     current = view;
-    VIEWS.forEach(v => { $('view-' + v).hidden = v !== view; });
+    VIEWS.forEach(v => { $('dv-' + v).hidden = v !== view; });
     document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
       if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
-    $('view-title').textContent = $('view-' + view).dataset.title;
-    // Only self-manage the hash when running standalone. Embedded in CheckPoint
-    // (window.CPActiveTool exists there), the shell owns the hash as "#/departures" —
-    // rewriting it to our own bare "#checkouts" format breaks the shell's own router
-    // on a later reload or back/forward.
-    if (!window.CPActiveTool && location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+    $('view-title').textContent = $('dv-' + view).dataset.title;
+    $('depSubtabs').hidden = !(view === 'departures' || view === 'checkouts');
+    $('reportSubtabs').hidden = !(view === 'daylist' || view === 'tools');
+    if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
     renderActions();
     window.scrollTo(0, 0);
   }
@@ -64,12 +61,12 @@
 
   function runAction(id) {
     if (id === 'import') return importNow();
-    if (id === 'reset-dep') return confirm('Reset departures?',
+    if (id === 'reset-dep') return confirm('Reset physical check?',
       'Clears the imported due-out list, the check history, the comparison and the balance tags. Your cutoff time stays. The checkout log is not touched.',
-      'Reset departures', CP.resetDepartures);
-    if (id === 'reset-co') return confirm('Reset checkouts?',
+      'Reset physical check', CP.resetDepartures);
+    if (id === 'reset-co') return confirm('Reset formatting?',
       'Clears the screenshot result and today\'s checkout log. Rooms Concierge reported go back onto the physical check list.',
-      'Reset checkouts', CP.resetCheckouts);
+      'Reset formatting', CP.resetCheckouts);
     if (id === 'import-dl') { go('daylist'); $('dl-file').click(); return; }
     if (id === 'reset-dl') return confirm('Reset the day list?',
       'Clears today\'s full departures PDF. Checkout validation falls back to the live due-out export only.',
@@ -99,21 +96,19 @@
   function commands() {
     const s = CP.state();
     return [
-      { label: 'Import due-out export', hint: 'Departures', run: importNow },
+      { label: 'Import due-out export', hint: 'Physical check', run: importNow },
       { label: 'Copy list for Concierge', hint: `${CP.dep.checkRooms(s).length} rooms`, run: () => { go('departures'); CP.copy(CP.dep.conciergeText(s), 'Concierge list copied'); } },
-      { label: 'Copy rooms to check as Opera list', hint: 'Departures', run: () => { const r = CP.sortRooms(CP.dep.checkRooms(s)); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
+      { label: 'Copy rooms to check as Opera list', hint: 'Physical check', run: () => { const r = CP.sortRooms(CP.dep.checkRooms(s)); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
       { label: 'Read a checkout screenshot', hint: 'Or just paste it', run: () => { go('checkouts'); $('ex-drop').focus(); } },
       { label: 'Copy checkouts to process in Opera', hint: `${CP.unprocessedCheckouts().length} rooms`, run: () => { const r = CP.unprocessedCheckouts(); CP.copy(r.join(','), `Copied ${CP.plural(r.length, 'room')}`); } },
-      { label: 'Reset departures', hint: '', run: () => runAction('reset-dep') },
-      { label: 'Reset checkouts', hint: '', run: () => runAction('reset-co') },
+      { label: 'Reset physical check', hint: '', run: () => runAction('reset-dep') },
+      { label: 'Reset formatting', hint: '', run: () => runAction('reset-co') },
       { label: 'Upload full-day departures PDF', hint: 'Day list', run: () => runAction('import-dl') },
-      { label: 'Find a room for an early arrival', hint: 'Room finder', run: () => go('finder') },
       { label: 'Turn any text into an Opera list', hint: 'Room lists', run: () => { go('tools'); setTimeout(() => $('tl-input').focus(), 30); } },
-      { label: 'Go to Departures', hint: '1', run: () => go('departures') },
-      { label: 'Go to Checkouts', hint: '2', run: () => go('checkouts') },
-      { label: 'Go to Room finder', hint: '3', run: () => go('finder') },
-      { label: 'Go to Room lists', hint: '4', run: () => go('tools') },
-      { label: 'Go to Day list', hint: '5', run: () => go('daylist') },
+      { label: 'Go to Physical check', hint: '1', run: () => go('departures') },
+      { label: 'Go to Formatting', hint: '2', run: () => go('checkouts') },
+      { label: 'Go to Room lists', hint: '3', run: () => go('tools') },
+      { label: 'Go to Day list', hint: '4', run: () => go('daylist') },
       { label: document.documentElement.getAttribute('data-theme') === 'dark' ? 'Switch to day mode' : 'Switch to night mode', hint: '', run: toggleTheme },
       { label: 'Start new shift', hint: 'Clears today', run: confirmNewShift }
     ];
@@ -149,29 +144,25 @@
   }
   CP.openPalette = openPalette;
 
-  // ---------- sidebar counts ----------
-  function renderNav() {
-    const s = CP.state();
-    const set = (k, n, hot) => {
-      const el = document.querySelector(`[data-count="${k}"]`);
-      if (!el) return;
-      el.textContent = n || '';
-      el.classList.toggle('hot', !!hot);
-    };
-    set('departures', s.dueouts ? CP.dep.checkRooms(s).length : 0, true);
-    set('checkouts', CP.unprocessedCheckouts().length, false);
-    set('daylist', s.dayList ? s.dayList.rooms.length : 0, false);
-  }
-
   // ---------- clock + render loop ----------
+  // Rail badges (the count on Departures/Arrivals/Reports in the shell nav)
+  // are shared/app.js's job now — it owns the one visible nav and reads
+  // both Departures and Allocation, not just this bundle's own state. The
+  // two subtab counts below are purely local to this screen's own header.
   function renderClock() {
     const d = new Date();
     $('clock').innerHTML = `<span class="clock-time">${CP.nowHHMM()}</span><span class="clock-date">${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>`;
-    $('theme-btn').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Day mode' : 'Night mode';
+  }
+
+  function renderSubtabCounts() {
+    const s = CP.state();
+    const set = (k, n) => { const el = document.querySelector(`.dep-subtab .nav-count[data-count="${k}"]`); if (el) el.textContent = n || ''; };
+    set('departures', s.dueouts ? CP.dep.checkRooms(s).length : 0);
+    set('checkouts', CP.unprocessedCheckouts ? CP.unprocessedCheckouts().length : 0);
   }
 
   function renderAll() {
-    [CP.renderDepartures, CP.renderCheckouts, CP.renderFinder, CP.renderTools, CP.renderDayList, renderClock, renderNav]
+    [CP.renderDepartures, CP.renderCheckouts, CP.renderTools, CP.renderDayList, renderClock, renderSubtabCounts]
       .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
   }
 
@@ -180,7 +171,12 @@
     const s = CP.state();
     if (s.day !== CP.todayStr()) { CP.newShift(); return; }
     const m = CP.nowMinutes();
-    if (m !== lastMinute) { lastMinute = m; renderClock(); if (CP.renderDepLast) CP.renderDepLast(); }
+    if (m !== lastMinute) {
+      lastMinute = m; renderClock(); if (CP.renderDepLast) CP.renderDepLast();
+      // Keeps "Late 1 h 37" etc. in the key rack accurate minute to minute,
+      // the same way renderDepLast above already keeps "checked X min ago" accurate.
+      if (CP.renderDepartures) CP.renderDepartures();
+    }
   }
 
   // ---------- events ----------
@@ -188,22 +184,30 @@
     const t = CP.state().theme;
     if (t) document.documentElement.setAttribute('data-theme', t);
 
+    // Each sub-view wires its own listeners here, once, now that its markup
+    // is guaranteed to be in the DOM. They can't self-bind on script load:
+    // departures.js is also loaded early (before this markup exists) so Home
+    // can read CP.dep's business logic for its dashboard. Isolated like
+    // renderAll() below, so one sub-view's bind failing can't take the
+    // clock, keyboard shortcuts, or the rest of Departures down with it.
+    [CP.bindDepartures, CP.bindCheckouts, CP.bindTools, CP.bindDayList]
+      .forEach(fn => { try { fn && fn(); } catch (e) { console.error(e); } });
+
     document.addEventListener('click', e => {
       const nav = e.target.closest('.nav-btn[data-view]');
       if (nav) { go(nav.dataset.view); return; }
       const a = e.target.closest('[data-action]');
       if (a) runAction(a.dataset.action);
     });
-    $('theme-btn').addEventListener('click', toggleTheme);
-    $('newshift-btn').addEventListener('click', confirmNewShift);
-
+    // Theme and "new shift" now live in the shell rail and Settings — the
+    // command palette (commands(), above) still reaches both from here.
     const dlg = $('sheet');
     dlg.addEventListener('click', e => { if (e.target === dlg) CP.closeSheet(); });
 
     const typing = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 
     document.addEventListener('keydown', e => {
-      if (window.CPActiveTool && window.CPActiveTool !== 'departures') return;
+      if (window.CPActiveMount && window.CPActiveMount !== 'departures') return;
       if (typing(document.activeElement) || dlg.open || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === '/') { e.preventDefault(); openPalette(); return; }
       const n = parseInt(e.key, 10);

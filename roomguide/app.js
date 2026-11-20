@@ -4,7 +4,7 @@
    glossary, dark mode, and recently-viewed rooms. */
 
 const TYPE_COLOR = {
-  KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
+  DBA: "var(--c-dba)", KGA: "var(--c-kga)", KGAOV: "var(--c-kgaov)", KGE: "var(--c-kge)", KGEOV: "var(--c-kgeov)",
   TWA: "var(--c-twa)", TWAOV: "var(--c-twaov)", SKA: "var(--c-ska)", SKB: "var(--c-skb)",
   SKC: "var(--c-skc)", SKD: "var(--c-skd)", SKP: "var(--c-skp)", SXA: "var(--c-sxa)", PI: "var(--c-pi)",
 };
@@ -14,63 +14,87 @@ const UPSELL_TIERS = [{"key": "t1", "label": "Occupancy 85\u2013100%", "extraPax
 const LATE_CHECKOUT_DATA = [{"category": "Deluxe", "time": "16:00", "charges": 400, "room": 300, "fb": 100}, {"category": "Deluxe", "time": "18:00", "charges": 600, "room": 450, "fb": 150}, {"category": "Premium / Family Suite / Interconnecting", "time": "16:00", "charges": 600, "room": 450, "fb": 150}, {"category": "Premium / Family Suite / Interconnecting", "time": "18:00", "charges": 800, "room": 600, "fb": 200}, {"category": "All Suites", "time": "16:00", "charges": 750, "room": 562.5, "fb": 187.5}, {"category": "All Suites", "time": "18:00", "charges": 950, "room": 712.5, "fb": 237.5}];
 
 
-const TYPE_DESC = {
-  KGA: "Deluxe King Garden", KGAOV: "Deluxe King View", KGE: "Premium King Garden", KGEOV: "Premium King View",
-  PI: "Posting Interface", SKA: "Kids Escape Suite", SKB: "Family Room Garden", SKC: "Family Room View",
-  SKD: "Junior Suite", SKP: "Senior Suite", SXA: "King Suite", TWA: "Deluxe Twin Garden", TWAOV: "Deluxe Twin View",
-};
-
-// Matterport 3D tours, keyed by room type code.
-const MP = (id) => `https://my.matterport.com/show/?m=${id}`;
-const TOUR_URL = {
-  KGA: MP("Qgu7kVwVoXV"), KGAOV: MP("Qgu7kVwVoXV"),
-  KGE: MP("gWD8XSyYAdX"), KGEOV: MP("gWD8XSyYAdX"),
-  SKB: MP("gRomPZk2eGW"), SKC: MP("gRomPZk2eGW"),
-  SKA: MP("2CA89aughXW"), SKD: MP("zrX453XZxx3"),
-  SKP: MP("6m3GtUFHW4E"), SXA: MP("Q2tQqkVcuqn"),
-};
-
-// Feature code meanings, confirmed against the hotel's official Opera code list.
-const GLOSSARY = {
-  BAL:    { label: "Balcony", conf: "high" },
-  NBA:    { label: "No Balcony", conf: "high" },
-  S:      { label: "Small Balcony", conf: "high" },
-  KGB:    { label: "King Bed", conf: "high" },
-  TWB:    { label: "Twin Bed", conf: "high" },
-  BBE:    { label: "Bunk Bed", conf: "high" },
-  SOF:    { label: "Sofa Cum Bed", conf: "high" },
-  "1EXBED": { label: "1 Extra Bed Space in Room", conf: "high" },
-  "2EXBED": { label: "2 Extra Bed Space in Room", conf: "high" },
-  GAR:    { label: "Garden View", conf: "high" },
-  GRD:    { label: "Ground Floor", conf: "high" },
-  POO:    { label: "Pool View", conf: "high" },
-  BEA:    { label: "Beach View", conf: "high" },
-  ROA:    { label: "Road View", conf: "high" },
-  CAV:    { label: "Car Park View", conf: "high" },
-  MAN:    { label: "Main Entrance View", conf: "high" },
-  COS:    { label: "Corniche Sea View", conf: "high" },
-  TER:    { label: "Terrace", conf: "high" },
-  NSM:    { label: "Non-Smoking", conf: "high" },
-  HCA:    { label: "Disabled Room (Handicap Accessible)", conf: "high" },
-  INT:    { label: "Interconnecting Room", conf: "high" },
-  KTC:    { label: "Kitchenette", conf: "high" },
-  COR:    { label: "Corner Room", conf: "high" },
-  SA:     { label: "Small Room, No Extra Bed Space", conf: "high" },
-  ZMR:    { label: "Zumroud (building reference)", conf: "high" },
-  AMJ:    { label: "Amwaj (building reference)", conf: "high" },
-  MRM:    { label: "Marmar (building reference)", conf: "high" },
-  "1ST": { label: "First Floor", conf: "high" }, "2ND": { label: "Second Floor", conf: "high" },
-  "3RD": { label: "Third Floor", conf: "high" }, "4TH": { label: "Fourth Floor", conf: "high" },
-  "5TH": { label: "Fifth Floor", conf: "high" }, "6TH": { label: "Sixth Floor", conf: "high" },
-  "7TH": { label: "Seventh Floor", conf: "high" }, "8TH": { label: "Eighth Floor", conf: "high" },
-};
+// Room type descriptions and feature-code meanings live in RBAB_DATA
+// (roomguide/data.js) now, not here, so any module that loads the data file
+// (Allocation Copilot, Room Finder) gets the same real, hotel-confirmed
+// definitions instead of a second hand-copied version.
+let TYPE_DESC = RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc;
+const GLOSSARY = RBAB_DATA.glossary;
 
 const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
 let currentBuilding = null;
 let currentFloor = null;
 let activeRoom = null;
-let filters = { types: new Set(), codes: new Set(), connectOnly: false };
+function emptyFilters() { return { types: new Set(), codes: new Set(), beds: new Set(), connectOnly: false, physOnly: false }; }
+let filters = emptyFilters();
+
+/* ================= Old / New room types =================
+   data.js keeps each room's current code/name as prevType/prevDescription and
+   the new one (from the "RN Changed" tab) as type/description. r.type and
+   r.description always hold the version being shown. r.bed (King/Twin) exists
+   only for new DBA / KGA / KGAOV rooms and is shown only in the New view. */
+const VERSION_KEY = "rbab-matrix-version";
+const TYPE_DESC_BY_VERSION = { old: RBAB_DATA.typeDescOld || RBAB_DATA.typeDesc, new: RBAB_DATA.typeDesc };
+let rgVersion = "old";
+
+function isNew() { return rgVersion === "new"; }
+function roomBed(r) { return isNew() && r.bed ? r.bed : null; }
+function bedLabel(b) { return b === "King" ? "King bed" : "Twin beds"; }
+
+function initialVersion() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(VERSION_KEY) || "null");
+    if (saved && (saved.v === "old" || saved.v === "new")) return saved.v;
+  } catch (e) {}
+  return "old";
+}
+function snapshotRoomVersions() {
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
+      if (r._v) return;
+      // Interconnecting: Old = today's pairs (r.connecting); New = the pairs from
+      // the "Interconnecting Rooms" tab (r.connectingNew, with its D3A/D3B/D3C code).
+      r._v = {
+        new: { type: r.type, description: r.description, connecting: r.connectingNew === undefined ? r.connecting : r.connectingNew, icCode: r.icCodeNew || null, physical: r.physicalNew || null },
+        old: { type: r.prevType || r.type, description: r.prevDescription || r.description, connecting: r.connecting, icCode: null, physical: null },
+      };
+    });
+  });
+}
+function applyVersionToData(v) {
+  rgVersion = v;
+  TYPE_DESC = TYPE_DESC_BY_VERSION[v];
+  RBAB_DATA.buildingOrder.forEach((bkey) => {
+    Object.values(RBAB_DATA.buildings[bkey].rooms).forEach((r) => {
+      r.type = r._v[v].type;
+      r.description = r._v[v].description;
+      r.connecting = r._v[v].connecting;
+      r.icCode = r._v[v].icCode;
+      r.physical = r._v[v].physical;
+    });
+  });
+}
+function updateVersionSwitch() {
+  $$("#rgVersion button").forEach((btn) => {
+    const on = btn.dataset.v === rgVersion;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  });
+}
+function setVersion(v) {
+  if (v === rgVersion) return;
+  try { localStorage.setItem(VERSION_KEY, JSON.stringify({ v })); } catch (e) {}
+  applyVersionToData(v);
+  updateVersionSwitch();
+  updateSearchHint();
+  filters = emptyFilters();
+  renderFloor(currentFloor);
+  if (activeRoom != null) showDetail(currentBuilding, activeRoom); else clearDetail();
+}
+function setupVersionSwitch() {
+  $$("#rgVersion button").forEach((btn) => btn.addEventListener("click", () => setVersion(btn.dataset.v)));
+}
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -182,7 +206,7 @@ function buildFloorTabs() {
 
 function selectFloor(key) {
   currentFloor = key;
-  filters = { types: new Set(), codes: new Set(), connectOnly: false };
+  filters = emptyFilters();
   $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === key));
   renderFloor(key);
   clearDetail();
@@ -200,11 +224,42 @@ function roomsForFloor(bkey, fkey) {
   return Object.values(buildingData(bkey).rooms).filter((r) => r.floor === fkey);
 }
 
+// One observer, reused across every floor render, rooted on the actual
+// scroll container (.plan-col scrolls internally — the document itself
+// doesn't) with a margin so tiles load a little before they're on screen.
+let thumbObserver = null;
+function getThumbObserver() {
+  if (thumbObserver) return thumbObserver;
+  thumbObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const tile = entry.target;
+      const src = tile.dataset.thumbSrc;
+      if (src) {
+        tile.style.backgroundImage = `linear-gradient(to bottom, rgba(20,15,10,0.18), rgba(20,15,10,0.62)), url(${src})`;
+        delete tile.dataset.thumbSrc;
+      }
+      thumbObserver.unobserve(tile);
+    });
+  }, { root: $(".plan-col"), rootMargin: "600px 0px", threshold: 0.01 });
+  return thumbObserver;
+}
+function observeLazyThumb(tile) { getThumbObserver().observe(tile); }
+
 function renderFloor(key) {
   const grid = $("#grid");
   grid.classList.add("transitioning");
   renderFloorContent(key);
   requestAnimationFrame(() => requestAnimationFrame(() => grid.classList.remove("transitioning")));
+}
+
+function renderBreadcrumb(roomLabel) {
+  const el = $("#rgBreadcrumb");
+  if (!el) return;
+  const b = buildingData(currentBuilding);
+  const f = b && b.floors[currentFloor];
+  const parts = [b && b.label, f && f.label, roomLabel].filter(Boolean);
+  el.innerHTML = parts.map((p, i) => `<span class="rg-crumb${i === parts.length - 1 ? ' current' : ''}">${p}</span>`).join('<span class="rg-crumb-sep">›</span>');
 }
 
 function renderFloorContent(key) {
@@ -213,9 +268,13 @@ function renderFloorContent(key) {
   const rooms = roomsForFloor(currentBuilding, key);
 
   $("#floorTitle").textContent = f.label;
+  renderBreadcrumb();
   $("#roomCount").textContent = rooms.length;
   const withConnect = rooms.filter((r) => r.connecting != null).length;
   $("#connectCount").textContent = withConnect;
+  const withPhys = rooms.filter((r) => r.physical != null).length;
+  const physStat = $("#physStat");
+  if (physStat) { $("#physCount").textContent = withPhys; physStat.style.display = withPhys ? "" : "none"; }
   const noPhoto = rooms.filter((r) => !r.hasPhoto && r.type !== "PI").length;
   const photoStat = $("#photoStat");
   if (noPhoto > 0) { $("#noPhotoCount").textContent = noPhoto; photoStat.style.display = ""; }
@@ -223,11 +282,14 @@ function renderFloorContent(key) {
 
   const grid = $("#grid");
   grid.innerHTML = "";
+  if (thumbObserver) thumbObserver.disconnect(); // drop any still-pending tiles from the floor we just left
   const tileSize = isTouch ? 48 : 62;
   grid.style.gridTemplateColumns = `repeat(${f.cols}, ${tileSize}px)`;
   grid.style.gridTemplateRows = `repeat(${f.rows}, ${tileSize}px)`;
 
   rooms.forEach((r) => {
+    const bed = roomBed(r);
+    const bedBadge = bed ? `<span class="bed-badge bed-${bed.toLowerCase()}">${bed.toUpperCase()}</span>` : "";
     const tile = document.createElement("div");
     tile.className = "tile room-tile";
     tile.dataset.room = r.room;
@@ -236,15 +298,20 @@ function renderFloorContent(key) {
 
     if (r.hasPhoto) {
       tile.classList.add("has-thumb");
-      tile.style.backgroundImage = `linear-gradient(to bottom, rgba(20,15,10,0.18), rgba(20,15,10,0.62)), url(${thumbPath(currentBuilding, r.room)})`;
-      tile.innerHTML = `<span class="type-dot" style="background:${typeColor(r.type)}"></span><div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>`;
+      // Lazy: a floor can hold 60+ rooms, most below the fold. Only fetch a
+      // thumbnail once its tile is actually about to be visible, instead of
+      // firing every request on the floor the instant it renders.
+      tile.dataset.thumbSrc = thumbPath(currentBuilding, r.room);
+      observeLazyThumb(tile);
+      tile.innerHTML = `<span class="type-dot" style="background:${typeColor(r.type)}"></span><div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>${bedBadge}`;
     } else {
       tile.style.background = typeColor(r.type);
       tile.classList.add("no-photo");
-      tile.innerHTML = `<div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>`;
+      tile.innerHTML = `<div class="rnum">${r.room}</div><div class="rtype">${r.type}</div>${bedBadge}`;
     }
 
     if (r.connecting != null) tile.classList.add("link-badge");
+    else if (r.physical != null) tile.classList.add("phys-badge");
     attachRoomEvents(tile, r.room);
     grid.appendChild(tile);
   });
@@ -281,9 +348,15 @@ function openOverview() {
     const withPhoto = guestRooms.filter((r) => r.hasPhoto).length;
     const pct = Math.round((withPhoto / guestRooms.length) * 100);
     const withConnect = allRooms.filter((r) => r.connecting != null).length;
+    const withPhys = allRooms.filter((r) => r.physical != null).length;
 
     const typeCounts = {};
-    guestRooms.forEach((r) => { typeCounts[r.type] = (typeCounts[r.type] || 0) + 1; });
+    const bedSplit = {};
+    guestRooms.forEach((r) => {
+      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+      const bd = roomBed(r);
+      if (bd) { bedSplit[r.type] = bedSplit[r.type] || { King: 0, Twin: 0 }; bedSplit[r.type][bd]++; }
+    });
     const maxCount = Math.max(...Object.values(typeCounts));
 
     html += `<div class="ov-building-block">
@@ -292,6 +365,7 @@ function openOverview() {
         <div class="ov-stat-card"><div class="ov-num">${allRooms.length}</div><div class="ov-label">Total Rooms</div></div>
         <div class="ov-stat-card"><div class="ov-num">${b.floorOrder.length}</div><div class="ov-label">Floors</div></div>
         <div class="ov-stat-card"><div class="ov-num">${withConnect}</div><div class="ov-label">Interconnecting</div></div>
+        ${isNew() ? `<div class="ov-stat-card"><div class="ov-num">${withPhys}</div><div class="ov-label">Physical only (PHY)</div></div>` : ""}
         <div class="ov-stat-card"><div class="ov-num">${pct}%</div><div class="ov-label">Photo Coverage</div></div>
       </div>
 
@@ -300,7 +374,7 @@ function openOverview() {
       html += `<div class="ov-type-row">
         <span class="ov-type-label">${t}</span>
         <span class="ov-type-track"><span class="ov-type-fill" style="width:${(count / maxCount) * 100}%; background:${typeColor(t)}"></span></span>
-        <span class="ov-type-count">${count}</span>
+        <span class="ov-type-count">${count}${bedSplit[t] ? `<small class="ov-bed-split"> ${bedSplit[t].King} K · ${bedSplit[t].Twin} T</small>` : ""}</span>
       </div>`;
     });
     html += `</div><div class="ov-floor-list">`;
@@ -343,7 +417,7 @@ function buildLegend(rooms) {
   legend.innerHTML = "";
   types.forEach((t) => {
     const sample = rooms.find((r) => r.type === t);
-    const label = titleCase(sample ? sample.description : t);
+    const label = isNew() ? (TYPE_DESC[t] || t) : titleCase(sample ? sample.description : t);
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `<span class="swatch" style="background:${typeColor(t)}"></span>${t} — ${label}`;
@@ -354,6 +428,8 @@ function buildLegend(rooms) {
     <div class="item"><span class="swatch" style="background:var(--c-atrium)"></span>Atrium</div>
     <div class="item"><span class="swatch" style="background:var(--gold-accent)"></span>Interconnecting room</div>
   `);
+  if (isNew()) legend.insertAdjacentHTML("beforeend", `<div class="item"><span class="swatch swatch-phys"></span>Physical connection only (PHY)</div>
+    <div class="item"><span class="bed-badge legend-badge">KING</span><span class="bed-badge bed-twin legend-badge">TWIN</span>Bed type (DBA / KGA / KGAOV)</div>`);
 }
 
 /* ================= Filter bar ================= */
@@ -371,6 +447,15 @@ function buildFilterBar(rooms) {
     .map((c) => ({ value: c, desc: GLOSSARY[c] ? GLOSSARY[c].label : "Meaning not yet confirmed" }));
   buildDropdownFilter(bar, "Features", codeOptions, filters.codes, () => applyFilters());
 
+  if (isNew()) {
+    const bedOptions = [
+      { value: "King", desc: "King bed (DBA / KGA / KGAOV)" },
+      { value: "Twin", desc: "Twin beds (DBA / KGA / KGAOV)" },
+    ];
+    buildDropdownFilter(bar, "Bed", bedOptions, filters.beds, () => applyFilters());
+    bar.lastElementChild.classList.add("fdrop-bed");
+  }
+
   const sep2 = document.createElement("div");
   sep2.className = "filter-sep";
   bar.appendChild(sep2);
@@ -386,12 +471,26 @@ function buildFilterBar(rooms) {
   });
   bar.appendChild(connChip);
 
+  if (isNew()) {
+    const physChip = document.createElement("button");
+    physChip.className = "filter-chip";
+    physChip.textContent = "Physical only (PHY)";
+    physChip.title = "Rooms with a connecting door that are no longer sold as interconnecting";
+    physChip.classList.toggle("active", filters.physOnly);
+    physChip.addEventListener("click", () => {
+      filters.physOnly = !filters.physOnly;
+      physChip.classList.toggle("active");
+      applyFilters();
+    });
+    bar.appendChild(physChip);
+  }
+
   const clear = document.createElement("button");
   clear.className = "filter-clear";
   clear.textContent = "Clear filters";
   clear.style.display = "none";
   clear.addEventListener("click", () => {
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
+    filters = emptyFilters();
     buildFilterBar(rooms);
     applyFilters();
   });
@@ -469,15 +568,17 @@ function buildDropdownFilter(bar, label, options, selectedSet, onChange) {
 }
 
 function filtersActive() {
-  return filters.types.size || filters.codes.size || filters.connectOnly;
+  return filters.types.size || filters.codes.size || filters.beds.size || filters.connectOnly || filters.physOnly;
 }
 
 function roomMatchesFilters(r) {
+  if (filters.beds.size && !filters.beds.has(roomBed(r))) return false;
   if (filters.types.size && !filters.types.has(r.type)) return false;
   if (filters.codes.size) {
     for (const c of filters.codes) { if (!r.codes.includes(c)) return false; }
   }
   if (filters.connectOnly && r.connecting == null) return false;
+  if (filters.physOnly && r.physical == null) return false;
   return true;
 }
 
@@ -528,7 +629,18 @@ function renderCrossBuildingPanel(active) {
     html += `</div></div>`;
   });
 
-  $("#crossBody").innerHTML = html;
+  if (isNew()) {
+    const all = RBAB_DATA.buildingOrder.flatMap((bk) => Object.values(buildingData(bk).rooms).filter(roomMatchesFilters))
+      .map((r) => r.room).sort((a, c) => a - c);
+    if (all.length) {
+      html = `<button type="button" class="copy-opera" id="copyOpera" title="Copies the room numbers as 2003,2005,2054 for pasting into Opera">Copy ${all.length} rooms for Opera</button>` + html;
+    }
+    $("#crossBody").innerHTML = html;
+    const btn = $("#copyOpera");
+    if (btn) btn.addEventListener("click", () => copyText(all.join(","), btn, `Copied ${all.length} rooms ✓`));
+  } else {
+    $("#crossBody").innerHTML = html;
+  }
 
   $$(".cross-chip", $("#crossBody")).forEach((chip) => {
     const bkey = chip.dataset.b;
@@ -559,13 +671,28 @@ function renderCrossBuildingPanel(active) {
   });
 }
 
+function copyText(text, btn, doneLabel) {
+  const old = btn.textContent;
+  const done = () => { btn.textContent = doneLabel; btn.classList.add("done"); setTimeout(() => { btn.textContent = old; btn.classList.remove("done"); }, 1800); };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    ta.remove(); done();
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback);
+  else fallback();
+}
+
 /* ================= Detail panel ================= */
 function clearDetail() {
   activeRoom = null;
   $("#detailEmpty").style.display = "flex";
   $("#detailRoom").classList.remove("show");
-  $$(".tile.room-tile").forEach((t) => t.classList.remove("active", "linked", "dim"));
+  $$(".tile.room-tile").forEach((t) => t.classList.remove("active", "linked", "phys-linked", "dim"));
   renderRecent();
+  renderBreadcrumb();
 }
 
 function showDetail(bkey, roomNum) {
@@ -575,27 +702,34 @@ function showDetail(bkey, roomNum) {
   activeRoom = roomNum;
   addRecent(bkey, roomNum);
 
-  if (bkey !== currentBuilding) {
+  const buildingChanged = bkey !== currentBuilding;
+  if (buildingChanged) {
     currentBuilding = bkey;
     $$("#buildingTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.building === bkey));
     buildFloorTabs();
   }
-  if (room.floor !== currentFloor) {
+  // Redraw when the building changes too: every building has the same floor keys
+  // ("GF", "1F", ...), so checking the floor alone left the previous building's plan.
+  if (buildingChanged || room.floor !== currentFloor) {
+    if (room.floor !== currentFloor) filters = emptyFilters();
     currentFloor = room.floor;
-    filters = { types: new Set(), codes: new Set(), connectOnly: false };
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
   }
 
   $("#detailEmpty").style.display = "none";
   $("#detailRoom").classList.add("show");
+  renderBreadcrumb(`Room ${room.room}`);
 
-  const label = titleCase(room.description) || room.type;
+  // Official new names are shown exactly as written; older sheet text is tidied.
+  const label = (isNew() && room.description === TYPE_DESC[room.type]) ? room.description : (titleCase(room.description) || room.type);
+  const dBed = roomBed(room);
   $("#dRoomNum").textContent = room.room;
   const pill = $("#dTypePill");
   pill.textContent = room.type;
   pill.style.background = typeColor(room.type);
-  $("#dDesc").textContent = label;
+  $("#dDesc").textContent = dBed ? `${label} · ${bedLabel(dBed)}` : label;
+  renderDetailFacts(room, dBed);
 
   const photoFrame = $("#dPhoto");
   if (room.hasPhoto) {
@@ -610,12 +744,6 @@ function showDetail(bkey, roomNum) {
       <svg class="no-img-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l18 18M10.5 5H17a2 2 0 0 1 2 2v9.5M3 7v10a2 2 0 0 0 2 2h11.5"/><circle cx="12" cy="13" r="3.2"/></svg><br>
       No photo available yet<br>for room ${room.room}</div>`;
   }
-
-  const tourWrap = $("#dTour");
-  const tour = TOUR_URL[room.type];
-  tourWrap.innerHTML = tour
-    ? `<a class="tour-btn" href="${tour}" target="_blank" rel="noopener">🧭 View 3D tour — ${TYPE_DESC[room.type] || room.type}</a>`
-    : "";
 
   const tagsWrap = $("#dTags");
   tagsWrap.innerHTML = "";
@@ -632,9 +760,22 @@ function showDetail(bkey, roomNum) {
   }
 
   const connectWrap = $("#dConnect");
-  if (room.connecting != null) {
-    const other = b.rooms[String(room.connecting)];
-    connectWrap.innerHTML = `<div class="connect-title">🔗 Interconnecting with Room ${room.connecting}</div>`;
+  const partner = room.connecting != null ? room.connecting : room.physical;
+  if (isNew() && partner != null) {
+    // New view: one compact line that says which kind of connection it is.
+    const sys = room.connecting != null;
+    connectWrap.innerHTML = `<div class="ic-line ${sys ? "ic-sys" : "ic-phys"}">
+        <span class="ic-dot" aria-hidden="true"></span>
+        <span class="ic-text">${sys ? "Interconnecting with" : "Physically connected to"}
+          <button type="button" class="ic-room">Room ${partner}</button>
+          · <b>${sys ? (room.icCode || "") : "PHY"}</b>
+          <span class="ic-sub">${sys ? "System configured" : "Not configured in the system"}</span>
+        </span>
+      </div>`;
+    $(".ic-room", connectWrap).addEventListener("click", () => showDetail(bkey, partner));
+  } else if (room.connecting != null) {
+    const other = b.rooms[String(partner)];
+    connectWrap.innerHTML = `<div class="connect-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 5l1-1a4 4 0 0 1 6 6l-1 1M14 19l-1 1a4 4 0 0 1-6-6l1-1"/></svg>Interconnecting with Room ${room.connecting}</div>`;
     const card = document.createElement("div");
     card.className = "connect-room-card";
     const otherLabel = other ? titleCase(other.description) : "";
@@ -645,7 +786,7 @@ function showDetail(bkey, roomNum) {
           : `<div class="thumb-empty">No photo available yet</div>`
       }</div>
       <div class="cmeta">
-        <div><strong>Room ${room.connecting}</strong><br><span class="ctype">${other ? `${other.type} — ${otherLabel}` : ""}</span></div>
+        <div><strong>Room ${partner}</strong><br><span class="ctype">${other ? `${other.type} — ${otherLabel}` : ""}</span></div>
         <span class="go">View room →</span>
       </div>`;
     if (other && other.hasPhoto) {
@@ -654,7 +795,7 @@ function showDetail(bkey, roomNum) {
         openLightbox(imgPath(bkey, other.room), `Room ${other.room} — view`);
       });
     }
-    card.querySelector(".cmeta").addEventListener("click", () => showDetail(bkey, room.connecting));
+    card.querySelector(".cmeta").addEventListener("click", () => showDetail(bkey, partner));
     connectWrap.appendChild(card);
   } else {
     connectWrap.innerHTML = `<div class="no-connect">This room is not interconnecting.</div>`;
@@ -664,12 +805,35 @@ function showDetail(bkey, roomNum) {
   renderRecent();
 }
 
+// New view only: a Bed type card (DBA / KGA / KGAOV) and an Old -> New card for
+// rooms whose code changes. The Old view shows neither.
+function renderDetailFacts(room, bed) {
+  const wrap = $("#dFacts");
+  if (!wrap) return;
+  const oldT = room._v ? room._v.old.type : room.type;
+  const newT = room._v ? room._v.new.type : room.type;
+  if (!isNew() || room.type === "PI") { wrap.innerHTML = ""; return; }
+  const pill = (code) => `<span class="mini-pill" style="background:${typeColor(code)}">${code}</span>`;
+  const name = (v, code) => { const d = TYPE_DESC_BY_VERSION[v][code]; return d ? (v === "new" ? d : titleCase(d)) : code; };
+  wrap.innerHTML = `
+    ${bed ? `<div class="bed-hero bed-hero-${bed.toLowerCase()}">
+      <span class="bed-hero-icon" aria-hidden="true">${bed === "King" ? "🛏" : "🛏🛏"}</span>
+      <span><span class="bed-hero-k">Bed type</span><span class="bed-hero-v">${bedLabel(bed)}</span></span>
+    </div>` : ""}
+    ${oldT !== newT ? `<div class="fact-change">
+      <div class="fc-col"><span class="fc-kicker">Old</span><span class="fc-line">${pill(oldT)} ${name("old", oldT)}</span></div>
+      <span class="fc-arrow" aria-hidden="true">→</span>
+      <div class="fc-col"><span class="fc-kicker">New</span><span class="fc-line">${pill(newT)} ${name("new", newT)}</span></div>
+    </div>` : ""}`;
+}
+
 function highlightConnections(room) {
   $$(".tile.room-tile").forEach((t) => {
     const rn = Number(t.dataset.room);
-    t.classList.remove("active", "linked", "dim");
+    t.classList.remove("active", "linked", "phys-linked", "dim");
     if (rn === room.room) t.classList.add("active");
     else if (room.connecting != null && rn === room.connecting) t.classList.add("linked");
+    else if (room.physical != null && rn === room.physical) t.classList.add("phys-linked");
     else t.classList.add("dim");
   });
 }
@@ -845,6 +1009,24 @@ function allRoomsFlat() {
 
 let searchHighlight = -1;
 
+// New view: every word must match the room's code, category name, bed,
+// interconnecting code, "PHY", or building name (e.g. "twin dba", "superior",
+// "d3b", "phy amwaj").
+function roomMatchesWords(m, val) {
+  const r = m.room;
+  const nameWords = String(TYPE_DESC[r.type] || "").split(/[\s/]+/);
+  const tags = [r.type, roomBed(r), r.icCode, r.physical != null ? "PHY" : null, m.buildingLabel, String(r.room), ...nameWords]
+    .filter(Boolean).map((x) => String(x).toLowerCase());
+  return val.toLowerCase().split(/\s+/).filter(Boolean)
+    .every((w) => tags.some((t) => t === w || (w.length >= 3 && t.startsWith(w))));
+}
+function updateSearchHint() {
+  const input = $("#searchInput");
+  if (!input) return;
+  input.placeholder = isNew() ? "Room #, or twin / DBA / D3B / PHY" : "Go to room #";
+  input.setAttribute("inputmode", isNew() ? "text" : "numeric");
+}
+
 function setupSearch() {
   const input = $("#searchInput");
   const dropdown = $("#searchDropdown");
@@ -855,11 +1037,12 @@ function setupSearch() {
     if (!matches.length) {
       dropdown.innerHTML = `<div class="sd-empty">No matching room</div>`;
     } else {
+      const more = matches.length > 8 ? `<div class="sd-empty">+${matches.length - 8} more · use the filters to list them all</div>` : "";
       dropdown.innerHTML = matches.slice(0, 8).map((m, i) => `
         <div class="sd-item" data-idx="${i}" data-b="${m.building}" data-r="${m.room.room}">
           <span class="sd-room">${m.room.room}</span>
-          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}</span>
-        </div>`).join("");
+          <span class="sd-meta">${m.buildingLabel} · ${m.room.type}${roomBed(m.room) ? ` · ${roomBed(m.room)}` : ""}</span>
+        </div>`).join("") + more;
       $$(".sd-item", dropdown).forEach((el) => {
         el.addEventListener("click", () => {
           showDetail(el.dataset.b, Number(el.dataset.r));
@@ -875,7 +1058,9 @@ function setupSearch() {
   input.addEventListener("input", () => {
     const val = input.value.trim();
     if (!val) { dropdown.classList.remove("show"); return; }
-    const matches = allRooms.filter((m) => String(m.room.room).startsWith(val));
+    const matches = (isNew() && /[a-z]/i.test(val))
+      ? allRooms.filter((m) => roomMatchesWords(m, val))
+      : allRooms.filter((m) => String(m.room.room).startsWith(val));
     renderResults(matches);
   });
 
@@ -911,7 +1096,7 @@ function setupSearch() {
 /* ================= Keyboard shortcuts ================= */
 function setupShortcuts() {
   document.addEventListener("keydown", (e) => {
-    if (window.CPActiveTool && window.CPActiveTool !== "roomguide") return;
+    if (window.CPActiveMount && window.CPActiveMount !== "roomguide") return;
     const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
 
     if (e.key === "Escape") {
@@ -936,6 +1121,7 @@ function setupShortcuts() {
 
 /* ================= First-visit tour ================= */
 const TOUR_STEPS = [
+  { sel: "#rgVersion", title: "Old or new room types", text: "Switch between the old room types and the new ones. The New view also shows King or Twin for DBA, KGA and KGAOV rooms." },
   { sel: "#buildingTabs", title: "Switch buildings", text: "Jump between Zumroud, Amwaj, and Marmar here." },
   { sel: "#floorTabs", title: "Pick a floor", text: "Each building's floors are listed here." },
   { sel: "#filterBar", title: "Filter the floor", text: "Search and check any room category or feature — matches highlight on the floor and show up for all 3 buildings in the sidebar." },
@@ -991,7 +1177,12 @@ function endTour() {
 
 /* ================= Init ================= */
 function initApp() {
+  snapshotRoomVersions();
+  applyVersionToData(initialVersion());
   initTheme();
+  setupVersionSwitch();
+  updateVersionSwitch();
+  updateSearchHint();
   if (isTouch) $("#detailHint").innerHTML = "Tap a room on the plan<br>to see its view and features.";
   buildBuildingTabs();
   setupSearch();

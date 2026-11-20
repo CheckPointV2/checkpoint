@@ -7,9 +7,6 @@
 <title>Checkpoint</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="css/app.css?v=26">
 <script>
   // set theme before paint to avoid a flash
@@ -25,31 +22,26 @@
 <body>
 <div class="shell">
 
-  <aside class="rail">
-    <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 4h10l4 5v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9z"/><circle cx="16" cy="10" r="2.2"/></svg>
-      <div>
-        <div class="brand-name">Checkpoint</div>
-        <div class="brand-sub">Rooms control, Rixos Bab Al Bahr</div>
-      </div>
-    </div>
-    <nav class="nav" aria-label="Sections">
-      <button class="nav-btn" data-view="departures"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg><span>Departures</span><em class="nav-count" data-count="departures"></em><kbd>1</kbd></button>
-      <button class="nav-btn" data-view="checkouts"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4z"/><path d="M9 10l2 2 4-4"/></svg><span>Checkouts</span><em class="nav-count" data-count="checkouts"></em><kbd>2</kbd></button>
-      <button class="nav-btn" data-view="finder"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>Room finder</span><kbd>3</kbd></button>
-      <button class="nav-btn" data-view="tools"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg><span>Room lists</span><kbd>4</kbd></button>
-      <button class="nav-btn" data-view="daylist"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M10 12h7M10 16h7M10 8h3"/></svg><span>Day list</span><em class="nav-count" data-count="daylist"></em><kbd>5</kbd></button>
-    </nav>
-    <div class="rail-foot">
-      <button class="rail-link" id="theme-btn" type="button">Night mode</button>
-      <button class="rail-link" id="newshift-btn" type="button">Start new shift</button>
-    </div>
-  </aside>
-
   <div class="main">
     <header class="topbar">
       <div class="topbar-title">
         <h1 id="view-title">Departures</h1>
+        <nav class="dep-subtabs" id="depSubtabs" aria-label="Departures phase">
+          <button class="nav-btn dep-subtab" data-view="departures" type="button">
+            <span>Physical check</span><em class="nav-count" data-count="departures"></em>
+          </button>
+          <button class="nav-btn dep-subtab" data-view="checkouts" type="button">
+            <span>Formatting</span><em class="nav-count" data-count="checkouts"></em>
+          </button>
+        </nav>
+        <nav class="dep-subtabs" id="reportSubtabs" aria-label="Reports section" hidden>
+          <button class="nav-btn dep-subtab" data-view="daylist" type="button">
+            <span>Day list</span><em class="nav-count" data-count="daylist"></em>
+          </button>
+          <button class="nav-btn dep-subtab" data-view="tools" type="button">
+            <span>Room lists</span>
+          </button>
+        </nav>
       </div>
       <div class="topbar-right">
         <div class="view-actions" id="view-actions"></div>
@@ -58,7 +50,7 @@
     </header>
 
     <!-- DEPARTURES -->
-    <section class="view" id="view-departures" data-title="Departures">
+    <section class="view" id="dv-departures" data-title="Departures">
       <div class="panel import-panel">
         <div class="last-checked" id="dep-last"></div>
         <div class="drop" id="dep-drop">
@@ -80,7 +72,7 @@
         </div>
       </div>
       <div id="dep-body"></div>
-      <div class="panel" id="dep-table-panel" hidden>
+      <div class="panel panel-quiet" id="dep-table-panel" hidden>
         <div class="panel-head">
           <h2>All due-outs</h2>
           <input id="dep-search" class="search" type="search" placeholder="Search room, guest or agent" autocomplete="off">
@@ -90,7 +82,7 @@
     </section>
 
     <!-- CHECKOUTS -->
-    <section class="view" id="view-checkouts" data-title="Checkouts">
+    <section class="view" id="dv-checkouts" data-title="Departures">
       <div class="split">
         <div class="panel">
           <div class="panel-head"><h2>Read a screenshot</h2></div>
@@ -114,14 +106,8 @@
       <div class="panel" id="ex-today"></div>
     </section>
 
-    <!-- WAITING CARDS -->
-    <section class="view" id="view-finder" data-title="Room finder" hidden>
-      <div class="panel fd-controls" id="fd-controls"></div>
-      <div id="fd-body"></div>
-    </section>
-
     <!-- ROOM LISTS -->
-    <section class="view" id="view-tools" data-title="Room lists">
+    <section class="view" id="dv-tools" data-title="Reports">
       <div class="split">
         <div class="panel">
           <div class="panel-head"><h2>Any text to Opera format</h2></div>
@@ -132,7 +118,7 @@
       </div>
     </section>
 
-    <section class="view" id="view-daylist" data-title="Day list" hidden>
+    <section class="view" id="dv-daylist" data-title="Reports" hidden>
       <div class="panel">
         <div class="panel-head"><h2>Full-day departures PDF</h2></div>
         <div class="drop" id="dl-drop">
@@ -156,7 +142,6 @@
 <script src="js/store.js?v=26" defer></script>
 <script src="js/departures.js?v=26" defer></script>
 <script src="js/checkouts.js?v=26" defer></script>
-<script src="js/finder.js?v=26" defer></script>
 <script src="js/tools.js?v=26" defer></script>
 <script src="js/daylist.js?v=26" defer></script>
 <script src="js/app.js?v=26" defer></script>

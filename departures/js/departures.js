@@ -1,6 +1,9 @@
 (function (CP) {
   const $ = (id) => document.getElementById(id);
   let rackFilter = 'check';
+  // A "to check" room whose own ETD has already passed, or is this close, gets
+  // singled out from the rest of the rack instead of blending in as plain "to check".
+  const CHECK_SOON_MINS = 15;
 
   // ---------- parsing ----------
   const HEADERS = {
@@ -119,7 +122,7 @@
 
   const vipRows = (s) => activeRows(s).filter(r => r.vip || r.memberLevel);
 
-  CP.dep = { parseHTMLText, parseFile, checkRooms, conciergeText, linkedGroups, vipRows, tagKey, activeRows, buildingStats, importRows, importFile };
+  CP.dep = { parseHTMLText, parseFile, checkRooms, conciergeText, linkedGroups, vipRows, tagKey, activeRows, buildingStats, importRows, importFile, checkUrgency, checkSub };
 
   // ---------- import ----------
   function importRows(rows, fileName) {
@@ -153,6 +156,37 @@
   }
 
   // ---------- rendering ----------
+
+  // Only real clock times count: a handful of ETD values (12:01, 12:02, 12:04)
+  // are Opera status codes such as "Preparing", not actual departure times, so
+  // comparing them against the current time would produce a meaningless
+  // "overdue by 3 hours". Those keep their existing ETD_CODES label untouched.
+  function checkUrgency(r) {
+    if (!r.etd || CP.ETD_CODES[r.etd]) return null;
+    const etdMins = CP.toMinutes(r.etd);
+    if (etdMins === null) return null;
+    const diff = etdMins - CP.nowMinutes();
+    if (diff <= 0) return 'overdue';
+    if (diff <= CHECK_SOON_MINS) return 'soon';
+    return null;
+  }
+
+  // Kept to the same rough length as the tile's other labels ("Checked out",
+  // "Unreachable"): the tile is 84px wide with no wrap, so anything longer
+  // than about 11-12 characters silently truncates and hides the number the
+  // whole feature exists to show.
+  function checkSub(r, st) {
+    if (st === 'co') return 'Checked out';
+    if (CP.ETD_CODES[r.etd]) return CP.ETD_CODES[r.etd];
+    if (st !== 'check') return '';
+    if (!r.etd) return 'No ETD';
+    const urgency = checkUrgency(r);
+    const etdMins = CP.toMinutes(r.etd);
+    if (urgency === 'overdue') return 'Late ' + CP.fmtDur(CP.nowMinutes() - etdMins);
+    if (urgency === 'soon') return 'Due ' + CP.fmtDur(etdMins - CP.nowMinutes());
+    return 'ETD ' + r.etd;
+  }
+
   function progressBar(c, total) {
     if (!total) return '';
     const seg = (n, cls, label) => n ? `<i class="${cls}" style="flex:${n}" title="${label}: ${n}"></i>` : '';
@@ -185,16 +219,21 @@
 
     const rows = activeRows(s);
     const counts = { check: 0, cleared: 0, ext: 0, later: 0 };
+    const urgent = { overdue: 0, soon: 0 };
     rows.forEach(r => {
       const st = CP.roomStatus(r, s);
       if (st === 'co' || st === 'left') counts.cleared++; else if (counts[st] !== undefined) counts[st]++;
+      if (st === 'check') {
+        const u = checkUrgency(r);
+        if (u) urgent[u]++;
+      }
     });
 
     let html = '';
 
     // diff
     if (s.diff) {
-      html += `<div class="panel diff">
+      html += `<div class="panel panel-quiet diff">
         <div class="panel-head"><h2>Since the last import</h2><span class="meta">compared with ${CP.ago(s.diff.vsAt)}</span></div>
         <div class="diff-grid">
           <div class="diff-cell good"><strong>${s.diff.resolved.length}</strong><span>resolved</span><p>${s.diff.resolved.join(', ') || 'None'}</p></div>
@@ -229,23 +268,28 @@
           <button class="btn" data-act="copy-check-opera" type="button">Copy as Opera list</button>
         </div>
       </div>
+      ${urgent.overdue || urgent.soon ? `<div class="urgency-key">
+        ${urgent.overdue ? `<span class="u-overdue">${CP.plural(urgent.overdue, 'room')} overdue for check</span>` : ''}
+        ${urgent.soon ? `<span class="u-soon">${CP.plural(urgent.soon, 'room')} due within ${CHECK_SOON_MINS} min</span>` : ''}
+      </div>` : ''}
       ${progressBar(counts, rows.length)}
       <div class="chips" role="tablist">${filters.map(([k, l, n]) =>
         `<button class="chip ${rackFilter === k ? 'on' : ''}" data-rack="${k}" type="button">${l}<b>${n}</b></button>`).join('')}</div>
-      <div class="rack-cols">${CP.BUILDINGS.map(bd => bd.name).concat(g.Other ? ['Other'] : []).map(b => {
+      <div class="rack-cols">${CP.BUILDINGS.map(bd => bd.name).concat(g.Other ? ['Other'] : []).map((b, i) => {
         const list = g[b] || [];
         const all = rows.filter(r => CP.building(r.room) === b);
         const done = all.filter(r => { const st = CP.roomStatus(r, s); return st === 'co' || st === 'left'; }).length;
         const pct = all.length ? Math.round(done / all.length * 100) : 0;
-        return `<div class="rack-col">
+        return `<div class="rack-col cp-enter cp-enter-${Math.min(i, 4) + 1}">
           <h3 class="bld-name">${b}<span>${list.length}</span></h3>
           <div class="bld-progress" title="${done} of ${all.length} departures cleared"><i style="width:${pct}%"></i></div>
           <p class="bld-meta">${done} of ${all.length} cleared</p>
           ${list.length ? `<div class="tiles">${CP.sortRooms(list.map(r => r.room)).map(room => {
             const r = list.find(x => x.room === room);
             const st = CP.roomStatus(r, s);
-            const sub = st === 'co' ? 'Checked out' : (CP.ETD_CODES[r.etd] || '');
-            return CP.tile(room, 's-' + st + (r.vip || r.memberLevel ? ' vip' : ''), sub);
+            const urgency = st === 'check' ? checkUrgency(r) : null;
+            const cls = 's-' + st + (urgency ? ' is-' + urgency : '') + (r.vip || r.memberLevel ? ' vip' : '');
+            return CP.tile(room, cls, checkSub(r, st));
           }).join('')}</div>` : `<p class="empty">Clear</p>`}
         </div>`;
       }).join('')}</div>
@@ -259,7 +303,7 @@
     const linked = linkedGroups(s);
 
     html += `<div class="split">
-      <div class="panel">
+      <div class="panel panel-quiet">
         <div class="panel-head"><h2>Balances on departure</h2><span class="meta">${bal.length ? CP.plural(bal.filter(x => !s.tags[tagKey(x.r)]).length, 'to review', 'to review') : ''}</span></div>
         ${bal.length ? `<ul class="list">${bal.map(({ r, v }) => {
           const tag = s.tags[tagKey(r)];
@@ -271,7 +315,7 @@
           </li>`;
         }).join('')}</ul>` : `<p class="empty">Every due-out is at zero.</p>`}
       </div>
-      <div class="panel">
+      <div class="panel panel-quiet">
         <div class="panel-head"><h2>VIPs and members leaving</h2><span class="meta">${vips.length || ''}</span></div>
         ${vips.length ? `<ul class="list">${vips.map(r => {
           const st = CP.roomStatus(r, s);
@@ -358,7 +402,7 @@
     const file = $('dep-file');
     $('dep-browse').addEventListener('click', () => file.click());
     file.addEventListener('change', () => { importFile(file.files[0]); file.value = ''; });
-    const view = $('view-departures');
+    const view = $('dv-departures');
     ['dragenter', 'dragover'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
     ['dragleave', 'drop'].forEach(ev => view.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === view) drop.classList.remove('over'); }));
     view.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) importFile(f); });
@@ -431,9 +475,9 @@
     rackFilter = 'check';
     $('dep-search').value = '';
     CP.update(s => { s.dueouts = null; s.diff = null; s.tags = {}; s.checks = []; s.rounds = []; });
-    CP.toast('Departures reset');
+    CP.toast('Physical check reset');
   };
 
   CP.renderDepartures = render;
-  document.addEventListener('DOMContentLoaded', bind);
+  CP.bindDepartures = bind;
 })(window.CP);

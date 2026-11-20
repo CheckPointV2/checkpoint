@@ -4,11 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#6B4E33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CheckPoint">
 <title>CheckPoint — Rixos Bab Al Bahr</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="shared/assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="shared/assets/favicon-16.png">
 <link rel="apple-touch-icon" href="shared/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="shared/tokens.css">
 <style>
   .cp-topbar-actions { display:flex; align-items:center; gap:8px; }
@@ -31,86 +38,107 @@
 
 <div class="cp-app" id="mainApp" style="display:none">
 
-  <div class="cp-dock-wrap no-print">
-    <div class="cp-dock">
-      <div class="cp-dock-brand">
-        <img class="cp-dock-mark" src="shared/assets/favicon-32.png" alt="Rixos">
-        <span class="cp-dock-word cp-serif">CheckPoint</span>
+  <aside class="cp-rail no-print" id="cpRail">
+    <div class="cp-rail-brand">
+      <img class="cp-rail-mark" src="shared/assets/favicon-32.png" alt="Rixos">
+      <div class="cp-rail-word">
+        <span class="cp-rail-name cp-serif" id="cpRailName">CheckPoint</span>
+        <span class="cp-rail-tagline">Rixos Bab Al Bahr</span>
       </div>
-      <div class="cp-dock-sep"></div>
-
-      <nav class="cp-dock-nav">
-        <button class="cp-dock-btn" data-route="#/" data-tip="Home" title="Home" aria-label="Home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-        </button>
-        <button class="cp-dock-btn" data-route="#/roomguide" data-tip="Room Guide" title="Room Guide" aria-label="Room Guide">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
-        </button>
-        <button class="cp-dock-btn" data-route="#/departures" data-sub="departures" data-tip="Departures" title="Departures" aria-label="Departures">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 13h16"/></svg>
-        </button>
-        <button class="cp-dock-btn" data-route="#/departures" data-sub="checkouts" data-tip="Checkouts" title="Checkouts" aria-label="Checkouts">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5h14v10H9l-4 4z"/><path d="M9 10l2 2 4-4"/></svg>
-        </button>
-        <button class="cp-dock-btn" data-route="#/allocation" data-tip="Allocation Intelligence" title="Allocation Intelligence" aria-label="Allocation Intelligence">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </button>
-      </nav>
-
-      <div class="cp-dock-sep"></div>
-      <div class="cp-dock-utils">
-        <button class="cp-dock-btn" id="searchTrigger" data-tip="Search (⌘K)" title="Search (⌘K)" aria-label="Search (⌘K)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        </button>
-        <button class="cp-dock-btn" id="printBtn" data-tip="Print this view" title="Print this view" aria-label="Print this view">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>
-        </button>
-        <button class="cp-dock-btn" id="themeBtn" data-tip="Toggle theme" title="Toggle theme" aria-label="Toggle theme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-        </button>
-        <button class="cp-dock-btn" id="lockBtn" data-tip="Lock" title="Lock" aria-label="Lock">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-        </button>
-      </div>
+      <button class="cp-rail-collapse" id="railCollapseBtn" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
     </div>
-  </div>
+
+    <nav class="cp-rail-nav" aria-label="Main">
+      <div class="cp-rail-group">
+        <button class="cp-rail-btn" data-route="#/home" data-tip="Home" aria-label="Home">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>
+          <span class="cp-rail-btn-label">Home</span>
+        </button>
+      </div>
+
+      <div class="cp-rail-group">
+        <div class="cp-rail-group-label">Operations</div>
+        <button class="cp-rail-btn" data-route="#/roomguide" data-tip="Room Guide" aria-label="Room Guide">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>
+          <span class="cp-rail-btn-label">Room Guide</span>
+        </button>
+        <button class="cp-rail-btn" data-route="#/departures" data-sub="departures" data-tip="Departures" aria-label="Departures">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l-4 4m4-4l4 4"/><path d="M4 5h16"/></svg></span>
+          <span class="cp-rail-btn-label">Departures</span>
+          <em class="cp-rail-count" data-count="departures"></em>
+        </button>
+        <button class="cp-rail-btn" data-route="#/reports" data-tip="Reports" aria-label="Reports">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10l4 4v14H7z"/><path d="M10 12h7M10 16h7M10 8h3"/></svg></span>
+          <span class="cp-rail-btn-label">Reports</span>
+          <em class="cp-rail-count" data-count="reports"></em>
+        </button>
+      </div>
+
+      <div class="cp-rail-group">
+        <div class="cp-rail-group-label">Communication</div>
+        <button class="cp-rail-btn" data-route="#/comms" data-tip="Templates" aria-label="Templates">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <span class="cp-rail-btn-label">Templates</span>
+        </button>
+      </div>
+
+      <div class="cp-rail-group">
+        <div class="cp-rail-group-label">Personal</div>
+        <button class="cp-rail-btn" data-route="#/reminders" data-tip="Reminders" aria-label="Reminders">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 3.5"/></svg></span>
+          <span class="cp-rail-btn-label">Reminders</span>
+          <em class="cp-rail-count" data-count="reminders"></em>
+        </button>
+        <button class="cp-rail-btn" data-route="#/notes" data-tip="Notes" aria-label="Notes">
+          <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg></span>
+          <span class="cp-rail-btn-label">Notes</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="cp-rail-foot">
+      <button class="cp-rail-btn" id="themeBtn" data-tip="Toggle theme" aria-label="Toggle theme">
+        <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
+        <span class="cp-rail-btn-label">Dark mode</span>
+      </button>
+      <button class="cp-rail-btn" id="lockBtn" data-tip="Lock" aria-label="Lock">
+        <span class="cp-rail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <span class="cp-rail-btn-label">Lock</span>
+      </button>
+    </div>
+  </aside>
 
   <div class="cp-content">
-    <div id="viewRoot" style="flex:1; position:relative;">
-      <div class="cp-view active" id="view-home">
-        <div class="cp-home">
-          <div class="cp-home-greet cp-serif" id="homeGreet">Welcome back</div>
-          <div class="cp-home-date" id="homeDate"></div>
-
-          <div class="cp-slab cp-attn-hero no-print" id="homeAttn"></div>
-
-          <div class="cp-stat-grid" id="homeStats"></div>
-
-          <div class="cp-home-links">
-            <button class="cp-card cp-quicklink" data-route="#/roomguide">
-              <div class="cp-quicklink-title">Room Guide</div>
-              <div class="cp-quicklink-sub">Floor plans, features, upsell &amp; late checkout</div>
-            </button>
-            <button class="cp-card cp-quicklink" data-route="#/departures" data-sub="departures">
-              <div class="cp-quicklink-title">Departures</div>
-              <div class="cp-quicklink-sub">Due-outs and checkouts</div>
-            </button>
-          </div>
-        </div>
+    <header class="cp-topbar no-print" id="cpTopbar">
+      <div class="cp-topbar-when">
+        <span class="cp-topbar-time" id="cpTopClock"></span>
+        <span class="cp-topbar-date" id="cpTopDate"></span>
       </div>
-      <!-- other tool views are mounted here on demand -->
+      <button class="cp-ticker" id="cpTicker" type="button" hidden aria-label="Next reminder"></button>
+      <div class="cp-topbar-actions">
+        <button class="cp-icon-btn" id="cpTopSettings" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+    <div id="viewRoot" style="position:relative;">
+      <!-- tool views are mounted here on demand, Home first on boot -->
     </div>
   </div>
 
+  <button class="scratchpad-fab no-print" id="scratchpadFab" aria-label="Open scratchpad" title="Scratchpad (Ctrl+Shift+N)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg>
+  </button>
+
 </div>
 
-<div class="cp-palette-overlay" id="paletteOverlay">
-  <div class="cp-palette">
-    <input class="cp-palette-input" id="paletteInput" placeholder="Search rooms, templates, tools…" autocomplete="off">
-    <div class="cp-palette-results" id="paletteResults"></div>
-  </div>
-</div>
-
+<script src="shared/prefs.js"></script>
 <script src="shared/app.js"></script>
+<script src="shared/motion.js"></script>
+<script src="shared/scratchpad.js"></script>
+<script src="shared/palette.js"></script>
+<script src="shared/lock.js"></script>
 </body>
 </html>
