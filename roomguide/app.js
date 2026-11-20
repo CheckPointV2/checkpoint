@@ -643,14 +643,17 @@ function showDetail(bkey, roomNum) {
   activeRoom = roomNum;
   addRecent(bkey, roomNum);
 
-  if (bkey !== currentBuilding) {
+  const buildingChanged = bkey !== currentBuilding;
+  if (buildingChanged) {
     currentBuilding = bkey;
     $$("#buildingTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.building === bkey));
     buildFloorTabs();
   }
-  if (room.floor !== currentFloor) {
+  // Redraw when the building changes too: every building has the same floor keys
+  // ("GF", "1F", ...), so checking the floor alone left the previous building's plan.
+  if (buildingChanged || room.floor !== currentFloor) {
+    if (room.floor !== currentFloor) filters = emptyFilters();
     currentFloor = room.floor;
-    filters = emptyFilters();
     $$("#floorTabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.floor === room.floor));
     renderFloor(room.floor);
   }
