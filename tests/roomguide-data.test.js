@@ -33,6 +33,11 @@ test('New view counts match the RN Changed tab (OPERA NEW)', () => {
     SKA: 17, SKB: 73, SKC: 29, SKD: 9, SKP: 14, SXA: 11, PI: 13,
   });
   assert.ok(!rooms.some((r) => r.type === 'TWA' || r.type === 'TWAOV'), 'TWA / TWAOV must not exist in the New view');
+  // "Unchanged" rooms keep their current code (checked against Opera, 24 Nov 2026)
+  assert.equal(byNum['2350'].type, 'KGAOV');
+  assert.equal(byNum['2354'].type, 'KGA');
+  assert.equal(byNum['3263'].type, 'KGAOV'); // was TWAOV, a deleted code
+  assert.equal(byNum['3349'].type, 'KGAOV');
 });
 
 test('bed type only on DBA / KGA / KGAOV, from the old code (TWA/TWAOV = Twin, KGA/KGAOV = King)', () => {

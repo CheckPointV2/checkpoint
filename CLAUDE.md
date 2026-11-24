@@ -31,7 +31,10 @@ Templates, Reminders, Notes). Static site, no build step: `index.html` + `shared
 - **Old** = the guide as it was (original codes incl. TWA/TWAOV, original 63 interconnecting pairs).
 - **New** = data from `ROOMS_Matrix - UPDATED FILE` (Nov 2026):
   - Room codes **only from the "RN Changed" tab** (276 changed, 426 unchanged).
-    Changed rooms get the new code + official name; unchanged rooms are kept exactly as is.
+    Changed rooms get the new code + official name; "Unchanged" rooms KEEP THEIR CURRENT CODE even
+    where the tab's code differs (2350 stays KGAOV, 2354 stays KGA — confirmed in Opera 24 Nov),
+    except current TWA/TWAOV (deleted codes) which take the tab's code (3263, 3349 -> KGAOV).
+    Bed type always comes from the room's current (old) code.
     The 13 PI rooms (1033–1039, 1133–1139) are not in the tab and stay as they are.
   - New counts: DBA 66 · KGA 175 · KGAOV 59 · KGE 172 · KGEOV 77 · SKA 17 · SKB 73 · SKC 29 ·
     SKD 9 · SKP 14 · SXA 11 (+ PI 13). TWA / TWAOV no longer exist.
