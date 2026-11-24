@@ -39,6 +39,7 @@ DATA = ROOT / "roomguide" / "data.js"
 
 BED_FROM_OLD_CODE = {"TWA": "Twin", "TWAOV": "Twin", "KGA": "King", "KGAOV": "King"}
 BED_SHOWN_FOR = {"DBA", "KGA", "KGAOV"}
+DELETED_CODES = {"TWA", "TWAOV"}
 # Rooms where the RN Changed tab's FROM code disagreed with the guide's old data;
 # bed type confirmed by the owner on 20 Nov 2026 (takes priority over the rule above).
 BED_OVERRIDE = {"3249": "King", "3252": "King", "3260": "King", "3350": "King", "3263": "Twin", "3349": "Twin"}
@@ -106,12 +107,19 @@ def main(xlsx):
             if key in rn:  # rooms not in the tab (e.g. Posting Interface) keep their code in both views
                 frm, to, status = rn[key]
                 room["prevType"], room["prevDescription"] = old_type, old_desc_room
-                if not (status == "Unchanged" and old_type == to):
+                # "Unchanged" means the room keeps its CURRENT code (checked against Opera on
+                # 24 Nov 2026: 2350 stays KGAOV, 2354 stays KGA even though the tab says
+                # otherwise). Only rooms whose current code was deleted (TWA/TWAOV) take the
+                # tab's code (3263, 3349 -> KGAOV).
+                keep = status == "Unchanged" and old_type not in DELETED_CODES
+                if not keep:
                     assert to in NEW_NAME, f"no name for new code {to}"
                     room["type"], room["description"] = to, NEW_NAME[to]
-                if to in BED_SHOWN_FOR:
-                    assert frm in BED_FROM_OLD_CODE, f"{key}: no bed rule for old code {frm}"
-                    room["bed"] = BED_OVERRIDE.get(key, BED_FROM_OLD_CODE[frm])
+                if room["type"] in BED_SHOWN_FOR:
+                    # Bed comes from the room's current (old) code — the owner confirmed this
+                    # for every room where the tab's FROM code disagreed.
+                    assert old_type in BED_FROM_OLD_CODE, f"{key}: no bed rule for old code {old_type}"
+                    room["bed"] = BED_OVERRIDE.get(key, BED_FROM_OLD_CODE[old_type])
             partner, code = ic.get(key, (None, None))
             room["connectingNew"], room["icCodeNew"] = partner, code
             old_partner = room.get("connecting")
