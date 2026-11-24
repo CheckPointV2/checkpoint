@@ -69,14 +69,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 '''
-# the copied gate calls initApp() directly after a good login; route it through the mount guard
-app = rep(app, '''      $("#mainApp").style.display = "";
+# the original gate calls initApp() directly after a good login; route it through the mount guard
+# (already done if the team site was built with this script before, so re-running is safe)
+OLD_LOGIN = '''      $("#mainApp").style.display = "";
       initApp();
     } else {
-      $("#authError").classList.add("show");''', '''      $("#mainApp").style.display = "";
-      window.CPMountRoomGuide();
-    } else {
-      $("#authError").classList.add("show");''')
+      $("#authError").classList.add("show");'''
+if OLD_LOGIN in app:
+    app = rep(app, OLD_LOGIN, OLD_LOGIN.replace("initApp();", "window.CPMountRoomGuide();"))
+assert "initApp();\n    } else {" not in app and "window.CPMountRoomGuide();\n    } else {" in app
 open(f"{team}/app.js", "w").write(app)
 
 # ---------- index.html ----------
